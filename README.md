@@ -1,5 +1,8 @@
 # Mainflux IoT Agent
-![agent](./docs/img/agent.png =250x)
+
+<p align="center">
+  <img width="30%" height="30%" src="./docs/img/agent.png">
+</p>
 
 Mainflux IoT Agent is a communication, execution and SW management agent for Mainflux system.
 
@@ -43,8 +46,8 @@ level = "info"
 url = "localhost:1883"
 ```
 
-`thing` is a Mainflux thing, and control channel from `channels` is used with `req` and `res` subtopic
-(i.e. app needgs to pub/sub on `/channels/<channel_id>/messages/req` and `/channels/<channel_id>/messages/res`).
+Here `thing` is a Mainflux thing, and control channel from `channels` is used with `req` and `res` subtopic
+(i.e. app needs to PUB/SUB on `/channels/<channel_id>/messages/req` and `/channels/<channel_id>/messages/res`).
 
 
 
