@@ -2,7 +2,6 @@
 
 [![build][ci-badge]][ci-url]
 [![go report card][grc-badge]][grc-url]
-[![coverage][cov-badge]][cov-url]
 [![license][license]](LICENSE)
 [![chat][gitter-badge]][gitter]
 
