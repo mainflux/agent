@@ -58,16 +58,18 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 
 	dc := deviceConfig{}
 	for i := 0; i < int(retries); i++ {
+
 		dc, err = getConfig(cfg.ID, cfg.Key, cfg.URL)
-		if err != nil {
-			logger.Error(fmt.Sprintf("Fetching bootstrap failed with error: %s", err))
-			logger.Debug(fmt.Sprintf("Retries remaining: %d. Retrying in %d seconds", retries, retryDelaySec))
-			time.Sleep(time.Duration(retryDelaySec) * time.Second)
-			if i == int(retries)-1 {
-				logger.Warn("Retries exhausted")
-				logger.Info(fmt.Sprintf("Continuing with local config"))
-				return nil
-			}
+		if err == nil {
+			break
+		}
+		logger.Error(fmt.Sprintf("Fetching bootstrap failed with error: %s", err))
+		logger.Debug(fmt.Sprintf("Retries remaining: %d. Retrying in %d seconds", retries, retryDelaySec))
+		time.Sleep(time.Duration(retryDelaySec) * time.Second)
+		if i == int(retries)-1 {
+			logger.Warn("Retries exhausted")
+			logger.Info(fmt.Sprintf("Continuing with local config"))
+			return nil
 		}
 	}
 
