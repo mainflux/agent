@@ -1,5 +1,11 @@
 # Mainflux IoT Agent
 
+[![build][ci-badge]][ci-url]
+[![go report card][grc-badge]][grc-url]
+[![coverage][cov-badge]][cov-url]
+[![license][license]](LICENSE)
+[![chat][gitter-badge]][gitter]
+
 <p align="center">
   <img width="30%" height="30%" src="./docs/img/agent.png">
 </p>
@@ -49,5 +55,16 @@ url = "localhost:1883"
 Here `thing` is a Mainflux thing, and control channel from `channels` is used with `req` and `res` subtopic
 (i.e. app needs to PUB/SUB on `/channels/<channel_id>/messages/req` and `/channels/<channel_id>/messages/res`).
 
+## License
 
+[Apache-2.0](LICENSE)
+
+[ci-badge]: https://semaphoreci.com/api/v1/mainflux/agent/branches/master/badge.svg
+[ci-url]: https://semaphoreci.com/mainflux/agent
+[docs]: http://mainflux.readthedocs.io
+[gitter]: https://gitter.im/mainflux/mainflux?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+[gitter-badge]: https://badges.gitter.im/Join%20Chat.svg
+[cov-badge]: https://codecov.io/gh/mainflux/mainflux/branch/master/graph/badge.svg
+[cov-url]: https://codecov.io/gh/mainflux/mainflux
+[license]: https://img.shields.io/badge/license-Apache%20v2.0-blue.svg
 
