@@ -63,7 +63,5 @@ Here `thing` is a Mainflux thing, and control channel from `channels` is used wi
 [docs]: http://mainflux.readthedocs.io
 [gitter]: https://gitter.im/mainflux/mainflux?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 [gitter-badge]: https://badges.gitter.im/Join%20Chat.svg
-[cov-badge]: https://codecov.io/gh/mainflux/mainflux/branch/master/graph/badge.svg
-[cov-url]: https://codecov.io/gh/mainflux/mainflux
 [license]: https://img.shields.io/badge/license-Apache%20v2.0-blue.svg
 
