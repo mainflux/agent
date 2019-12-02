@@ -60,6 +60,8 @@ Here `thing` is a Mainflux thing, and control channel from `channels` is used wi
 
 [ci-badge]: https://semaphoreci.com/api/v1/mainflux/agent/branches/master/badge.svg
 [ci-url]: https://semaphoreci.com/mainflux/agent
+[grc-badge]: https://goreportcard.com/badge/github.com/mainflux/agent
+[grc-url]: https://goreportcard.com/report/github.com/mainflux/agent
 [docs]: http://mainflux.readthedocs.io
 [gitter]: https://gitter.im/mainflux/mainflux?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 [gitter-badge]: https://badges.gitter.im/Join%20Chat.svg
