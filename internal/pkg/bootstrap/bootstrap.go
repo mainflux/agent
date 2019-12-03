@@ -58,7 +58,6 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 
 	dc := deviceConfig{}
 	for i := 0; i < int(retries); i++ {
-
 		dc, err = getConfig(cfg.ID, cfg.Key, cfg.URL)
 		if err == nil {
 			break
