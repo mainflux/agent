@@ -11,39 +11,39 @@ import (
 )
 
 type ServerConf struct {
-	Port string `json:"port"`
+	Port string `toml:"port"`
 }
 
 type ThingConf struct {
-	ID  string `json:"id"`
-	Key string `json:"key"`
+	ID  string `toml:"id"`
+	Key string `toml:"key"`
 }
 
 type ChanConf struct {
-	Control string `json:"control"`
-	Data    string `json:"data"`
+	Control string `toml:"control"`
+	Data    string `toml:"data"`
 }
 
 type EdgexConf struct {
-	URL string `json:"url"`
+	URL string `toml:"url"`
 }
 
 type LogConf struct {
-	Level string `json:"level"`
+	Level string `toml:"level"`
 }
 
 type MQTTConf struct {
-	URL string `json:"url"`
+	URL string `toml:"url"`
 }
 
 // Config struct of Mainflux Agent
 type AgentConf struct {
-	Server   ServerConf `json:"server"`
-	Thing    ThingConf  `json:"thing"`
-	Channels ChanConf   `json:"channels"`
-	Edgex    EdgexConf  `json:"edgex"`
-	Log      LogConf    `json:"log"`
-	MQTT     MQTTConf   `json:"mqtt"`
+	Server   ServerConf `toml:"server"`
+	Thing    ThingConf  `toml:"thing"`
+	Channels ChanConf   `toml:"channels"`
+	Edgex    EdgexConf  `toml:"edgex"`
+	Log      LogConf    `toml:"log"`
+	MQTT     MQTTConf   `toml:"mqtt"`
 }
 
 type Config struct {
