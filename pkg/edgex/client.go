@@ -15,22 +15,36 @@ import (
 	model "github.com/edgexfoundry/go-mod-core-contracts/models"
 )
 
-// Client - holds data for Edgex Client
-type Client struct {
+type Client interface {
+
+	// PushOperation - pushes operation to EdgeX components
+	PushOperation([]string) (string, error)
+
+	// FetchConfig - fetches config from EdgeX components
+	FetchConfig([]string) (string, error)
+
+	// FetchMetrics - fetches metrics from EdgeX components
+	FetchMetrics(cmdArr []string) (string, error)
+
+	// Ping - ping EdgeX SMA
+	Ping() (string, error)
+}
+
+type edgexClient struct {
 	url    string
 	logger log.Logger
 }
 
 // NewClient - Creates ne EdgeX client
-func NewClient(edgexURL string, logger log.Logger) *Client {
-	return &Client{
+func NewClient(edgexURL string, logger log.Logger) Client {
+	return &edgexClient{
 		url:    edgexURL,
 		logger: logger,
 	}
 }
 
 // PushOperation - pushes operation to EdgeX components
-func (ec *Client) PushOperation(cmdArr []string) (string, error) {
+func (ec *edgexClient) PushOperation(cmdArr []string) (string, error) {
 	url := ec.url + "operation"
 
 	m := model.Operation{
@@ -56,7 +70,7 @@ func (ec *Client) PushOperation(cmdArr []string) (string, error) {
 }
 
 // FetchConfig - fetches config from EdgeX components
-func (ec *Client) FetchConfig(cmdArr []string) (string, error) {
+func (ec *edgexClient) FetchConfig(cmdArr []string) (string, error) {
 	cmdStr := strings.Replace(strings.Join(cmdArr, ","), " ", "", -1)
 	url := ec.url + "config/" + cmdStr
 
@@ -74,7 +88,7 @@ func (ec *Client) FetchConfig(cmdArr []string) (string, error) {
 }
 
 // FetchMetrics - fetches metrics from EdgeX components
-func (ec *Client) FetchMetrics(cmdArr []string) (string, error) {
+func (ec *edgexClient) FetchMetrics(cmdArr []string) (string, error) {
 	cmdStr := strings.Replace(strings.Join(cmdArr, ","), " ", "", -1)
 	url := ec.url + "metrics/" + cmdStr
 
@@ -93,7 +107,7 @@ func (ec *Client) FetchMetrics(cmdArr []string) (string, error) {
 }
 
 // Ping - ping EdgeX SMA
-func (ec *Client) Ping() (string, error) {
+func (ec *edgexClient) Ping() (string, error) {
 	url := ec.url + "ping"
 
 	resp, err := http.Get(url)

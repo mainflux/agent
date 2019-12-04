@@ -57,12 +57,12 @@ var _ Service = (*agent)(nil)
 type agent struct {
 	mqttClient  paho.Client
 	config      *config.Config
-	edgexClient *edgex.Client
+	edgexClient edgex.Client
 	logger      log.Logger
 }
 
 // New returns agent service implementation.
-func New(mc paho.Client, cfg *config.Config, ec *edgex.Client, logger log.Logger) Service {
+func New(mc paho.Client, cfg *config.Config, ec edgex.Client, logger log.Logger) Service {
 	return &agent{
 		mqttClient:  mc,
 		edgexClient: ec,
