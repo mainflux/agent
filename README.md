@@ -58,8 +58,8 @@ Here `thing` is a Mainflux thing, and control channel from `channels` is used wi
 
 [Apache-2.0](LICENSE)
 
-[ci-badge]: https://semaphoreci.com/api/v1/mainflux/agent/branches/master/badge.svg
-[ci-url]: https://semaphoreci.com/mainflux/agent
+[ci-badge]:
+[ci-url]: https://github.com/mainflux/agent/workflows/Go/badge.svg
 [grc-badge]: https://goreportcard.com/badge/github.com/mainflux/agent
 [grc-url]: https://goreportcard.com/report/github.com/mainflux/agent
 [docs]: http://mainflux.readthedocs.io
