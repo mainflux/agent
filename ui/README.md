@@ -55,3 +55,5 @@ If you have already launched Mainflux as a Docker composition, simply `cd` to
 Mainflux folder and run `docker-compose -f docker/docker-compose.yml stop ui`.
 Please follow the [guidelines for Mainflux
 contributors](https://mainflux.readthedocs.io/en/latest/CONTRIBUTING/).
+
+Trigger
