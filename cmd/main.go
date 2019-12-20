@@ -71,8 +71,7 @@ func main() {
 
 	nc, err := nats.Connect(cfg.Agent.Server.NatsURL)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Agent.Server.NatsURL))
-		os.Exit(1)
+		logger.Warn(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Agent.Server.NatsURL))
 	}
 	defer nc.Close()
 

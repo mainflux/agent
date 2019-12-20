@@ -53,9 +53,11 @@ func (b *broker) Subscribe(topic string) error {
 		return err
 	}
 
-	n := b.client.Subscribe(fmt.Sprintf("%s/%s", topic, NATS_TOPIC), 0, b.handleNatsMsg)
-	if err := n.Error(); n.Wait() && err != nil {
-		return err
+	if b.nats != nil {
+		n := b.client.Subscribe(fmt.Sprintf("%s/%s", topic, NATS_TOPIC), 0, b.handleNatsMsg)
+		if err := n.Error(); n.Wait() && err != nil {
+			return err
+		}
 	}
 
 	return nil
