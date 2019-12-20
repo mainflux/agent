@@ -10,8 +10,15 @@ import (
 	"github.com/mainflux/agent/internal/app/agent"
 	"github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/senml"
+	"github.com/nats-io/go-nats"
+	"robpike.io/filter"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
+)
+
+const (
+	REQ_TOPIC  = "req"
+	NATS_TOPIC = "nats"
 )
 
 var _ MqttBroker = (*broker)(nil)
@@ -26,25 +33,61 @@ type broker struct {
 	svc    agent.Service
 	client paho.Client
 	logger logger.Logger
+	nats   *nats.Conn
 }
 
 // NewBroker returns new MQTT broker instance.
-func NewBroker(svc agent.Service, client paho.Client, log logger.Logger) MqttBroker {
+func NewBroker(svc agent.Service, client paho.Client, nats *nats.Conn, log logger.Logger) MqttBroker {
 	return &broker{
 		svc:    svc,
 		client: client,
 		logger: log,
+		nats:   nats,
 	}
 }
 
 // Subscribe subscribes to the MQTT message broker
 func (b *broker) Subscribe(topic string) error {
-	s := b.client.Subscribe(topic, 0, b.handleMsg)
+	s := b.client.Subscribe(fmt.Sprintf("%s/%s", topic, REQ_TOPIC), 0, b.handleMsg)
 	if err := s.Error(); s.Wait() && err != nil {
 		return err
 	}
 
+	n := b.client.Subscribe(fmt.Sprintf("%s/%s", topic, NATS_TOPIC), 0, b.handleNatsMsg)
+	if err := n.Error(); n.Wait() && err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// handleNatsMsg triggered when new message is received on MQTT broker
+func (b *broker) handleNatsMsg(mc paho.Client, msg paho.Message) {
+	topic := extractNatsTopic(msg.Topic())
+	b.nats.Publish(topic, msg.Payload())
+}
+
+func extractNatsTopic(topic string) string {
+	i := strings.LastIndex(topic, REQ_TOPIC) + len(REQ_TOPIC)
+	natsTopic := topic[i:]
+	if natsTopic[0] == '/' {
+		natsTopic = natsTopic[1:]
+	}
+	last := len(natsTopic) - 1
+	if natsTopic[last] == '/' {
+		natsTopic = natsTopic[:last]
+	}
+	natsTopic = strings.ReplaceAll(natsTopic, "/", ".")
+
+	isEmpty := func(s string) bool {
+		return (len(s) == 0)
+	}
+	// filter empty array element, avoid topic topic.sub.sub...
+	filtered := filter.Drop(strings.Split(natsTopic, "."), isEmpty).([]string)
+	natsTopic = strings.Join(filtered, ".")
+
+	return natsTopic
+
 }
 
 // handleMsg triggered when new message is received on MQTT broker
