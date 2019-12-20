@@ -17,6 +17,7 @@ import (
 	paho "github.com/eclipse/paho.mqtt.golang"
 )
 
+<<<<<<< HEAD
 type cmdType string
 
 const (
@@ -31,6 +32,13 @@ const (
 
 var channelPartRegExp = regexp.MustCompile(`^channels/([\w\-]+)/messages/services(/[^?]*)?(\?.*)?$`)
 
+=======
+const (
+	REQ_TOPIC  = "req"
+	NATS_TOPIC = "nats"
+)
+
+>>>>>>> add nats and support forwarding messages from mqtt to local nats
 var _ MqttBroker = (*broker)(nil)
 
 // MqttBroker represents the MQTT broker.
