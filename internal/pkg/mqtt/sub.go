@@ -17,7 +17,6 @@ import (
 	paho "github.com/eclipse/paho.mqtt.golang"
 )
 
-<<<<<<< HEAD
 type cmdType string
 
 const (
@@ -32,13 +31,6 @@ const (
 
 var channelPartRegExp = regexp.MustCompile(`^channels/([\w\-]+)/messages/services(/[^?]*)?(\?.*)?$`)
 
-=======
-const (
-	REQ_TOPIC  = "req"
-	NATS_TOPIC = "nats"
-)
-
->>>>>>> add nats and support forwarding messages from mqtt to local nats
 var _ MqttBroker = (*broker)(nil)
 
 // MqttBroker represents the MQTT broker.
@@ -83,18 +75,19 @@ func (b *broker) Subscribe(topic string) error {
 
 // handleNatsMsg triggered when new message is received on MQTT broker
 func (b *broker) handleNatsMsg(mc paho.Client, msg paho.Message) {
-	if topic := extractNatsTopic(msg.Topic()); topic != "" {
-		b.nats.Publish(topic, msg.Payload())
-	}
+	topic := extractNatsTopic(msg.Topic())
+	b.nats.Publish(topic, msg.Payload())
 }
 
 func extractNatsTopic(topic string) string {
+
 	isEmpty := func(s string) bool {
 		return (len(s) == 0)
 	}
+
 	channelParts := channelPartRegExp.FindStringSubmatch(topic)
-	if len(channelParts) < 3 {
-		return ""
+	if len(channelParts) < 2 {
+		return "err"
 	}
 	filtered := filter.Drop(strings.Split(channelParts[2], "/"), isEmpty).([]string)
 	natsTopic := strings.Join(filtered, ".")
@@ -123,6 +116,11 @@ func (b *broker) handleMsg(mc paho.Client, msg paho.Message) {
 	case exec:
 		b.logger.Info(fmt.Sprintf("Execute command for uuid %s and command string %s", uuid, cmdStr))
 		if _, err := b.svc.Execute(uuid, cmdStr); err != nil {
+			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
+		}
+	case config:
+		b.logger.Info(fmt.Sprintf("Execute command for uuid %s and command string %s", uuid, cmdStr))
+		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
 			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
 		}
 	}
