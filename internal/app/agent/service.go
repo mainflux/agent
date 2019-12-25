@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
+	"github.com/mainflux/agent/internal/app/agent/register"
 	"github.com/mainflux/agent/internal/pkg/config"
 	"github.com/mainflux/agent/pkg/edgex"
 	log "github.com/mainflux/mainflux/logger"
@@ -59,15 +60,17 @@ type agent struct {
 	config      *config.Config
 	edgexClient edgex.Client
 	logger      log.Logger
+	register    register.Service
 }
 
 // New returns agent service implementation.
-func New(mc paho.Client, cfg *config.Config, ec edgex.Client, logger log.Logger) Service {
+func New(mc paho.Client, cfg *config.Config, ec edgex.Client, reg register.Service, logger log.Logger) Service {
 	return &agent{
 		mqttClient:  mc,
 		edgexClient: ec,
 		config:      cfg,
 		logger:      logger,
+		register:    reg,
 	}
 }
 
