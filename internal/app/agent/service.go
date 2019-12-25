@@ -9,7 +9,11 @@ import (
 	"strings"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
+<<<<<<< HEAD
 	"github.com/mainflux/agent/internal/app/agent/services"
+=======
+	"github.com/mainflux/agent/internal/app/agent/register"
+>>>>>>> add heartbeat and app registering to agent
 	"github.com/mainflux/agent/internal/pkg/config"
 	"github.com/mainflux/agent/pkg/edgex"
 	"github.com/mainflux/mainflux/errors"
