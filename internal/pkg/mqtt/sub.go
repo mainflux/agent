@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	REQ_TOPIC  = "req"
-	NATS_TOPIC = "nats"
+	reqTopic  = "req"
+	servTopic = "services"
+	commands  = "commands"
 )
 
 var _ MqttBroker = (*broker)(nil)
@@ -48,13 +49,13 @@ func NewBroker(svc agent.Service, client paho.Client, nats *nats.Conn, log logge
 
 // Subscribe subscribes to the MQTT message broker
 func (b *broker) Subscribe(topic string) error {
-	s := b.client.Subscribe(fmt.Sprintf("%s/%s", topic, REQ_TOPIC), 0, b.handleMsg)
+	s := b.client.Subscribe(fmt.Sprintf("%s/%s", topic, reqTopic), 0, b.handleMsg)
 	if err := s.Error(); s.Wait() && err != nil {
 		return err
 	}
 
 	if b.nats != nil {
-		n := b.client.Subscribe(fmt.Sprintf("%s/%s", topic, NATS_TOPIC), 0, b.handleNatsMsg)
+		n := b.client.Subscribe(fmt.Sprintf("%s/%s/#", topic, servTopic), 0, b.handleNatsMsg)
 		if err := n.Error(); n.Wait() && err != nil {
 			return err
 		}
@@ -70,7 +71,7 @@ func (b *broker) handleNatsMsg(mc paho.Client, msg paho.Message) {
 }
 
 func extractNatsTopic(topic string) string {
-	i := strings.LastIndex(topic, REQ_TOPIC) + len(REQ_TOPIC)
+	i := strings.LastIndex(topic, servTopic) + len(servTopic)
 	natsTopic := topic[i:]
 	if natsTopic[0] == '/' {
 		natsTopic = natsTopic[1:]
@@ -88,7 +89,7 @@ func extractNatsTopic(topic string) string {
 	filtered := filter.Drop(strings.Split(natsTopic, "."), isEmpty).([]string)
 	natsTopic = strings.Join(filtered, ".")
 
-	return natsTopic
+	return fmt.Sprintf("%s.%s", commands, natsTopic)
 
 }
 
