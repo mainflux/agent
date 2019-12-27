@@ -13,7 +13,7 @@ const (
 var _ Service = (*register)(nil)
 
 type Service interface {
-	Applications() (map[string]*Application, error)
+	Applications() map[string]*Application
 }
 
 type register struct {
@@ -47,4 +47,4 @@ func New(nc *nats.Conn) (Service, error) {
 	return &r, nil
 }
 
-func (r *register) Applications() (map[string]*Application, error) { return r.apps, nil }
+func (r *register) Applications() map[string]*Application { return r.apps }
