@@ -12,6 +12,7 @@ import (
 	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
 	"github.com/mainflux/agent/internal/app/agent"
 	"github.com/mainflux/agent/internal/app/agent/api"
+	"github.com/mainflux/agent/internal/app/agent/register"
 	"github.com/mainflux/agent/internal/pkg/bootstrap"
 	"github.com/mainflux/agent/internal/pkg/config"
 	"github.com/mainflux/agent/internal/pkg/mqtt"
@@ -77,8 +78,12 @@ func main() {
 
 	mqttClient := connectToMQTTBroker(cfg.Agent.MQTT.URL, cfg.Agent.Thing.ID, cfg.Agent.Thing.Key, logger)
 	edgexClient := edgex.NewClient(cfg.Agent.Edgex.URL, logger)
+	regService, err := register.New(nc)
+	if err != nil {
+		logger.Warn(fmt.Sprintf("Failed to start register service"))
+	}
 
-	svc := agent.New(mqttClient, &cfg, edgexClient, logger)
+	svc := agent.New(mqttClient, &cfg, edgexClient, regService, logger)
 
 	svc = api.LoggingMiddleware(svc, logger)
 	svc = api.MetricsMiddleware(
@@ -182,8 +187,8 @@ func connectToMQTTBroker(mqttURL, thingID, thingKey string, logger logger.Logger
 	return client
 }
 
-func subscribeToMQTTBroker(svc agent.Service, mc paho.Client, ctrlChan string, nats *nats.Conn, logger logger.Logger) {
-	broker := mqtt.NewBroker(svc, mc, nats, logger)
+func subscribeToMQTTBroker(svc agent.Service, mc paho.Client, ctrlChan string, nc *nats.Conn, logger logger.Logger) {
+	broker := mqtt.NewBroker(svc, mc, nc, logger)
 	topic := fmt.Sprintf("channels/%s/messages", ctrlChan)
 	if err := broker.Subscribe(topic); err != nil {
 		logger.Error(fmt.Sprintf("Failed to subscribe to MQTT broker: %s", err.Error()))

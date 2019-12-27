@@ -45,6 +45,12 @@ func MakeHandler(svc agent.Service) http.Handler {
 		encodeResponse,
 	))
 
+	r.Get("/services", kithttp.NewServer(
+		viewServicesEndpoint(svc),
+		decodeRequest,
+		encodeResponse,
+	))
+
 	r.GetFunc("/version", mainflux.Version("agent"))
 	r.Handle("/metrics", promhttp.Handler())
 
