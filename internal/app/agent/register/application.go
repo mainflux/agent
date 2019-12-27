@@ -8,7 +8,7 @@ import (
 type Status string
 
 const (
-	timeout  = 10
+	timeout  = 3
 	interval = 10000
 
 	ONLINE  Status = "online"
@@ -23,15 +23,15 @@ type Application struct {
 	Status   Status
 
 	counter int
-	done    *chan bool
+	done    chan bool
 	ticker  *time.Ticker
 	mu      sync.Mutex
 }
 
 func NewApplication(name string) *Application {
 	ticker := time.NewTicker(interval * time.Millisecond)
-	done := new(chan bool)
-	a := Application{Name: name, Status: ONLINE, done: done, ticker: ticker}
+	done := make(chan bool)
+	a := Application{Name: name, Status: ONLINE, done: done, counter: timeout, ticker: ticker}
 	a.Listen()
 	return &a
 }
@@ -40,8 +40,6 @@ func (a *Application) Listen() {
 	go func() {
 		for {
 			select {
-			case <-*a.done:
-				return
 			case <-a.ticker.C:
 				// TODO - we can disable ticker when the status gets OFFLINE
 				// and on the next heartbeat enable it again
@@ -63,8 +61,4 @@ func (a *Application) Update() {
 	defer a.mu.Unlock()
 	a.counter = timeout
 	a.Status = ONLINE
-}
-
-func (a *Application) Done() {
-	*a.done <- true
 }
