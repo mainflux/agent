@@ -31,23 +31,30 @@ type Application struct {
 func NewApplication(name string) *Application {
 	ticker := time.NewTicker(interval * time.Millisecond)
 	done := new(chan bool)
-	a := Application{Name: name, done: done, ticker: ticker}
+	a := Application{Name: name, Status: ONLINE, done: done, ticker: ticker}
+	a.Listen()
+	return &a
+}
+
+func (a *Application) Listen() {
 	go func() {
 		for {
 			select {
 			case <-*a.done:
 				return
-			case <-ticker.C:
+			case <-a.ticker.C:
+				// TODO - we can disable ticker when the status gets OFFLINE
+				// and on the next heartbeat enable it again
 				a.mu.Lock()
 				a.counter = a.counter - 1
 				if a.counter == 0 {
 					a.Status = OFFLINE
+					a.counter = timeout
 				}
 				a.mu.Unlock()
 			}
 		}
 	}()
-	return &a
 }
 
 func (a *Application) Update() {

@@ -49,6 +49,9 @@ type Service interface {
 	// View returns Config struct created from config file
 	ViewConfig() config.Config
 
+	// View returns service list
+	ViewServices() map[string]*register.Application
+
 	// Publish message
 	Publish(string, string) error
 }
@@ -142,6 +145,10 @@ func (a *agent) AddConfig(c config.Config) error {
 
 func (a *agent) ViewConfig() config.Config {
 	return *a.config
+}
+
+func (a *agent) ViewServices() map[string]*register.Application {
+	return a.register.Applications()
 }
 
 func (a *agent) Publish(crtlChan, payload string) error {
