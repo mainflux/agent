@@ -76,6 +76,15 @@ func (ms *metricsMiddleware) Services() map[string]*services.Service {
 	return ms.svc.Services()
 }
 
+func (ms *metricsMiddleware) ViewServices() map[string]*register.Application {
+	defer func(begin time.Time) {
+		ms.counter.With("method", "view_services").Add(1)
+		ms.latency.With("method", "view_services").Observe(time.Since(begin).Seconds())
+	}(time.Now())
+
+	return ms.svc.ViewServices()
+}
+
 func (ms *metricsMiddleware) Publish(topic, payload string) error {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "publish").Add(1)

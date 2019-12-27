@@ -61,6 +61,9 @@ type Service interface {
 	// Services returns service list
 	Services() map[string]*services.Service
 
+	// View returns service list
+	ViewServices() map[string]*register.Application
+
 	// Publish message
 	Publish(string, string) error
 }
@@ -185,8 +188,13 @@ func (a *agent) Config() config.Config {
 	return *a.config
 }
 
+<<<<<<< HEAD
 func (a *agent) Services() map[string]*services.Service {
 	return a.servs
+=======
+func (a *agent) ViewServices() map[string]*register.Application {
+	return a.register.Applications()
+>>>>>>> add view application status
 }
 
 func (a *agent) Publish(crtlChan, payload string) error {
