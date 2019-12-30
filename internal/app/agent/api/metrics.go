@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/mainflux/agent/internal/app/agent"
-	"github.com/mainflux/agent/internal/app/agent/services"
 	"github.com/mainflux/agent/internal/pkg/config"
 )
 
@@ -58,37 +57,37 @@ func (ms *metricsMiddleware) AddConfig(ec config.Config) error {
 	return ms.svc.AddConfig(ec)
 }
 
-func (ms *metricsMiddleware) Config() config.Config {
+func (ms *metricsMiddleware) ServiceConfig(uuid, cmdStr string) error {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "config").Add(1)
-		ms.latency.With("method", "config").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "service_config").Add(1)
+		ms.latency.With("method", "service_config").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return ms.svc.Config()
+	return ms.svc.ServiceConfig(uuid, cmdStr)
 }
 
-func (ms *metricsMiddleware) Services() map[string]*services.Service {
+func (ms *metricsMiddleware) ViewConfig() config.Config {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "services").Add(1)
-		ms.latency.With("method", "services").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "view_config").Add(1)
+		ms.latency.With("method", "view_config").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return ms.svc.Services()
+	return ms.svc.ViewConfig()
 }
 
-func (ms *metricsMiddleware) ViewServices() map[string]*register.Application {
+func (ms *metricsMiddleware) ViewApplications() map[string]*agent.Application {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "view_services").Add(1)
 		ms.latency.With("method", "view_services").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return ms.svc.ViewServices()
+	return ms.svc.ViewApplications()
 }
 
 func (ms *metricsMiddleware) Publish(topic, payload string) error {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "publish").Add(1)
-		ms.latency.With("method", "publish").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "execute").Add(1)
+		ms.latency.With("method", "execute").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
 	return ms.svc.Publish(topic, payload)

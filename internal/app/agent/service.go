@@ -4,18 +4,15 @@
 package agent
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os/exec"
 	"strings"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
-<<<<<<< HEAD
-	"github.com/mainflux/agent/internal/app/agent/services"
-=======
-	"github.com/mainflux/agent/internal/app/agent/register"
->>>>>>> add heartbeat and app registering to agent
 	"github.com/mainflux/agent/internal/pkg/config"
 	"github.com/mainflux/agent/pkg/edgex"
+	export "github.com/mainflux/export/pkg/config"
 	"github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/senml"
@@ -55,14 +52,14 @@ type Service interface {
 	// Update configuration file
 	AddConfig(config.Config) error
 
-	// Config returns Config struct created from config file
-	Config() config.Config
+	// View returns Config struct created from config file
+	ViewConfig() config.Config
 
-	// Services returns service list
-	Services() map[string]*services.Service
+	// Saves config file for service
+	ServiceConfig(string, string) error
 
 	// View returns service list
-	ViewServices() map[string]*register.Application
+	ViewApplications() map[string]*Application
 
 	// Publish message
 	Publish(string, string) error
@@ -76,7 +73,7 @@ type agent struct {
 	edgexClient edgex.Client
 	logger      log.Logger
 	nats        *nats.Conn
-	servs       map[string]*services.Service
+	apps        map[string]*Application
 }
 
 // New returns agent service implementation.
@@ -87,7 +84,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		config:      cfg,
 		nats:        nc,
 		logger:      logger,
-		servs:       make(map[string]*services.Service),
+		apps:        make(map[string]*Application),
 	}
 
 	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {
@@ -97,17 +94,17 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 			ag.logger.Error(fmt.Sprintf("Failed: Subject has incorrect length %s" + sub))
 			return
 		}
-		servname := tok[1]
+		appname := tok[1]
 		// Service name is extracted from the subtopic
 		// if there is multiple instances of the same service
 		// we will have to add another distinction
-		if _, ok := ag.servs[servname]; !ok {
-			serv := services.NewService(servname)
-			ag.servs[servname] = serv
-			ag.logger.Info(fmt.Sprintf("Services '%s' registered", servname))
+		if _, ok := ag.apps[appname]; !ok {
+			app := NewApplication(appname)
+			ag.apps[appname] = app
+			ag.logger.Info(fmt.Sprintf("Application '%s' registered", appname))
 		}
-		serv := ag.servs[servname]
-		serv.Update()
+		app := ag.apps[appname]
+		app.Update()
 	})
 
 	if err != nil {
@@ -180,21 +177,36 @@ func (a *agent) Control(uuid, cmdStr string) error {
 	return nil
 }
 
+func (a *agent) ServiceConfig(uuid, cmdStr string) error {
+	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
+	if len(cmdArgs) < 2 {
+		return errInvalidCommand
+	}
+
+	fileName := cmdArgs[0]
+	fileCont, err := base64.StdEncoding.DecodeString(cmdArgs[1])
+	if err != nil {
+		return err
+	}
+	c := &export.Config{}
+
+	c.ReadBytes([]byte(fileCont))
+	c.File = fileName
+	c.Save()
+
+	return nil
+}
+
 func (a *agent) AddConfig(c config.Config) error {
 	return c.Save()
 }
 
-func (a *agent) Config() config.Config {
+func (a *agent) ViewConfig() config.Config {
 	return *a.config
 }
 
-<<<<<<< HEAD
-func (a *agent) Services() map[string]*services.Service {
-	return a.servs
-=======
-func (a *agent) ViewServices() map[string]*register.Application {
-	return a.register.Applications()
->>>>>>> add view application status
+func (a *agent) ViewApplications() map[string]*Application {
+	return a.apps
 }
 
 func (a *agent) Publish(crtlChan, payload string) error {

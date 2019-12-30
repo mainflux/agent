@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/mainflux/agent/internal/app/agent"
-	"github.com/mainflux/agent/internal/app/agent/register"
-	"github.com/mainflux/agent/internal/app/agent/services"
 	"github.com/mainflux/agent/internal/pkg/config"
 	log "github.com/mainflux/mainflux/logger"
 )
@@ -67,7 +65,7 @@ func (lm loggingMiddleware) Control(uuid, cmd string) (err error) {
 
 func (lm loggingMiddleware) AddConfig(c config.Config) (err error) {
 	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method add_config took %s to complete", time.Since(begin))
+		message := fmt.Sprintf("Method AddConfig took %s to complete", time.Since(begin))
 		if err != nil {
 			lm.logger.Warn(fmt.Sprintf("%s with error: %s.", message, err))
 			return
@@ -78,29 +76,33 @@ func (lm loggingMiddleware) AddConfig(c config.Config) (err error) {
 	return lm.svc.AddConfig(c)
 }
 
-func (lm loggingMiddleware) Config() config.Config {
+func (lm loggingMiddleware) ServiceConfig(uuid, cmdStr string) (err error) {
 	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method config took %s to complete", time.Since(begin))
+		message := fmt.Sprintf("Method AddConfig took %s to complete", time.Since(begin))
+		if err != nil {
+			lm.logger.Warn(fmt.Sprintf("%s with error: %s.", message, err))
+			return
+		}
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
 	}(time.Now())
 
-	return lm.svc.Config()
+	return lm.svc.ServiceConfig(uuid, cmdStr)
 }
 
-func (lm loggingMiddleware) Services() map[string]*services.Service {
+func (lm loggingMiddleware) ViewConfig() config.Config {
 	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method services took %s to complete", time.Since(begin))
+		message := fmt.Sprintf("Method ViewConfig took %s to complete", time.Since(begin))
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
 	}(time.Now())
 
-	return lm.svc.Services()
+	return lm.svc.ViewConfig()
 }
 
-func (lm loggingMiddleware) ViewServices() map[string]*register.Application {
+func (lm loggingMiddleware) ViewApplications() map[string]*agent.Application {
 	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method ViewServices took %s to complete", time.Since(begin))
+		message := fmt.Sprintf("Method ViewApplications took %s to complete", time.Since(begin))
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
 	}(time.Now())
 
-	return lm.svc.ViewServices()
+	return lm.svc.ViewApplications()
 }
