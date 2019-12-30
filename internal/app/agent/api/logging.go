@@ -77,6 +77,19 @@ func (lm loggingMiddleware) AddConfig(c config.Config) (err error) {
 	return lm.svc.AddConfig(c)
 }
 
+func (lm loggingMiddleware) ServiceConfig(uuid, cmdStr string) (err error) {
+	defer func(begin time.Time) {
+		message := fmt.Sprintf("Method AddConfig took %s to complete", time.Since(begin))
+		if err != nil {
+			lm.logger.Warn(fmt.Sprintf("%s with error: %s.", message, err))
+			return
+		}
+		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
+	}(time.Now())
+
+	return lm.svc.ServiceConfig(uuid, cmdStr)
+}
+
 func (lm loggingMiddleware) ViewConfig() config.Config {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method ViewConfig took %s to complete", time.Since(begin))

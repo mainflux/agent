@@ -13,6 +13,7 @@ import (
 	"github.com/mainflux/agent/internal/app/agent/register"
 	"github.com/mainflux/agent/internal/pkg/config"
 	"github.com/mainflux/agent/pkg/edgex"
+	export "github.com/mainflux/export/pkg/config"
 	log "github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/senml"
 )
@@ -48,6 +49,9 @@ type Service interface {
 
 	// View returns Config struct created from config file
 	ViewConfig() config.Config
+
+	// Saves config file for service
+	ServiceConfig(string, string) error
 
 	// View returns service list
 	ViewServices() map[string]*register.Application
@@ -135,6 +139,23 @@ func (a *agent) Control(uuid, cmdStr string) error {
 	if err := a.Publish(a.config.Agent.Channels.Control, string(payload)); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (a *agent) ServiceConfig(uuid, cmdStr string) error {
+	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
+	if len(cmdArgs) < 2 {
+		return errInvalidCommand
+	}
+
+	fileName := cmdArgs[0]
+	fileCont := cmdArgs[1]
+	c := &export.Config{}
+
+	c.ReadFromB([]byte(fileCont))
+	c.File = fileName
+	c.Save()
 
 	return nil
 }

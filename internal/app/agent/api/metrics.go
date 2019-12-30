@@ -58,6 +58,15 @@ func (ms *metricsMiddleware) AddConfig(ec config.Config) error {
 	return ms.svc.AddConfig(ec)
 }
 
+func (ms *metricsMiddleware) ServiceConfig(uuid, cmdStr string) error {
+	defer func(begin time.Time) {
+		ms.counter.With("method", "service_config").Add(1)
+		ms.latency.With("method", "service_config").Observe(time.Since(begin).Seconds())
+	}(time.Now())
+
+	return ms.svc.ServiceConfig(uuid, cmdStr)
+}
+
 func (ms *metricsMiddleware) ViewConfig() config.Config {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "view_config").Add(1)
