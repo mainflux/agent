@@ -4,6 +4,7 @@
 package agent
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os/exec"
@@ -150,7 +151,10 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 	}
 
 	fileName := cmdArgs[0]
-	fileCont := cmdArgs[1]
+	fileCont, err := base64.StdEncoding.DecodeString(cmdArgs[1])
+	if err != nil {
+		return err
+	}
 	c := &export.Config{}
 
 	c.ReadFromB([]byte(fileCont))
