@@ -11,6 +11,5 @@ RUN apk update \
     && mv build/mainflux-$SVC /exe
 
 FROM scratch
-# Certificates are needed so that mailing util can work.
 COPY --from=builder /exe /
 ENTRYPOINT ["/exe"]
