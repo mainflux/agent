@@ -18,3 +18,14 @@ jobs:
 
     - name: Build
       run: make
+
+    - name: Publish to Registry
+      uses: elgohr/Publish-Docker-Github-Action@master
+      env:
+        SVC: agent
+      with:
+        name: mainflux/agent
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        buildargs: SVC
+        dockerfile: docker/Dockerfile
