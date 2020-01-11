@@ -24,7 +24,7 @@ jobs:
       env:
         SVC: agent
       with:
-        name: ivke/agent
+        name: mainflux/agent
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         buildargs: SVC
