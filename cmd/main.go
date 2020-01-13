@@ -78,7 +78,7 @@ func main() {
 
 	mqttClient := connectToMQTTBroker(cfg.Agent.MQTT.URL, cfg.Agent.Thing.ID, cfg.Agent.Thing.Key, logger)
 	edgexClient := edgex.NewClient(cfg.Agent.Edgex.URL, logger)
-	regService, err := register.New(nc)
+	regService, err := register.New(nc, logger)
 	if err != nil {
 		logger.Warn(fmt.Sprintf("Failed to start register service"))
 	}
