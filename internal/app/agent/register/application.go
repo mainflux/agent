@@ -11,14 +11,12 @@ const (
 	timeout  = 3
 	interval = 10000
 
-	ONLINE  Status = "online"
-	OFFLINE Status = "offline"
+	Online  Status = "online"
+	Offline Status = "offline"
 )
 
 type Application struct {
-	Name string
-	// RegName  string
-	// Num      int
+	Name     string
 	LastSeen time.Time
 	Status   Status
 
@@ -31,7 +29,7 @@ type Application struct {
 func NewApplication(name string) *Application {
 	ticker := time.NewTicker(interval * time.Millisecond)
 	done := make(chan bool)
-	a := Application{Name: name, Status: ONLINE, done: done, counter: timeout, ticker: ticker}
+	a := Application{Name: name, Status: Online, done: done, counter: timeout, ticker: ticker}
 	a.Listen()
 	return &a
 }
@@ -46,7 +44,7 @@ func (a *Application) Listen() {
 				a.mu.Lock()
 				a.counter = a.counter - 1
 				if a.counter == 0 {
-					a.Status = OFFLINE
+					a.Status = Offline
 					a.counter = timeout
 				}
 				a.mu.Unlock()
@@ -60,5 +58,5 @@ func (a *Application) Update() {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.counter = timeout
-	a.Status = ONLINE
+	a.Status = Online
 }
