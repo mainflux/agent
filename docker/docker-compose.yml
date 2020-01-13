@@ -1,0 +1,34 @@
+# Copyright (c) Mainflux
+# SPDX-License-Identifier: Apache-2.0
+
+
+version: "3.7"
+
+networks:
+  docker_mainflux-base-net:
+    external: true
+
+services:
+  agent:
+    image: mainflux/agent:latest
+    container_name: mainflux-agent
+    restart: on-failure
+    environment:
+      MF_AGENT_LOG_LEVEL: ${MF_AGENT_LOG_LEVEL}
+      MF_AGENT_EDGEX_URL: ${MF_AGENT_EDGEX_URL}
+      MF_AGENT_MQTT_URL: ${MF_AGENT_MQTT_URL}
+      MF_AGENT_HTTP_PORT: ${MF_AGENT_HTTP_PORT}
+      MF_AGENT_BOOTSTRAP_URL: ${MF_AGENT_BOOTSTRAP_URL}
+      MF_AGENT_BOOTSTRAP_ID: ${MF_AGENT_BOOTSTRAP_ID}
+      MF_AGENT_BOOTSTRAP_KEY: ${MF_AGENT_BOOTSTRAP_KEY}
+      MF_AGENT_BOOTSTRAP_RETRIES: ${MF_AGENT_BOOTSTRAP_RETRIES}
+      MF_AGENT_BOOTSTRAP_RETRY_DELAY_SECONDS: ${MF_AGENT_BOOTSTRAP_RETRY_DELAY_SECONDS}
+      MF_AGENT_THING_ID: ${MF_AGENT_THING_ID}
+      MF_AGENT_THING_KEY: ${MF_AGENT_THING_KEY}
+      MF_AGENT_CONTROL_CHANNEL: ${MF_AGENT_CONTROL_CHANNEL}
+      MF_AGENT_DATA_CHANNEL: ${MF_AGENT_DATA_CHANNEL}
+      MF_AGENT_ENCRYPTION: ${MF_AGENT_ENCRYPTION}
+    ports:
+      - ${MF_AGENT_HTTP_PORT}:${MF_AGENT_HTTP_PORT}
+    networks:
+      - docker_mainflux-base-net
