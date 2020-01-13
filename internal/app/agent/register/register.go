@@ -1,13 +1,15 @@
 package register
 
 import (
+	"fmt"
 	"strings"
 
+	"github.com/mainflux/mainflux/logger"
 	nats "github.com/nats-io/go-nats"
 )
 
 const (
-	HEARTBEAT = "heartbeat.*"
+	Hearbeat = "heartbeat.*"
 )
 
 var _ Service = (*register)(nil)
@@ -17,26 +19,34 @@ type Service interface {
 }
 
 type register struct {
-	nc   *nats.Conn
-	apps map[string]*Application
+	nc     *nats.Conn
+	apps   map[string]*Application
+	logger logger.Logger
 }
 
-func New(nc *nats.Conn) (Service, error) {
+func New(nc *nats.Conn, l logger.Logger) (Service, error) {
 	r := register{
-		nc:   nc,
-		apps: make(map[string]*Application),
+		nc:     nc,
+		apps:   make(map[string]*Application),
+		logger: l,
 	}
 
-	_, err := r.nc.Subscribe(HEARTBEAT, func(msg *nats.Msg) {
+	_, err := r.nc.Subscribe(Hearbeat, func(msg *nats.Msg) {
+
 		sub := msg.Subject
-		appname := strings.Split(sub, ".")[1]
+		tok := strings.Split(sub, ".")
+		if len(tok) < 2 {
+			l.Error(fmt.Sprintf("Failed: Subject has incorrect length %s" + sub))
+			return
+		}
+		appname := tok[1]
 		// Service name is extracted from the subtopic
 		// if there is multiple instances of the same service
 		// we will have to add another distinction
 		if _, ok := r.apps[appname]; !ok {
 			a := NewApplication(appname)
 			r.apps[appname] = a
-			return
+			l.Info(fmt.Sprintf("Application '%s' registered", appname))
 		}
 		a := r.apps[appname]
 		a.Update()
