@@ -5,8 +5,8 @@
 version: "3.7"
 
 networks:
-  docker_mainflux-base-net:
-    external: true
+    mainflux-base-net:
+      driver: bridge
 
 services:
   agent:
