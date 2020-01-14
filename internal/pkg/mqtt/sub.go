@@ -118,10 +118,5 @@ func (b *broker) handleMsg(mc paho.Client, msg paho.Message) {
 		if _, err := b.svc.Execute(uuid, cmdStr); err != nil {
 			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
 		}
-	case config:
-		b.logger.Info(fmt.Sprintf("Execute command for uuid %s and command string %s", uuid, cmdStr))
-		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
-			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
-		}
 	}
 }
