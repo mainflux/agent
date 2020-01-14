@@ -35,8 +35,8 @@ var (
 	// errUnknownCommand indicates that command is not found
 	errUnknownCommand = errors.New("Unknown command")
 
-	// errNatsHeartbeat indicates problem with sub to topic for heartbeat
-	ErrNatsSubscribing = errors.New("failed to subscribe to heartbeat topic")
+	// errNatsSubscribing indicates problem with sub to topic for heartbeat
+	errNatsSubscribing = errors.New("failed to subscribe to heartbeat topic")
 )
 
 // Service specifies API for publishing messages and subscribing to topics.
@@ -103,7 +103,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 	})
 
 	if err != nil {
-		return ag, errors.Wrap(ErrNatsSubscribing, err)
+		return ag, errors.Wrap(errNatsSubscribing, err)
 	}
 
 	return ag, nil
