@@ -5,6 +5,7 @@ package mqtt
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/mainflux/agent/internal/app/agent"
@@ -27,6 +28,8 @@ const (
 	exec    cmdType = "exec"
 	config  cmdType = "config"
 )
+
+var channelPartRegExp = regexp.MustCompile(`^channels/([\w\-]+)/messages/services(/[^?]*)?(\?.*)?$`)
 
 var _ MqttBroker = (*broker)(nil)
 
@@ -77,31 +80,17 @@ func (b *broker) handleNatsMsg(mc paho.Client, msg paho.Message) {
 }
 
 func extractNatsTopic(topic string) string {
-	i := strings.LastIndex(topic, servTopic)
-	if i == -1 {
-		return ""
-	}
-	i = i + len(servTopic)
-
-	natsTopic := topic[i:]
-	if natsTopic[0] == '/' {
-		natsTopic = natsTopic[1:]
-	}
-	last := len(natsTopic) - 1
-	if natsTopic[last] == '/' {
-		natsTopic = natsTopic[:last]
-	}
-	natsTopic = strings.ReplaceAll(natsTopic, "/", ".")
-
 	isEmpty := func(s string) bool {
 		return (len(s) == 0)
 	}
-	// filter empty array element, avoid topic topic.sub.sub...
-	filtered := filter.Drop(strings.Split(natsTopic, "."), isEmpty).([]string)
-	natsTopic = strings.Join(filtered, ".")
+	channelParts := channelPartRegExp.FindStringSubmatch(topic)
+	if len(channelParts) < 2 {
+		return "err"
+	}
+	filtered := filter.Drop(strings.Split(channelParts[2], "/"), isEmpty).([]string)
+	natsTopic := strings.Join(filtered, ".")
 
 	return fmt.Sprintf("%s.%s", commands, natsTopic)
-
 }
 
 // handleMsg triggered when new message is received on MQTT broker
