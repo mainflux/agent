@@ -76,7 +76,9 @@ func (b *broker) Subscribe(topic string) error {
 // handleNatsMsg triggered when new message is received on MQTT broker
 func (b *broker) handleNatsMsg(mc paho.Client, msg paho.Message) {
 	topic := extractNatsTopic(msg.Topic())
-	b.nats.Publish(topic, msg.Payload())
+	if topic != "" {
+		b.nats.Publish(topic, msg.Payload())
+	}
 }
 
 func extractNatsTopic(topic string) string {
@@ -85,7 +87,7 @@ func extractNatsTopic(topic string) string {
 	}
 	channelParts := channelPartRegExp.FindStringSubmatch(topic)
 	if len(channelParts) < 2 {
-		return "err"
+		return ""
 	}
 	filtered := filter.Drop(strings.Split(channelParts[2], "/"), isEmpty).([]string)
 	natsTopic := strings.Join(filtered, ".")
