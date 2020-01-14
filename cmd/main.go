@@ -12,7 +12,6 @@ import (
 	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
 	"github.com/mainflux/agent/internal/app/agent"
 	"github.com/mainflux/agent/internal/app/agent/api"
-	"github.com/mainflux/agent/internal/app/agent/register"
 	"github.com/mainflux/agent/internal/pkg/bootstrap"
 	"github.com/mainflux/agent/internal/pkg/config"
 	"github.com/mainflux/agent/internal/pkg/mqtt"
@@ -78,12 +77,14 @@ func main() {
 
 	mqttClient := connectToMQTTBroker(cfg.Agent.MQTT.URL, cfg.Agent.Thing.ID, cfg.Agent.Thing.Key, logger)
 	edgexClient := edgex.NewClient(cfg.Agent.Edgex.URL, logger)
-	regService, err := register.New(nc, logger)
-	if err != nil {
-		logger.Warn(fmt.Sprintf("Failed to start register service"))
-	}
 
-	svc := agent.New(mqttClient, &cfg, edgexClient, regService, logger)
+	svc, err := agent.New(mqttClient, &cfg, edgexClient, nc, logger)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error in agent service: %s", err.Error()))
+	}
+	if err != nil && err != agent.ErrNatsSubscribing {
+		log.Fatalf(fmt.Sprintf("Agent service failed: %s", err.Error()))
+	}
 
 	svc = api.LoggingMiddleware(svc, logger)
 	svc = api.MetricsMiddleware(
