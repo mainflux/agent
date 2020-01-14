@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/mainflux/agent/internal/app/agent"
-	"github.com/mainflux/agent/internal/app/agent/register"
 	"github.com/mainflux/agent/internal/pkg/config"
 	log "github.com/mainflux/mainflux/logger"
 )
@@ -86,11 +85,11 @@ func (lm loggingMiddleware) ViewConfig() config.Config {
 	return lm.svc.ViewConfig()
 }
 
-func (lm loggingMiddleware) ViewServices() map[string]*register.Application {
+func (lm loggingMiddleware) ViewApplications() map[string]*agent.Application {
 	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method ViewServices took %s to complete", time.Since(begin))
+		message := fmt.Sprintf("Method ViewApplications took %s to complete", time.Since(begin))
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
 	}(time.Now())
 
-	return lm.svc.ViewServices()
+	return lm.svc.ViewApplications()
 }
