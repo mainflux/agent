@@ -16,9 +16,16 @@ import (
 	paho "github.com/eclipse/paho.mqtt.golang"
 )
 
+type cmdType string
+
 const (
-	REQ_TOPIC  = "req"
-	NATS_TOPIC = "nats"
+	reqTopic  = "req"
+	servTopic = "services"
+	commands  = "commands"
+
+	control cmdType = "control"
+	exec    cmdType = "exec"
+	config  cmdType = "config"
 )
 
 var _ MqttBroker = (*broker)(nil)
@@ -48,13 +55,13 @@ func NewBroker(svc agent.Service, client paho.Client, nats *nats.Conn, log logge
 
 // Subscribe subscribes to the MQTT message broker
 func (b *broker) Subscribe(topic string) error {
-	s := b.client.Subscribe(fmt.Sprintf("%s/%s", topic, REQ_TOPIC), 0, b.handleMsg)
+	s := b.client.Subscribe(fmt.Sprintf("%s/%s", topic, reqTopic), 0, b.handleMsg)
 	if err := s.Error(); s.Wait() && err != nil {
 		return err
 	}
 
 	if b.nats != nil {
-		n := b.client.Subscribe(fmt.Sprintf("%s/%s", topic, NATS_TOPIC), 0, b.handleNatsMsg)
+		n := b.client.Subscribe(fmt.Sprintf("%s/%s/#", topic, servTopic), 0, b.handleNatsMsg)
 		if err := n.Error(); n.Wait() && err != nil {
 			return err
 		}
@@ -65,16 +72,12 @@ func (b *broker) Subscribe(topic string) error {
 
 // handleNatsMsg triggered when new message is received on MQTT broker
 func (b *broker) handleNatsMsg(mc paho.Client, msg paho.Message) {
-	topic := extractNatsTopic(msg.Topic(), NATS_TOPIC)
+	topic := extractNatsTopic(msg.Topic())
 	b.nats.Publish(topic, msg.Payload())
 }
 
-func extractNatsTopic(topic, sub string) string {
-	i := strings.LastIndex(topic, sub)
-	if i == -1 {
-		return ""
-	}
-	i = i + len(sub)
+func extractNatsTopic(topic string) string {
+	i := strings.LastIndex(topic, servTopic) + len(servTopic)
 	natsTopic := topic[i:]
 	if natsTopic[0] == '/' {
 		natsTopic = natsTopic[1:]
@@ -92,7 +95,7 @@ func extractNatsTopic(topic, sub string) string {
 	filtered := filter.Drop(strings.Split(natsTopic, "."), isEmpty).([]string)
 	natsTopic = strings.Join(filtered, ".")
 
-	return natsTopic
+	return fmt.Sprintf("%s.%s", commands, natsTopic)
 
 }
 
@@ -104,19 +107,24 @@ func (b *broker) handleMsg(mc paho.Client, msg paho.Message) {
 		return
 	}
 
-	cmdType := sm.Records[0].Name
+	cmdType := cmdType(sm.Records[0].Name)
 	cmdStr := *sm.Records[0].StringValue
 	uuid := strings.TrimSuffix(sm.Records[0].BaseName, ":")
 
 	switch cmdType {
-	case "control":
+	case control:
 		b.logger.Info(fmt.Sprintf("Control command for uuid %s and command string %s", uuid, cmdStr))
 		if err := b.svc.Control(uuid, cmdStr); err != nil {
 			b.logger.Warn(fmt.Sprintf("Control operation failed: %s", err))
 		}
-	case "exec":
+	case exec:
 		b.logger.Info(fmt.Sprintf("Execute command for uuid %s and command string %s", uuid, cmdStr))
 		if _, err := b.svc.Execute(uuid, cmdStr); err != nil {
+			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
+		}
+	case config:
+		b.logger.Info(fmt.Sprintf("Execute command for uuid %s and command string %s", uuid, cmdStr))
+		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
 			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
 		}
 	}
