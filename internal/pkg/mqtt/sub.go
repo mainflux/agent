@@ -77,7 +77,12 @@ func (b *broker) handleNatsMsg(mc paho.Client, msg paho.Message) {
 }
 
 func extractNatsTopic(topic string) string {
-	i := strings.LastIndex(topic, servTopic) + len(servTopic)
+	i := strings.LastIndex(topic, servTopic)
+	if i == -1 {
+		return ""
+	}
+	i = i + len(servTopic)
+
 	natsTopic := topic[i:]
 	if natsTopic[0] == '/' {
 		natsTopic = natsTopic[1:]
