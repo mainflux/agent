@@ -71,7 +71,7 @@ func main() {
 
 	nc, err := nats.Connect(cfg.Agent.Server.NatsURL)
 	if err != nil {
-		logger.Warn(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Agent.Server.NatsURL))
+		log.Fatalf(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Agent.Server.NatsURL))
 	}
 	defer nc.Close()
 
@@ -80,10 +80,7 @@ func main() {
 
 	svc, err := agent.New(mqttClient, &cfg, edgexClient, nc, logger)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Error in agent service: %s", err.Error()))
-	}
-	if err != nil && err != agent.ErrNatsSubscribing {
-		log.Fatalf(fmt.Sprintf("Agent service failed: %s", err.Error()))
+		log.Fatalf(fmt.Sprintf("Error in agent service: %s", err.Error()))
 	}
 
 	svc = api.LoggingMiddleware(svc, logger)
