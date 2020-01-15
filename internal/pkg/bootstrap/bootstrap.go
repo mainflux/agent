@@ -40,6 +40,7 @@ type infraConfig struct {
 	HTTPPort string `json:"http_port"`
 	MqttURL  string `json:"mqtt_url"`
 	EdgexURL string `json:"edgex_url"`
+	NatsURL  string `json:"nats_url"`
 }
 
 // Bootstrap - Retrieve device config
@@ -91,7 +92,11 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		dataChan = dc.MainfluxChannels[0].ID
 	}
 
-	sc := config.ServerConf{Port: ic.HTTPPort}
+	sc := config.ServerConf{
+		Port:    ic.HTTPPort,
+		NatsURL: ic.NatsURL,
+	}
+
 	tc := config.ThingConf{
 		ID:  dc.MainfluxID,
 		Key: dc.MainfluxKey,
