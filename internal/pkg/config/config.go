@@ -11,7 +11,8 @@ import (
 )
 
 type ServerConf struct {
-	Port string `toml:"port"`
+	Port    string `toml:"port"`
+	NatsURL string `toml:"nats_url"`
 }
 
 type ThingConf struct {
