@@ -37,7 +37,7 @@ const (
 	defCtrlChan                   = "f36c3733-95a3-481c-a314-4125e03d8993"
 	defDataChan                   = "ea353dac-0298-4fbb-9e5d-501e3699949c"
 	defEncryption                 = "false"
-	defConfigFile                 = "config.toml"
+	defConfigFile                 = "/configs/agent/config.toml"
 	defNatsURL                    = nats.DefaultURL
 
 	envConfigFile                 = "MF_AGENT_CONFIG_FILE"
@@ -121,6 +121,7 @@ func main() {
 
 func loadConfig(logger logger.Logger) (config.Config, error) {
 	file := mainflux.Env(envConfigFile, defConfigFile)
+	logger.Error(fmt.Sprintf("config file from env %s", file))
 	bcfg := bootstrap.Config{
 		URL:           mainflux.Env(envBootstrapURL, defBootstrapURL),
 		ID:            mainflux.Env(envBootstrapID, defBootstrapID),
