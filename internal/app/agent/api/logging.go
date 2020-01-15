@@ -65,7 +65,7 @@ func (lm loggingMiddleware) Control(uuid, cmd string) (err error) {
 
 func (lm loggingMiddleware) AddConfig(c config.Config) (err error) {
 	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method AddConfig took %s to complete", time.Since(begin))
+		message := fmt.Sprintf("Method add_config took %s to complete", time.Since(begin))
 		if err != nil {
 			lm.logger.Warn(fmt.Sprintf("%s with error: %s.", message, err))
 			return
@@ -78,7 +78,7 @@ func (lm loggingMiddleware) AddConfig(c config.Config) (err error) {
 
 func (lm loggingMiddleware) ViewConfig() config.Config {
 	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method ViewConfig took %s to complete", time.Since(begin))
+		message := fmt.Sprintf("Method view_config took %s to complete", time.Since(begin))
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
 	}(time.Now())
 
@@ -87,7 +87,7 @@ func (lm loggingMiddleware) ViewConfig() config.Config {
 
 func (lm loggingMiddleware) ViewApplications() map[string]*agent.Application {
 	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method ViewApplications took %s to complete", time.Since(begin))
+		message := fmt.Sprintf("Method view_applications took %s to complete", time.Since(begin))
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
 	}(time.Now())
 
