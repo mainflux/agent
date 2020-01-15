@@ -52,10 +52,10 @@ type Service interface {
 	AddConfig(config.Config) error
 
 	// View returns Config struct created from config file
-	ViewConfig() config.Config
+	Config() config.Config
 
 	// View returns service list
-	ViewServices() map[string]*services.Service
+	Services() map[string]*services.Service
 
 	// Publish message
 	Publish(string, string) error
@@ -177,11 +177,11 @@ func (a *agent) AddConfig(c config.Config) error {
 	return c.Save()
 }
 
-func (a *agent) ViewConfig() config.Config {
+func (a *agent) Config() config.Config {
 	return *a.config
 }
 
-func (a *agent) ViewServices() map[string]*services.Service {
+func (a *agent) Services() map[string]*services.Service {
 	return a.servs
 }
 

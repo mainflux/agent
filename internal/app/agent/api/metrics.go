@@ -58,22 +58,22 @@ func (ms *metricsMiddleware) AddConfig(ec config.Config) error {
 	return ms.svc.AddConfig(ec)
 }
 
-func (ms *metricsMiddleware) ViewConfig() config.Config {
+func (ms *metricsMiddleware) Config() config.Config {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "view_config").Add(1)
 		ms.latency.With("method", "view_config").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return ms.svc.ViewConfig()
+	return ms.svc.Config()
 }
 
-func (ms *metricsMiddleware) ViewServices() map[string]*services.Service {
+func (ms *metricsMiddleware) Services() map[string]*services.Service {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "view_services").Add(1)
 		ms.latency.With("method", "view_services").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return ms.svc.ViewServices()
+	return ms.svc.Services()
 }
 
 func (ms *metricsMiddleware) Publish(topic, payload string) error {

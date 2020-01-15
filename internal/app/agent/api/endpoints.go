@@ -99,7 +99,7 @@ func addConfigEndpoint(svc agent.Service) endpoint.Endpoint {
 
 func viewConfigEndpoint(svc agent.Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		c := svc.ViewConfig()
+		c := svc.Config()
 
 		sc := serverConf{port: c.Agent.Server.Port}
 		cc := chanConf{
@@ -129,6 +129,6 @@ func viewConfigEndpoint(svc agent.Service) endpoint.Endpoint {
 
 func viewServicesEndpoint(svc agent.Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		return svc.ViewServices(), nil
+		return svc.Services(), nil
 	}
 }

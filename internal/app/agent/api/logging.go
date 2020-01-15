@@ -77,20 +77,20 @@ func (lm loggingMiddleware) AddConfig(c config.Config) (err error) {
 	return lm.svc.AddConfig(c)
 }
 
-func (lm loggingMiddleware) ViewConfig() config.Config {
+func (lm loggingMiddleware) Config() config.Config {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method view_config took %s to complete", time.Since(begin))
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
 	}(time.Now())
 
-	return lm.svc.ViewConfig()
+	return lm.svc.Config()
 }
 
-func (lm loggingMiddleware) ViewServices() map[string]*services.Service {
+func (lm loggingMiddleware) Services() map[string]*services.Service {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method view_services took %s to complete", time.Since(begin))
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
 	}(time.Now())
 
-	return lm.svc.ViewServices()
+	return lm.svc.Services()
 }
