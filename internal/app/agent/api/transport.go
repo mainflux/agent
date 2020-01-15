@@ -46,7 +46,7 @@ func MakeHandler(svc agent.Service) http.Handler {
 	))
 
 	r.Get("/services", kithttp.NewServer(
-		viewApplicationsEndpoint(svc),
+		viewServicesEndpoint(svc),
 		decodeRequest,
 		encodeResponse,
 	))

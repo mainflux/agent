@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
+	"github.com/mainflux/agent/internal/app/agent/services"
 	"github.com/mainflux/agent/internal/pkg/config"
 	"github.com/mainflux/agent/pkg/edgex"
 	"github.com/mainflux/mainflux/errors"
@@ -54,7 +55,7 @@ type Service interface {
 	ViewConfig() config.Config
 
 	// View returns service list
-	ViewApplications() map[string]*Application
+	ViewServices() map[string]*services.Service
 
 	// Publish message
 	Publish(string, string) error
@@ -68,7 +69,7 @@ type agent struct {
 	edgexClient edgex.Client
 	logger      log.Logger
 	nats        *nats.Conn
-	apps        map[string]*Application
+	servs       map[string]*services.Service
 }
 
 // New returns agent service implementation.
@@ -79,7 +80,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		config:      cfg,
 		nats:        nc,
 		logger:      logger,
-		apps:        make(map[string]*Application),
+		servs:       make(map[string]*services.Service),
 	}
 
 	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {
@@ -89,17 +90,17 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 			ag.logger.Error(fmt.Sprintf("Failed: Subject has incorrect length %s" + sub))
 			return
 		}
-		appname := tok[1]
+		servname := tok[1]
 		// Service name is extracted from the subtopic
 		// if there is multiple instances of the same service
 		// we will have to add another distinction
-		if _, ok := ag.apps[appname]; !ok {
-			app := NewApplication(appname)
-			ag.apps[appname] = app
-			ag.logger.Info(fmt.Sprintf("Application '%s' registered", appname))
+		if _, ok := ag.servs[servname]; !ok {
+			serv := services.NewService(servname)
+			ag.servs[servname] = serv
+			ag.logger.Info(fmt.Sprintf("Services '%s' registered", servname))
 		}
-		app := ag.apps[appname]
-		app.Update()
+		serv := ag.servs[servname]
+		serv.Update()
 	})
 
 	if err != nil {
@@ -180,8 +181,8 @@ func (a *agent) ViewConfig() config.Config {
 	return *a.config
 }
 
-func (a *agent) ViewApplications() map[string]*Application {
-	return a.apps
+func (a *agent) ViewServices() map[string]*services.Service {
+	return a.servs
 }
 
 func (a *agent) Publish(crtlChan, payload string) error {

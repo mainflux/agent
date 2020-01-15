@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/mainflux/agent/internal/app/agent"
+	"github.com/mainflux/agent/internal/app/agent/services"
 	"github.com/mainflux/agent/internal/pkg/config"
 )
 
@@ -66,19 +67,19 @@ func (ms *metricsMiddleware) ViewConfig() config.Config {
 	return ms.svc.ViewConfig()
 }
 
-func (ms *metricsMiddleware) ViewApplications() map[string]*agent.Application {
+func (ms *metricsMiddleware) ViewServices() map[string]*services.Service {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "view_services").Add(1)
 		ms.latency.With("method", "view_services").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return ms.svc.ViewApplications()
+	return ms.svc.ViewServices()
 }
 
 func (ms *metricsMiddleware) Publish(topic, payload string) error {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "execute").Add(1)
-		ms.latency.With("method", "execute").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "publish").Add(1)
+		ms.latency.With("method", "publish").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
 	return ms.svc.Publish(topic, payload)

@@ -127,8 +127,8 @@ func viewConfigEndpoint(svc agent.Service) endpoint.Endpoint {
 	}
 }
 
-func viewApplicationsEndpoint(svc agent.Service) endpoint.Endpoint {
+func viewServicesEndpoint(svc agent.Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		return svc.ViewApplications(), nil
+		return svc.ViewServices(), nil
 	}
 }
