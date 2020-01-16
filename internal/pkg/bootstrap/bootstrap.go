@@ -109,7 +109,6 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	lc := config.LogConf{Level: ic.LogLevel}
 	mc := config.MQTTConf{URL: ic.MqttURL}
 
-	logger.Error(fmt.Sprintf("file %s", file))
 	c := config.New(sc, tc, cc, ec, lc, mc, file)
 
 	return c.Save()

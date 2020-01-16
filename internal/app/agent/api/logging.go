@@ -88,7 +88,7 @@ func (lm loggingMiddleware) Config() config.Config {
 
 func (lm loggingMiddleware) ServiceConfig(uuid, cmdStr string) (err error) {
 	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method AddConfig took %s to complete", time.Since(begin))
+		message := fmt.Sprintf("Method service_config took %s to complete", time.Since(begin))
 		if err != nil {
 			lm.logger.Warn(fmt.Sprintf("%s with error: %s.", message, err))
 			return
