@@ -51,10 +51,10 @@ type Service interface {
 	// Update configuration file
 	AddConfig(config.Config) error
 
-	// View returns Config struct created from config file
+	// Config returns Config struct created from config file
 	Config() config.Config
 
-	// View returns service list
+	// Services returns service list
 	Services() map[string]*services.Service
 
 	// Publish message

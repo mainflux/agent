@@ -79,7 +79,7 @@ func (lm loggingMiddleware) AddConfig(c config.Config) (err error) {
 
 func (lm loggingMiddleware) Config() config.Config {
 	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method view_config took %s to complete", time.Since(begin))
+		message := fmt.Sprintf("Method config took %s to complete", time.Since(begin))
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
 	}(time.Now())
 
@@ -88,7 +88,7 @@ func (lm loggingMiddleware) Config() config.Config {
 
 func (lm loggingMiddleware) Services() map[string]*services.Service {
 	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method view_services took %s to complete", time.Since(begin))
+		message := fmt.Sprintf("Method services took %s to complete", time.Since(begin))
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
 	}(time.Now())
 
