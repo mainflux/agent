@@ -23,6 +23,8 @@ import (
 const (
 	Path     = "./config.toml"
 	Hearbeat = "heartbeat.*"
+	Commands = "commands"
+	Config   = "config"
 )
 
 var (
@@ -180,12 +182,13 @@ func (a *agent) Control(uuid, cmdStr string) error {
 
 func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
-	if len(cmdArgs) < 2 {
+	if len(cmdArgs) < 3 {
 		return errInvalidCommand
 	}
 
-	fileName := cmdArgs[0]
-	fileCont, err := base64.StdEncoding.DecodeString(cmdArgs[1])
+	service := cmdArgs[0]
+	fileName := cmdArgs[1]
+	fileCont, err := base64.StdEncoding.DecodeString(cmdArgs[2])
 	if err != nil {
 		return err
 	}
@@ -194,8 +197,7 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 	c.ReadBytes([]byte(fileCont))
 	c.File = fileName
 	c.Save()
-
-	return nil
+	return a.nats.Publish(fmt.Sprintf("%s.%s.%s", Commands, service, Config), []byte(""))
 }
 
 func (a *agent) AddConfig(c config.Config) error {
