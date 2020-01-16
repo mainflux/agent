@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/mainflux/agent/internal/app/agent"
+	"github.com/mainflux/agent/internal/app/agent/services"
 	"github.com/mainflux/agent/internal/pkg/config"
 )
 
@@ -66,28 +67,28 @@ func (ms *metricsMiddleware) ServiceConfig(uuid, cmdStr string) error {
 	return ms.svc.ServiceConfig(uuid, cmdStr)
 }
 
-func (ms *metricsMiddleware) ViewConfig() config.Config {
+func (ms *metricsMiddleware) Config() config.Config {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "view_config").Add(1)
-		ms.latency.With("method", "view_config").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "config").Add(1)
+		ms.latency.With("method", "config").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return ms.svc.ViewConfig()
+	return ms.svc.Config()
 }
 
-func (ms *metricsMiddleware) ViewApplications() map[string]*agent.Application {
+func (ms *metricsMiddleware) Services() map[string]*services.Service {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "view_services").Add(1)
-		ms.latency.With("method", "view_services").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "services").Add(1)
+		ms.latency.With("method", "services").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return ms.svc.ViewApplications()
+	return ms.svc.Services()
 }
 
 func (ms *metricsMiddleware) Publish(topic, payload string) error {
 	defer func(begin time.Time) {
-		ms.counter.With("method", "execute").Add(1)
-		ms.latency.With("method", "execute").Observe(time.Since(begin).Seconds())
+		ms.counter.With("method", "publish").Add(1)
+		ms.latency.With("method", "publish").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
 	return ms.svc.Publish(topic, payload)

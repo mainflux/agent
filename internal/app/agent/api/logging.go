@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mainflux/agent/internal/app/agent"
+	"github.com/mainflux/agent/internal/app/agent/services"
 	"github.com/mainflux/agent/internal/pkg/config"
 	log "github.com/mainflux/mainflux/logger"
 )
@@ -65,7 +66,7 @@ func (lm loggingMiddleware) Control(uuid, cmd string) (err error) {
 
 func (lm loggingMiddleware) AddConfig(c config.Config) (err error) {
 	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method AddConfig took %s to complete", time.Since(begin))
+		message := fmt.Sprintf("Method add_config took %s to complete", time.Since(begin))
 		if err != nil {
 			lm.logger.Warn(fmt.Sprintf("%s with error: %s.", message, err))
 			return
@@ -74,6 +75,15 @@ func (lm loggingMiddleware) AddConfig(c config.Config) (err error) {
 	}(time.Now())
 
 	return lm.svc.AddConfig(c)
+}
+
+func (lm loggingMiddleware) Config() config.Config {
+	defer func(begin time.Time) {
+		message := fmt.Sprintf("Method config took %s to complete", time.Since(begin))
+		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
+	}(time.Now())
+
+	return lm.svc.Config()
 }
 
 func (lm loggingMiddleware) ServiceConfig(uuid, cmdStr string) (err error) {
@@ -89,20 +99,11 @@ func (lm loggingMiddleware) ServiceConfig(uuid, cmdStr string) (err error) {
 	return lm.svc.ServiceConfig(uuid, cmdStr)
 }
 
-func (lm loggingMiddleware) ViewConfig() config.Config {
+func (lm loggingMiddleware) Services() map[string]*services.Service {
 	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method ViewConfig took %s to complete", time.Since(begin))
+		message := fmt.Sprintf("Method services took %s to complete", time.Since(begin))
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
 	}(time.Now())
 
-	return lm.svc.ViewConfig()
-}
-
-func (lm loggingMiddleware) ViewApplications() map[string]*agent.Application {
-	defer func(begin time.Time) {
-		message := fmt.Sprintf("Method ViewApplications took %s to complete", time.Since(begin))
-		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
-	}(time.Now())
-
-	return lm.svc.ViewApplications()
+	return lm.svc.Services()
 }
