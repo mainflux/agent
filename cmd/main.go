@@ -121,7 +121,6 @@ func main() {
 
 func loadConfig(logger logger.Logger) (config.Config, error) {
 	file := mainflux.Env(envConfigFile, defConfigFile)
-
 	bcfg := bootstrap.Config{
 		URL:           mainflux.Env(envBootstrapURL, defBootstrapURL),
 		ID:            mainflux.Env(envBootstrapID, defBootstrapID),
