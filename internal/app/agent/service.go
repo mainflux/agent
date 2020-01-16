@@ -4,20 +4,23 @@
 package agent
 
 import (
-	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
+	"github.com/mainflux/agent/internal/app/agent/services"
 	"github.com/mainflux/agent/internal/pkg/config"
 	"github.com/mainflux/agent/pkg/edgex"
+	"github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/senml"
+	"github.com/nats-io/go-nats"
 )
 
 const (
-	Path = "./config.toml"
+	Path     = "./config.toml"
+	Hearbeat = "heartbeat.*"
 )
 
 var (
@@ -32,6 +35,9 @@ var (
 
 	// errUnknownCommand indicates that command is not found
 	errUnknownCommand = errors.New("Unknown command")
+
+	// errNatsSubscribing indicates problem with sub to topic for heartbeat
+	errNatsSubscribing = errors.New("failed to subscribe to heartbeat topic")
 )
 
 // Service specifies API for publishing messages and subscribing to topics.
@@ -45,8 +51,11 @@ type Service interface {
 	// Update configuration file
 	AddConfig(config.Config) error
 
-	// View returns Config struct created from config file
-	ViewConfig() config.Config
+	// Config returns Config struct created from config file
+	Config() config.Config
+
+	// Services returns service list
+	Services() map[string]*services.Service
 
 	// Publish message
 	Publish(string, string) error
@@ -59,16 +68,47 @@ type agent struct {
 	config      *config.Config
 	edgexClient edgex.Client
 	logger      log.Logger
+	nats        *nats.Conn
+	servs       map[string]*services.Service
 }
 
 // New returns agent service implementation.
-func New(mc paho.Client, cfg *config.Config, ec edgex.Client, logger log.Logger) Service {
-	return &agent{
+func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, logger log.Logger) (Service, errors.Error) {
+	ag := &agent{
 		mqttClient:  mc,
 		edgexClient: ec,
 		config:      cfg,
+		nats:        nc,
 		logger:      logger,
+		servs:       make(map[string]*services.Service),
 	}
+
+	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {
+		sub := msg.Subject
+		tok := strings.Split(sub, ".")
+		if len(tok) < 2 {
+			ag.logger.Error(fmt.Sprintf("Failed: Subject has incorrect length %s" + sub))
+			return
+		}
+		servname := tok[1]
+		// Service name is extracted from the subtopic
+		// if there is multiple instances of the same service
+		// we will have to add another distinction
+		if _, ok := ag.servs[servname]; !ok {
+			serv := services.NewService(servname)
+			ag.servs[servname] = serv
+			ag.logger.Info(fmt.Sprintf("Services '%s' registered", servname))
+		}
+		serv := ag.servs[servname]
+		serv.Update()
+	})
+
+	if err != nil {
+		return ag, errors.Wrap(errNatsSubscribing, err)
+	}
+
+	return ag, nil
+
 }
 
 func (a *agent) Execute(uuid, cmd string) (string, error) {
@@ -137,8 +177,12 @@ func (a *agent) AddConfig(c config.Config) error {
 	return c.Save()
 }
 
-func (a *agent) ViewConfig() config.Config {
+func (a *agent) Config() config.Config {
 	return *a.config
+}
+
+func (a *agent) Services() map[string]*services.Service {
+	return a.servs
 }
 
 func (a *agent) Publish(crtlChan, payload string) error {

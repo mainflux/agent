@@ -18,6 +18,7 @@ import (
 	"github.com/mainflux/agent/pkg/edgex"
 	"github.com/mainflux/mainflux"
 	"github.com/mainflux/mainflux/logger"
+	nats "github.com/nats-io/go-nats"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 )
 
@@ -37,6 +38,7 @@ const (
 	defDataChan                   = "ea353dac-0298-4fbb-9e5d-501e3699949c"
 	defEncryption                 = "false"
 	defConfigFile                 = "config.toml"
+	defNatsURL                    = nats.DefaultURL
 
 	envConfigFile                 = "MF_AGENT_CONFIG_FILE"
 	envLogLevel                   = "MF_AGENT_LOG_LEVEL"
@@ -53,6 +55,7 @@ const (
 	envCtrlChan                   = "MF_AGENT_CONTROL_CHANNEL"
 	envDataChan                   = "MF_AGENT_DATA_CHANNEL"
 	envEncryption                 = "MF_AGENT_ENCRYPTION"
+	envNatsURL                    = "MF_AGENT_NATS_URL"
 )
 
 func main() {
@@ -66,10 +69,19 @@ func main() {
 		log.Fatalf(fmt.Sprintf("Failed to load config: %s", err.Error()))
 	}
 
+	nc, err := nats.Connect(cfg.Agent.Server.NatsURL)
+	if err != nil {
+		log.Fatalf(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Agent.Server.NatsURL))
+	}
+	defer nc.Close()
+
 	mqttClient := connectToMQTTBroker(cfg.Agent.MQTT.URL, cfg.Agent.Thing.ID, cfg.Agent.Thing.Key, logger)
 	edgexClient := edgex.NewClient(cfg.Agent.Edgex.URL, logger)
 
-	svc := agent.New(mqttClient, &cfg, edgexClient, logger)
+	svc, err := agent.New(mqttClient, &cfg, edgexClient, nc, logger)
+	if err != nil {
+		log.Fatalf(fmt.Sprintf("Error in agent service: %s", err.Error()))
+	}
 
 	svc = api.LoggingMiddleware(svc, logger)
 	svc = api.MetricsMiddleware(
@@ -87,7 +99,7 @@ func main() {
 			Help:      "Total duration of requests in microseconds.",
 		}, []string{"method"}),
 	)
-	go subscribeToMQTTBroker(svc, mqttClient, cfg.Agent.Channels.Control, logger)
+	go subscribeToMQTTBroker(svc, mqttClient, cfg.Agent.Channels.Control, nc, logger)
 
 	errs := make(chan error, 3)
 
@@ -122,7 +134,10 @@ func loadConfig(logger logger.Logger) (config.Config, error) {
 		return config.Config{}, err
 	}
 
-	sc := config.ServerConf{Port: mainflux.Env(envLogLevel, defLogLevel)}
+	sc := config.ServerConf{
+		NatsURL: mainflux.Env(envNatsURL, defNatsURL),
+		Port:    mainflux.Env(envLogLevel, defLogLevel),
+	}
 	tc := config.ThingConf{
 		ID:  mainflux.Env(envThingID, defThingID),
 		Key: mainflux.Env(envThingKey, defThingKey),
@@ -170,9 +185,9 @@ func connectToMQTTBroker(mqttURL, thingID, thingKey string, logger logger.Logger
 	return client
 }
 
-func subscribeToMQTTBroker(svc agent.Service, mc paho.Client, ctrlChan string, logger logger.Logger) {
-	broker := mqtt.NewBroker(svc, mc, logger)
-	topic := fmt.Sprintf("channels/%s/messages/req", ctrlChan)
+func subscribeToMQTTBroker(svc agent.Service, mc paho.Client, ctrlChan string, nc *nats.Conn, logger logger.Logger) {
+	broker := mqtt.NewBroker(svc, mc, nc, logger)
+	topic := fmt.Sprintf("channels/%s/messages", ctrlChan)
 	if err := broker.Subscribe(topic); err != nil {
 		logger.Error(fmt.Sprintf("Failed to subscribe to MQTT broker: %s", err.Error()))
 		os.Exit(1)
