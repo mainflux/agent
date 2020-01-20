@@ -184,8 +184,8 @@ func (a *agent) Control(uuid, cmdStr string) error {
 // "[{"bn":"1:", "n":"config", "vs":"export, /configs/export/config.toml, config_file_content"}]"
 // config_file_content is base64 encoded marshaled structure representing service conf
 // Example of creation:
-// 		b, _ := toml.Marshal(cfg)
-// 		config_file_content := base64.StdEncoding.EncodeToString(b)
+// 	b, _ := toml.Marshal(cfg)
+// 	config_file_content := base64.StdEncoding.EncodeToString(b)
 func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
 	if len(cmdArgs) < 3 {
