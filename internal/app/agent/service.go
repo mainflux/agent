@@ -4,6 +4,7 @@
 package agent
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/mainflux/agent/internal/app/agent/services"
 	"github.com/mainflux/agent/internal/pkg/config"
 	"github.com/mainflux/agent/pkg/edgex"
+	export "github.com/mainflux/export/pkg/config"
 	"github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/senml"
@@ -21,6 +23,8 @@ import (
 const (
 	Path     = "./config.toml"
 	Hearbeat = "heartbeat.*"
+	Commands = "commands"
+	Config   = "config"
 )
 
 var (
@@ -53,6 +57,9 @@ type Service interface {
 
 	// Config returns Config struct created from config file
 	Config() config.Config
+
+	// Saves config file
+	ServiceConfig(uuid, cmdStr string) error
 
 	// Services returns service list
 	Services() map[string]*services.Service
@@ -171,6 +178,32 @@ func (a *agent) Control(uuid, cmdStr string) error {
 	}
 
 	return nil
+}
+
+// Message for this command
+// "[{"bn":"1:", "n":"config", "vs":"export, /configs/export/config.toml, config_file_content"}]"
+// config_file_content is base64 encoded marshaled structure representing service conf
+// Example of creation:
+// 	b, _ := toml.Marshal(cfg)
+// 	config_file_content := base64.StdEncoding.EncodeToString(b)
+func (a *agent) ServiceConfig(uuid, cmdStr string) error {
+	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
+	if len(cmdArgs) < 3 {
+		return errInvalidCommand
+	}
+
+	service := cmdArgs[0]
+	fileName := cmdArgs[1]
+	fileCont, err := base64.StdEncoding.DecodeString(cmdArgs[2])
+	if err != nil {
+		return err
+	}
+	c := &export.Config{}
+
+	c.ReadBytes([]byte(fileCont))
+	c.File = fileName
+	c.Save()
+	return a.nats.Publish(fmt.Sprintf("%s.%s.%s", Commands, service, Config), []byte(""))
 }
 
 func (a *agent) AddConfig(c config.Config) error {

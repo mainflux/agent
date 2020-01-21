@@ -86,6 +86,19 @@ func (lm loggingMiddleware) Config() config.Config {
 	return lm.svc.Config()
 }
 
+func (lm loggingMiddleware) ServiceConfig(uuid, cmdStr string) (err error) {
+	defer func(begin time.Time) {
+		message := fmt.Sprintf("Method service_config took %s to complete", time.Since(begin))
+		if err != nil {
+			lm.logger.Warn(fmt.Sprintf("%s with error: %s.", message, err))
+			return
+		}
+		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
+	}(time.Now())
+
+	return lm.svc.ServiceConfig(uuid, cmdStr)
+}
+
 func (lm loggingMiddleware) Services() map[string]*services.Service {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method services took %s to complete", time.Since(begin))
