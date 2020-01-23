@@ -97,19 +97,19 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		NatsURL: ic.NatsURL,
 	}
 
-	tc := config.ThingConf{
-		ID:  dc.MainfluxID,
-		Key: dc.MainfluxKey,
-	}
 	cc := config.ChanConf{
 		Control: ctrlChan,
 		Data:    dataChan,
 	}
 	ec := config.EdgexConf{URL: ic.EdgexURL}
 	lc := config.LogConf{Level: ic.LogLevel}
-	mc := config.MQTTConf{URL: ic.MqttURL}
+	mc := config.MQTTConf{
+		URL:      ic.MqttURL,
+		Password: dc.MainfluxID,
+		Username: dc.MainfluxKey,
+	}
 
-	c := config.New(sc, tc, cc, ec, lc, mc, file)
+	c := config.New(sc, cc, ec, lc, mc, file)
 
 	return c.Save()
 }

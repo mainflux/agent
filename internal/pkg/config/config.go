@@ -4,6 +4,7 @@
 package config
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 
@@ -13,11 +14,6 @@ import (
 type ServerConf struct {
 	Port    string `toml:"port"`
 	NatsURL string `toml:"nats_url"`
-}
-
-type ThingConf struct {
-	ID  string `toml:"id"`
-	Key string `toml:"key"`
 }
 
 type ChanConf struct {
@@ -34,13 +30,23 @@ type LogConf struct {
 }
 
 type MQTTConf struct {
-	URL string `toml:"url"`
+	URL         string          `json:"url" toml:"url"`
+	Username    string          `json:"username" toml:"username" mapstructure:"username"`
+	Password    string          `json:"password" toml:"password" mapstructure:"password"`
+	MTLS        bool            `json:"mtls" toml:"mtls" mapstructure:"mtls"`
+	SkipTLSVer  bool            `json:"skip_tls_ver" toml:"skip_tls_ver" mapstructure:"skip_tls_ver"`
+	Retain      bool            `json:"retain" toml:"retain" mapstructure:"retain"`
+	QoS         int             `json:"qos" toml:"qos" mapstructure:"qos"`
+	CAPath      string          `json:"ca_path" toml:"ca_path" mapstructure:"ca_path"`
+	CertPath    string          `json:"cert_path" toml:"cert_path" mapstructure:"cert_path"`
+	PrivKeyPath string          `json:"priv_key_path" toml:"priv_key_path" mapstructure:"priv_key_path"`
+	CA          []byte          `json:"-" toml:"-"`
+	Cert        tls.Certificate `json:"-" toml:"-"`
 }
 
 // Config struct of Mainflux Agent
 type AgentConf struct {
 	Server   ServerConf `toml:"server"`
-	Thing    ThingConf  `toml:"thing"`
 	Channels ChanConf   `toml:"channels"`
 	Edgex    EdgexConf  `toml:"edgex"`
 	Log      LogConf    `toml:"log"`
@@ -52,10 +58,9 @@ type Config struct {
 	File  string
 }
 
-func New(sc ServerConf, tc ThingConf, cc ChanConf, ec EdgexConf, lc LogConf, mc MQTTConf, file string) *Config {
+func New(sc ServerConf, cc ChanConf, ec EdgexConf, lc LogConf, mc MQTTConf, file string) *Config {
 	ac := AgentConf{
 		Server:   sc,
-		Thing:    tc,
 		Channels: cc,
 		Edgex:    ec,
 		Log:      lc,

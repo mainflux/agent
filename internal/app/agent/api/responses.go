@@ -3,6 +3,8 @@
 
 package api
 
+import "github.com/mainflux/agent/internal/pkg/config"
+
 type genericRes struct {
 	Service  string `json:"service"`
 	Response string `json:"response"`
@@ -15,6 +17,6 @@ type execRes struct {
 }
 
 type configRes struct {
-	agent agentConf
+	agent config.AgentConf
 	file  string
 }
