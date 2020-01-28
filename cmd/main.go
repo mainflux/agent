@@ -123,7 +123,6 @@ func main() {
 			Help:      "Total duration of requests in microseconds.",
 		}, []string{"method"}),
 	)
-	go subscribeToMQTTBroker(svc, mqttClient, cfg.Agent.Channels.Control, nc, logger)
 
 	errs := make(chan error, 3)
 
