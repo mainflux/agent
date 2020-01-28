@@ -21,7 +21,7 @@ define make_docker
 		--build-arg GOARCH=$(GOARCH) \
 		--build-arg GOARM=$(GOARM) \
 		--tag=mainflux/$(svc) \
-		-f docker/Dockerfile .
+		-f deployments/Dockerfile .
 endef
 
 define make_docker_dev
@@ -31,7 +31,7 @@ define make_docker_dev
 		--no-cache \
 		--build-arg SVC=$(svc) \
 		--tag=mainflux/$(svc) \
-		-f docker/Dockerfile.dev ./build
+		-f deployments/Dockerfile.dev ./build
 endef
 
 all: $(SERVICES) 
@@ -88,4 +88,4 @@ rundev:
 	cd scripts && ./run.sh
 
 run:
-	docker-compose -f docker/docker-compose.yml up
+	docker-compose -f deployments/docker-compose.yml up
