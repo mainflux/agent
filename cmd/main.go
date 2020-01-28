@@ -161,9 +161,10 @@ func loadConfig(logger logger.Logger) (config.Config, error) {
 }
 
 func connectToMQTTBroker(mqttURL, thingID, thingKey string, logger logger.Logger) paho.Client {
+	clientID := fmt.Sprintf("agent-%s", thingID)
 	opts := paho.NewClientOptions()
 	opts.AddBroker(mqttURL)
-	opts.SetClientID("agent")
+	opts.SetClientID(clientID)
 	opts.SetUsername(thingID)
 	opts.SetPassword(thingKey)
 	opts.SetCleanSession(true)
