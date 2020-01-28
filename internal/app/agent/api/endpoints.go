@@ -99,10 +99,7 @@ func addConfigEndpoint(svc agent.Service) endpoint.Endpoint {
 func viewConfigEndpoint(svc agent.Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		c := svc.Config()
-
-		res := configRes{agent: c.Agent}
-
-		return res, nil
+		return c, nil
 	}
 }
 
