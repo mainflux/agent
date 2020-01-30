@@ -105,8 +105,8 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	lc := config.LogConf{Level: ic.LogLevel}
 	mc := config.MQTTConf{
 		URL:      ic.MqttURL,
-		Password: dc.MainfluxID,
-		Username: dc.MainfluxKey,
+		Password: dc.MainfluxKey,
+		Username: dc.MainfluxID,
 	}
 
 	c := config.New(sc, cc, ec, lc, mc, file)
