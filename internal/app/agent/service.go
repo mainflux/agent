@@ -179,7 +179,8 @@ func (a *agent) Control(uuid, cmdStr string) (err error) {
 }
 
 // Message for this command
-// "[{"bn":"1:", "n":"config", "vs":"export, /configs/export/config.toml, config_file_content"}]"
+// [{"bn":"1:", "n":"config", "vs":"view"}]
+// [{"bn":"1:", "n":"config", "vs":"save, export, filename, filecontent"}]
 // config_file_content is base64 encoded marshaled structure representing service conf
 // Example of creation:
 // 	b, _ := toml.Marshal(cfg)
