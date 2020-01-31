@@ -21,11 +21,16 @@ import (
 	"github.com/nats-io/go-nats"
 )
 
+type cmdType string
+
 const (
 	Path     = "./config.toml"
 	Hearbeat = "heartbeat.*"
 	Commands = "commands"
 	Config   = "config"
+
+	view cmdType = "view"
+	save cmdType = "save"
 )
 
 var (
@@ -186,13 +191,13 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) (err error) {
 	}
 	services := []byte{}
 	resp := ""
-	cmd := cmdArgs[0]
+	cmd := cmdType(cmdArgs[0])
 
 	switch cmd {
-	case "view":
+	case view:
 		services, err = json.Marshal(a.Services())
 		resp = string(services)
-	case "save":
+	case save:
 		if len(cmdArgs) < 4 {
 			return errInvalidCommand
 		}
@@ -204,7 +209,7 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) (err error) {
 	if err != nil {
 		return err
 	}
-	return a.processResponse(resp, uuid, cmd)
+	return a.processResponse(resp, uuid, string(cmd))
 }
 
 func (a *agent) processResponse(resp, uuid, cmd string) (err error) {
