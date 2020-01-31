@@ -229,7 +229,6 @@ func connectToMQTTBroker(conf config.MQTTConf, logger logger.Logger) (mqtt.Clien
 	token.Wait()
 
 	if token.Error() != nil {
-		//e := errors.New(fmt.Sprintf("Client %s had error connecting to the broker", name))
 		return nil, token.Error()
 	}
 	return client, nil
@@ -246,7 +245,6 @@ func subscribeToMQTTBroker(svc agent.Service, mc mqtt.Client, ctrlChan string, n
 }
 
 func loadCertificate(cfg *config.MQTTConf) error {
-
 	caByte := []byte{}
 	cert := tls.Certificate{}
 	if cfg.MTLS {
@@ -256,30 +254,24 @@ func loadCertificate(cfg *config.MQTTConf) error {
 			return err
 		}
 		caByte, _ = ioutil.ReadAll(caFile)
-
 		clientCert, err := os.Open(cfg.CertPath)
 		defer clientCert.Close()
 		if err != nil {
 			return err
 		}
 		cc, _ := ioutil.ReadAll(clientCert)
-
 		privKey, err := os.Open(cfg.PrivKeyPath)
 		defer clientCert.Close()
 		if err != nil {
 			return err
 		}
-
 		pk, _ := ioutil.ReadAll((privKey))
-
 		cert, err = tls.X509KeyPair([]byte(cc), []byte(pk))
 		if err != nil {
 			return err
 		}
-
 		cfg.Cert = cert
 		cfg.CA = caByte
-
 	}
 	return nil
 }
