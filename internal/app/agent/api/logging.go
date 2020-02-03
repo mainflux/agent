@@ -99,7 +99,7 @@ func (lm loggingMiddleware) ServiceConfig(uuid, cmdStr string) (err error) {
 	return lm.svc.ServiceConfig(uuid, cmdStr)
 }
 
-func (lm loggingMiddleware) Services() map[string]*services.Service {
+func (lm loggingMiddleware) Services() []*services.Service {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method services took %s to complete", time.Since(begin))
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))

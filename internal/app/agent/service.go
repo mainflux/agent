@@ -71,7 +71,7 @@ type Service interface {
 	ServiceConfig(uuid, cmdStr string) error
 
 	// Services returns service list
-	Services() map[string]*services.Service
+	Services() []*services.Service
 
 	// Publish message
 	Publish(string, string) error
@@ -179,7 +179,7 @@ func (a *agent) Control(uuid, cmdStr string) (err error) {
 }
 
 // Message for this command
-// [{"bn":"1:", "n":"config", "vs":"view"}]
+// [{"bn":"1:", "n":"services", "vs":"view"}]
 // [{"bn":"1:", "n":"config", "vs":"save, export, filename, filecontent"}]
 // config_file_content is base64 encoded marshaled structure representing service conf
 // Example of creation:
@@ -250,8 +250,12 @@ func (a *agent) Config() config.Config {
 	return *a.config
 }
 
-func (a *agent) Services() map[string]*services.Service {
-	return a.servs
+func (a *agent) Services() []*services.Service {
+	services := [](*services.Service){}
+	for _, s := range a.servs {
+		services = append(services, s)
+	}
+	return services
 }
 
 func (a *agent) Publish(crtlChan, payload string) error {

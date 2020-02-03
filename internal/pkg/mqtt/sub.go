@@ -27,6 +27,7 @@ const (
 	control cmdType = "control"
 	exec    cmdType = "exec"
 	config  cmdType = "config"
+	service cmdType = "service"
 )
 
 var channelPartRegExp = regexp.MustCompile(`^channels/([\w\-]+)/messages/services(/[^?]*)?(\?.*)?$`)
@@ -118,6 +119,11 @@ func (b *broker) handleMsg(mc paho.Client, msg paho.Message) {
 			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
 		}
 	case config:
+		b.logger.Info(fmt.Sprintf("Execute command for uuid %s and command string %s", uuid, cmdStr))
+		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
+			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
+		}
+	case service:
 		b.logger.Info(fmt.Sprintf("Execute command for uuid %s and command string %s", uuid, cmdStr))
 		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
 			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
