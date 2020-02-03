@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"sort"
 	"strings"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
@@ -71,7 +72,7 @@ type Service interface {
 	ServiceConfig(uuid, cmdStr string) error
 
 	// Services returns service list
-	Services() []*services.Service
+	Services() []services.Service
 
 	// Publish message
 	Publish(string, string) error
@@ -250,10 +251,16 @@ func (a *agent) Config() config.Config {
 	return *a.config
 }
 
-func (a *agent) Services() []*services.Service {
-	services := [](*services.Service){}
-	for _, s := range a.servs {
-		services = append(services, s)
+func (a *agent) Services() []services.Service {
+	services := [](services.Service){}
+	keys := []string{}
+	for k := range a.servs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		service := a.servs[key]
+		services = append(services, *service)
 	}
 	return services
 }
