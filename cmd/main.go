@@ -253,7 +253,10 @@ func loadCertificate(cfg *config.MQTTConf) error {
 		if err != nil {
 			return err
 		}
-		caByte, _ = ioutil.ReadAll(caFile)
+		caByte, err = ioutil.ReadAll(caFile)
+		if err != nil {
+			return err
+		}
 		clientCert, err := os.Open(cfg.CertPath)
 		defer clientCert.Close()
 		if err != nil {

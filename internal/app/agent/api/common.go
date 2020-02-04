@@ -24,7 +24,7 @@ type mqttConf struct {
 	url         string `json:"url"`
 	username    string `json:"username"`
 	password    string `json:"json"`
-	mtls        bool   `json:"mtls" `
+	mtls        bool   `json:"mtls"`
 	skipTLSVer  bool   `json:"skip_tls_ver"`
 	retain      bool   `json:"retain"`
 	qoS         int    `json:"qos"`
