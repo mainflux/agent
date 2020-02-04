@@ -210,8 +210,7 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 		service := cmdArgs[1]
 		fileName := cmdArgs[2]
 		fileCont := cmdArgs[3]
-		err := a.saveConfig(service, fileName, fileCont)
-		if err != nil {
+		if err := a.saveConfig(service, fileName, fileCont); err != nil {
 			return err
 		}
 	}
