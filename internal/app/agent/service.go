@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"sort"
 	"strings"
+	"time"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mainflux/agent/internal/app/agent/services"
@@ -70,7 +71,7 @@ type Service interface {
 	ServiceConfig(uuid, cmdStr string) error
 
 	// Services returns service list
-	Services() []services.Service
+	Services() []interface{}
 
 	// Publish message
 	Publish(string, string) error
@@ -258,16 +259,24 @@ func (a *agent) Config() config.Config {
 	return *a.config
 }
 
-func (a *agent) Services() []services.Service {
-	services := [](services.Service){}
+func (a *agent) Services() []interface{} {
+	services := [](interface{}){}
 	keys := []string{}
 	for k := range a.svcs {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	for _, key := range keys {
-		service := a.svcs[key]
-		services = append(services, *service)
+		service := struct {
+			Name     string
+			LastSeen time.Time
+			Status   string
+		}{
+			Name:     a.svcs[key].Name,
+			LastSeen: a.svcs[key].LastSeen,
+			Status:   a.svcs[key].Status,
+		}
+		services = append(services, service)
 	}
 	return services
 }
