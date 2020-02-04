@@ -22,16 +22,14 @@ import (
 	"github.com/nats-io/go-nats"
 )
 
-type cmdType string
-
 const (
 	Path     = "./config.toml"
 	Hearbeat = "heartbeat.*"
 	Commands = "commands"
 	Config   = "config"
 
-	view cmdType = "view"
-	save cmdType = "save"
+	view = "view"
+	save = "save"
 )
 
 var (
@@ -86,7 +84,7 @@ type agent struct {
 	edgexClient edgex.Client
 	logger      log.Logger
 	nats        *nats.Conn
-	servs       map[string]*services.Service
+	svcs        map[string]*services.Service
 }
 
 // New returns agent service implementation.
@@ -97,7 +95,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		config:      cfg,
 		nats:        nc,
 		logger:      logger,
-		servs:       make(map[string]*services.Service),
+		svcs:        make(map[string]*services.Service),
 	}
 
 	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {
@@ -107,16 +105,16 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 			ag.logger.Error(fmt.Sprintf("Failed: Subject has incorrect length %s" + sub))
 			return
 		}
-		servname := tok[1]
+		svcname := tok[1]
 		// Service name is extracted from the subtopic
 		// if there is multiple instances of the same service
 		// we will have to add another distinction
-		if _, ok := ag.servs[servname]; !ok {
-			serv := services.NewService(servname)
-			ag.servs[servname] = serv
-			ag.logger.Info(fmt.Sprintf("Services '%s' registered", servname))
+		if _, ok := ag.svcs[svcname]; !ok {
+			svc := services.NewService(svcname)
+			ag.svcs[svcname] = svc
+			ag.logger.Info(fmt.Sprintf("Services '%s' registered", svcname))
 		}
-		serv := ag.servs[servname]
+		serv := ag.svcs[svcname]
 		serv.Update()
 	})
 
@@ -194,7 +192,7 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 		return errInvalidCommand
 	}
 	resp := ""
-	cmd := cmdType(cmdArgs[0])
+	cmd := cmdArgs[0]
 
 	switch cmd {
 	case view:
@@ -214,7 +212,7 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 			return err
 		}
 	}
-	return a.processResponse(uuid, string(cmd), resp)
+	return a.processResponse(uuid, cmd, resp)
 }
 
 func (a *agent) processResponse(uuid, cmd, resp string) error {
@@ -231,7 +229,6 @@ func (a *agent) processResponse(uuid, cmd, resp string) error {
 func (a *agent) saveConfig(service, fileName, fileCont string) error {
 	switch service {
 	case "export":
-		var content []byte
 		content, err := base64.StdEncoding.DecodeString(fileCont)
 		if err != nil {
 			return err
@@ -264,12 +261,12 @@ func (a *agent) Config() config.Config {
 func (a *agent) Services() []services.Service {
 	services := [](services.Service){}
 	keys := []string{}
-	for k := range a.servs {
+	for k := range a.svcs {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	for _, key := range keys {
-		service := a.servs[key]
+		service := a.svcs[key]
 		services = append(services, *service)
 	}
 	return services
