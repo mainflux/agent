@@ -101,7 +101,7 @@ func (b *broker) handleMsg(mc paho.Client, msg paho.Message) {
 		return
 	}
 
-	cmdType := (sm.Records[0].Name)
+	cmdType := sm.Records[0].Name
 	cmdStr := *sm.Records[0].StringValue
 	uuid := strings.TrimSuffix(sm.Records[0].BaseName, ":")
 
