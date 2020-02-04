@@ -14,6 +14,7 @@ import (
 
 	"github.com/mainflux/agent/internal/app/agent"
 	"github.com/mainflux/agent/internal/pkg/config"
+	export "github.com/mainflux/export/pkg/config"
 	log "github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/mainflux/things"
 )
@@ -36,11 +37,12 @@ type deviceConfig struct {
 }
 
 type infraConfig struct {
-	LogLevel string `json:"log_level"`
-	HTTPPort string `json:"http_port"`
-	MqttURL  string `json:"mqtt_url"`
-	EdgexURL string `json:"edgex_url"`
-	NatsURL  string `json:"nats_url"`
+	LogLevel     string        `json:"log_level"`
+	HTTPPort     string        `json:"http_port"`
+	MqttURL      string        `json:"mqtt_url"`
+	EdgexURL     string        `json:"edgex_url"`
+	NatsURL      string        `json:"nats_url"`
+	ExportConfig export.Config `json:"export_config"  mapstructure:"export_config"`
 }
 
 // Bootstrap - Retrieve device config
@@ -77,6 +79,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		cfg.ID, cfg.URL))
 
 	ic := infraConfig{}
+	fmt.Println(string(dc.Content))
 	if err := json.Unmarshal([]byte(dc.Content), &ic); err != nil {
 		return err
 	}

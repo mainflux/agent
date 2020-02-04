@@ -231,12 +231,10 @@ func (a *agent) processResponse(uuid, cmd, resp string) error {
 func (a *agent) saveConfig(service, fileName, fileCont string) error {
 	switch service {
 	case "export":
-		var content []byte
 		content, err := base64.StdEncoding.DecodeString(fileCont)
 		if err != nil {
 			return err
 		}
-
 		c := &export.Config{}
 		if err := c.ReadBytes([]byte(content)); err != nil {
 			return err
