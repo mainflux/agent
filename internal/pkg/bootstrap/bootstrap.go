@@ -42,7 +42,7 @@ type infraConfig struct {
 	MqttURL      string        `json:"mqtt_url"`
 	EdgexURL     string        `json:"edgex_url"`
 	NatsURL      string        `json:"nats_url"`
-	ExportConfig export.Config `json:"export_config"  mapstructure:"export_config"`
+	ExportConfig export.Config `json:"export_config"`
 }
 
 // Bootstrap - Retrieve device config
@@ -82,6 +82,10 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	fmt.Println(string(dc.Content))
 	if err := json.Unmarshal([]byte(dc.Content), &ic); err != nil {
 		return err
+	}
+	econf := &ic.ExportConfig
+	if econf != nil {
+		econf.Save()
 	}
 
 	if len(dc.MainfluxChannels) < 2 {
