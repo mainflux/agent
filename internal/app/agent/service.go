@@ -151,13 +151,15 @@ func (a *agent) Execute(uuid, cmd string) (string, error) {
 	return string(payload), nil
 }
 
-func (a *agent) Control(uuid, cmdStr string) (err error) {
+func (a *agent) Control(uuid, cmdStr string) error {
 	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
 	if len(cmdArgs) < 2 {
 		return errInvalidCommand
 	}
 
-	resp := ""
+	var resp string
+	var err error
+
 	cmd := cmdArgs[0]
 	switch cmd {
 	case "edgex-operation":
@@ -176,7 +178,7 @@ func (a *agent) Control(uuid, cmdStr string) (err error) {
 		return err
 	}
 
-	return a.processResponse(resp, uuid, cmd)
+	return a.processResponse(uuid, cmd, resp)
 }
 
 // Message for this command
@@ -186,18 +188,20 @@ func (a *agent) Control(uuid, cmdStr string) (err error) {
 // Example of creation:
 // 	b, _ := toml.Marshal(cfg)
 // 	config_file_content := base64.StdEncoding.EncodeToString(b)
-func (a *agent) ServiceConfig(uuid, cmdStr string) (err error) {
+func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
 	if len(cmdArgs) < 1 {
 		return errInvalidCommand
 	}
-	services := []byte{}
 	resp := ""
 	cmd := cmdType(cmdArgs[0])
 
 	switch cmd {
 	case view:
-		services, err = json.Marshal(a.Services())
+		services, err := json.Marshal(a.Services())
+		if err != nil {
+			return err
+		}
 		resp = string(services)
 	case save:
 		if len(cmdArgs) < 4 {
@@ -206,15 +210,15 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) (err error) {
 		service := cmdArgs[1]
 		fileName := cmdArgs[2]
 		fileCont := cmdArgs[3]
-		err = a.saveConfig(service, fileName, fileCont)
+		err := a.saveConfig(service, fileName, fileCont)
+		if err != nil {
+			return err
+		}
 	}
-	if err != nil {
-		return err
-	}
-	return a.processResponse(resp, uuid, string(cmd))
+	return a.processResponse(uuid, string(cmd), resp)
 }
 
-func (a *agent) processResponse(resp, uuid, cmd string) (err error) {
+func (a *agent) processResponse(uuid, cmd, resp string) (err error) {
 	payload, err := encodeSenML(uuid, cmd, resp)
 	if err != nil {
 		return err
@@ -225,21 +229,28 @@ func (a *agent) processResponse(resp, uuid, cmd string) (err error) {
 	return nil
 }
 
-func (a *agent) saveConfig(service, fileName, fileCont string) (err error) {
+func (a *agent) saveConfig(service, fileName, fileCont string) error {
 	switch service {
 	case "export":
-		content := []byte{}
-		content, err = base64.StdEncoding.DecodeString(fileCont)
+		var content []byte
+		content, err := base64.StdEncoding.DecodeString(fileCont)
+		if err != nil {
+			return err
+		}
+
 		c := &export.Config{}
-		c.ReadBytes([]byte(content))
+		if err := c.ReadBytes([]byte(content)); err != nil {
+			return err
+		}
 		c.File = fileName
-		err = c.Save()
+		if err := c.Save(); err != nil {
+			return err
+		}
+
 	default:
-		err = errNoSuchService
+		return errNoSuchService
 	}
-	if err != nil {
-		return err
-	}
+
 	return a.nats.Publish(fmt.Sprintf("%s.%s.%s", Commands, service, Config), []byte(""))
 }
 
