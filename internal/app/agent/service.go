@@ -71,13 +71,19 @@ type Service interface {
 	ServiceConfig(uuid, cmdStr string) error
 
 	// Services returns service list
-	Services() []interface{}
+	Services() []ServiceInfo
 
 	// Publish message
 	Publish(string, string) error
 }
 
 var _ Service = (*agent)(nil)
+
+type ServiceInfo struct {
+	Name     string
+	LastSeen time.Time
+	Status   string
+}
 
 type agent struct {
 	mqttClient  paho.Client
@@ -259,19 +265,15 @@ func (a *agent) Config() config.Config {
 	return *a.config
 }
 
-func (a *agent) Services() []interface{} {
-	services := [](interface{}){}
+func (a *agent) Services() []ServiceInfo {
+	services := []ServiceInfo{}
 	keys := []string{}
 	for k := range a.svcs {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	for _, key := range keys {
-		service := struct {
-			Name     string
-			LastSeen time.Time
-			Status   string
-		}{
+		service := ServiceInfo{
 			Name:     a.svcs[key].Name,
 			LastSeen: a.svcs[key].LastSeen,
 			Status:   a.svcs[key].Status,
