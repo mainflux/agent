@@ -218,7 +218,7 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 	return a.processResponse(uuid, string(cmd), resp)
 }
 
-func (a *agent) processResponse(uuid, cmd, resp string) (err error) {
+func (a *agent) processResponse(uuid, cmd, resp string) error {
 	payload, err := encodeSenML(uuid, cmd, resp)
 	if err != nil {
 		return err
