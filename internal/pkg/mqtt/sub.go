@@ -17,16 +17,15 @@ import (
 	paho "github.com/eclipse/paho.mqtt.golang"
 )
 
-type cmdType string
-
 const (
 	reqTopic  = "req"
 	servTopic = "services"
 	commands  = "commands"
 
-	control cmdType = "control"
-	exec    cmdType = "exec"
-	config  cmdType = "config"
+	control = "control"
+	exec    = "exec"
+	config  = "config"
+	service = "service"
 )
 
 var channelPartRegExp = regexp.MustCompile(`^channels/([\w\-]+)/messages/services(/[^?]*)?(\?.*)?$`)
@@ -102,7 +101,7 @@ func (b *broker) handleMsg(mc paho.Client, msg paho.Message) {
 		return
 	}
 
-	cmdType := cmdType(sm.Records[0].Name)
+	cmdType := sm.Records[0].Name
 	cmdStr := *sm.Records[0].StringValue
 	uuid := strings.TrimSuffix(sm.Records[0].BaseName, ":")
 
@@ -118,6 +117,11 @@ func (b *broker) handleMsg(mc paho.Client, msg paho.Message) {
 			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
 		}
 	case config:
+		b.logger.Info(fmt.Sprintf("Execute command for uuid %s and command string %s", uuid, cmdStr))
+		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
+			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
+		}
+	case service:
 		b.logger.Info(fmt.Sprintf("Execute command for uuid %s and command string %s", uuid, cmdStr))
 		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
 			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))

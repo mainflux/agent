@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/mainflux/agent/internal/app/agent"
-	"github.com/mainflux/agent/internal/app/agent/services"
 	"github.com/mainflux/agent/internal/pkg/config"
 )
 
@@ -76,7 +75,7 @@ func (ms *metricsMiddleware) Config() config.Config {
 	return ms.svc.Config()
 }
 
-func (ms *metricsMiddleware) Services() map[string]*services.Service {
+func (ms *metricsMiddleware) Services() []agent.ServiceInfo {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "services").Add(1)
 		ms.latency.With("method", "services").Observe(time.Since(begin).Seconds())

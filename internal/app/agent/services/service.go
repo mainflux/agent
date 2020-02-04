@@ -5,20 +5,18 @@ import (
 	"time"
 )
 
-type Status string
-
 const (
 	timeout  = 3
 	interval = 10000
 
-	Online  Status = "online"
-	Offline Status = "offline"
+	Online  = "online"
+	Offline = "offline"
 )
 
 type Service struct {
 	Name     string
 	LastSeen time.Time
-	Status   Status
+	Status   string
 
 	counter int
 	done    chan bool
