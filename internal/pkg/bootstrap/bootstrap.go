@@ -79,7 +79,6 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		cfg.ID, cfg.URL))
 
 	ic := infraConfig{}
-	fmt.Println(string(dc.Content))
 	if err := json.Unmarshal([]byte(dc.Content), &ic); err != nil {
 		return err
 	}
