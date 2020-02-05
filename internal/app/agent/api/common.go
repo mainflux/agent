@@ -27,7 +27,7 @@ type mqttConf struct {
 	mtls        bool   `json:"mtls"`
 	skipTLSVer  bool   `json:"skip_tls_ver"`
 	retain      bool   `json:"retain"`
-	qoS         int    `json:"qos"`
+	QoS         int    `json:"qos"`
 	caPath      string `json:"ca_path"`
 	certPath    string `json:"cert_path"`
 	privKeyPath string `json:"priv_key_path"`
