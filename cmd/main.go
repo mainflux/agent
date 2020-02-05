@@ -87,24 +87,28 @@ func main() {
 
 	cfg, err := loadConfig(logger)
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("Failed to load config: %s", err.Error()))
+		logger.Error(fmt.Sprintf("Failed to load config: %s", err.Error()))
+		os.Exit(1)
 	}
 
 	nc, err := nats.Connect(cfg.Agent.Server.NatsURL)
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Agent.Server.NatsURL))
+		logger.Error(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Agent.Server.NatsURL))
+		os.Exit(1)
 	}
 	defer nc.Close()
 
 	mqttClient, err := connectToMQTTBroker(cfg.Agent.MQTT, logger)
 	if err != nil {
-		log.Fatalf(err.Error())
+		logger.Error(err.Error())
+		os.Exit(1)
 	}
 	edgexClient := edgex.NewClient(cfg.Agent.Edgex.URL, logger)
 
 	svc, err := agent.New(mqttClient, &cfg, edgexClient, nc, logger)
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("Error in agent service: %s", err.Error()))
+		logger.Error(fmt.Sprintf("Error in agent service: %s", err.Error()))
+		os.Exit(1)
 	}
 
 	svc = api.LoggingMiddleware(svc, logger)
