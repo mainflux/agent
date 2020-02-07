@@ -1,7 +1,7 @@
 // Copyright (c) Mainflux
 // SPDX-License-Identifier: Apache-2.0
 
-package mqtt
+package conn
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ import (
 	"github.com/nats-io/go-nats"
 	"robpike.io/filter"
 
-	paho "github.com/eclipse/paho.mqtt.golang"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
 const (
@@ -40,13 +40,13 @@ type MqttBroker interface {
 
 type broker struct {
 	svc    agent.Service
-	client paho.Client
+	client mqtt.Client
 	logger logger.Logger
 	nats   *nats.Conn
 }
 
 // NewBroker returns new MQTT broker instance.
-func NewBroker(svc agent.Service, client paho.Client, nats *nats.Conn, log logger.Logger) MqttBroker {
+func NewBroker(svc agent.Service, client mqtt.Client, nats *nats.Conn, log logger.Logger) MqttBroker {
 	return &broker{
 		svc:    svc,
 		client: client,
@@ -73,7 +73,7 @@ func (b *broker) Subscribe(topic string) error {
 }
 
 // handleNatsMsg triggered when new message is received on MQTT broker
-func (b *broker) handleNatsMsg(mc paho.Client, msg paho.Message) {
+func (b *broker) handleNatsMsg(mc mqtt.Client, msg mqtt.Message) {
 	if topic := extractNatsTopic(msg.Topic()); topic != "" {
 		b.nats.Publish(topic, msg.Payload())
 	}
@@ -94,7 +94,7 @@ func extractNatsTopic(topic string) string {
 }
 
 // handleMsg triggered when new message is received on MQTT broker
-func (b *broker) handleMsg(mc paho.Client, msg paho.Message) {
+func (b *broker) handleMsg(mc mqtt.Client, msg mqtt.Message) {
 	sm, err := senml.Decode(msg.Payload(), senml.JSON)
 	if err != nil {
 		b.logger.Warn(fmt.Sprintf("SenML decode failed: %s", err))
@@ -117,14 +117,14 @@ func (b *broker) handleMsg(mc paho.Client, msg paho.Message) {
 			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
 		}
 	case config:
-		b.logger.Info(fmt.Sprintf("Execute command for uuid %s and command string %s", uuid, cmdStr))
+		b.logger.Info(fmt.Sprintf("Config service for uuid %s and command string %s", uuid, cmdStr))
 		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
-			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
+			b.logger.Warn(fmt.Sprintf("Config service operation failed: %s", err))
 		}
 	case service:
-		b.logger.Info(fmt.Sprintf("Execute command for uuid %s and command string %s", uuid, cmdStr))
+		b.logger.Info(fmt.Sprintf("Services view for uuid %s and command string %s", uuid, cmdStr))
 		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
-			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
+			b.logger.Warn(fmt.Sprintf("Services view operation failed: %s", err))
 		}
 	}
 

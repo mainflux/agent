@@ -70,16 +70,15 @@ func addConfigEndpoint(svc agent.Service) endpoint.Endpoint {
 			Control: req.agent.channels.control,
 			Data:    req.agent.channels.data,
 		}
-		tc := config.ThingConf{
-			ID:  req.agent.thing.id,
-			Key: req.agent.thing.key,
-		}
 		ec := config.EdgexConf{URL: req.agent.edgex.url}
 		lc := config.LogConf{Level: req.agent.log.level}
-		mc := config.MQTTConf{URL: req.agent.mqtt.url}
+		mc := config.MQTTConf{
+			URL:      req.agent.mqtt.url,
+			Username: req.agent.mqtt.username,
+			Password: req.agent.mqtt.password,
+		}
 		a := config.AgentConf{
 			Server:   sc,
-			Thing:    tc,
 			Channels: cc,
 			Edgex:    ec,
 			Log:      lc,
@@ -100,30 +99,7 @@ func addConfigEndpoint(svc agent.Service) endpoint.Endpoint {
 func viewConfigEndpoint(svc agent.Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		c := svc.Config()
-
-		sc := serverConf{port: c.Agent.Server.Port}
-		cc := chanConf{
-			control: c.Agent.Channels.Control,
-			data:    c.Agent.Channels.Data,
-		}
-		tc := thingConf{
-			id:  c.Agent.Thing.ID,
-			key: c.Agent.Thing.Key,
-		}
-		ec := edgexConf{url: c.Agent.Edgex.URL}
-		lc := logConf{level: c.Agent.Log.Level}
-		mc := mqttConf{url: c.Agent.MQTT.URL}
-		a := agentConf{
-			server:   sc,
-			thing:    tc,
-			channels: cc,
-			edgex:    ec,
-			log:      lc,
-			mqtt:     mc,
-		}
-		res := configRes{agent: a}
-
-		return res, nil
+		return c, nil
 	}
 }
 

@@ -7,11 +7,6 @@ type serverConf struct {
 	port string `json:"port"`
 }
 
-type thingConf struct {
-	id  string `json:"id"`
-	key string `json:"key"`
-}
-
 type chanConf struct {
 	control string `json:"control"`
 	data    string `json:"data"`
@@ -26,13 +21,21 @@ type logConf struct {
 }
 
 type mqttConf struct {
-	url string `json:"url"`
+	url         string `json:"url"`
+	username    string `json:"username"`
+	password    string `json:"json"`
+	mtls        bool   `json:"mtls"`
+	skipTLSVer  bool   `json:"skip_tls_ver"`
+	retain      bool   `json:"retain"`
+	QoS         int    `json:"qos"`
+	caPath      string `json:"ca_path"`
+	certPath    string `json:"cert_path"`
+	privKeyPath string `json:"priv_key_path"`
 }
 
 // Config struct of Mainflux Agent
 type agentConf struct {
 	server   serverConf `json:"server"`
-	thing    thingConf  `json:"thing"`
 	channels chanConf   `json:"channels"`
 	edgex    edgexConf  `json:"edgex"`
 	log      logConf    `json:"log"`

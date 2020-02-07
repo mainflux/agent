@@ -13,8 +13,3 @@ type execRes struct {
 	Name     string `json:"n"`
 	Value    string `json:"vs"`
 }
-
-type configRes struct {
-	agent agentConf
-	file  string
-}

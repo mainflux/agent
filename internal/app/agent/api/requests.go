@@ -41,8 +41,8 @@ type addConfigReq struct {
 
 func (req addConfigReq) validate() error {
 	if req.agent.server.port == "" ||
-		req.agent.thing.id == "" ||
-		req.agent.thing.key == "" ||
+		req.agent.mqtt.username == "" ||
+		req.agent.mqtt.password == "" ||
 		req.agent.channels.control == "" ||
 		req.agent.channels.data == "" ||
 		req.agent.log.level == "" ||

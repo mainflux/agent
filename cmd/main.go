@@ -1,20 +1,23 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
-	paho "github.com/eclipse/paho.mqtt.golang"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
 	"github.com/mainflux/agent/internal/app/agent"
 	"github.com/mainflux/agent/internal/app/agent/api"
 	"github.com/mainflux/agent/internal/pkg/bootstrap"
 	"github.com/mainflux/agent/internal/pkg/config"
-	"github.com/mainflux/agent/internal/pkg/mqtt"
+	"github.com/mainflux/agent/internal/pkg/conn"
 	"github.com/mainflux/agent/pkg/edgex"
 	"github.com/mainflux/mainflux"
 	"github.com/mainflux/mainflux/logger"
@@ -32,11 +35,19 @@ const (
 	defLogLevel                   = "info"
 	defEdgexURL                   = "http://localhost:48090/api/v1/"
 	defMqttURL                    = "localhost:1883"
-	defThingID                    = "2dce1d65-73b4-4020-bfe3-403d851386e7"
-	defThingKey                   = "1ff0d0f0-ea04-4fbb-83c4-c10b110bf566"
 	defCtrlChan                   = "f36c3733-95a3-481c-a314-4125e03d8993"
 	defDataChan                   = "ea353dac-0298-4fbb-9e5d-501e3699949c"
 	defEncryption                 = "false"
+	defMqttUsername               = ""
+	defMqttPassword               = ""
+	defMqttChannel                = ""
+	defMqttSkipTLSVer             = "true"
+	defMqttMTLS                   = "false"
+	defMqttCA                     = "ca.crt"
+	defMqttQoS                    = "0"
+	defMqttRetain                 = false
+	defMqttCert                   = "thing.cert"
+	defMqttPrivKey                = "thing.key"
 	defConfigFile                 = "config.toml"
 	defNatsURL                    = nats.DefaultURL
 
@@ -56,6 +67,16 @@ const (
 	envDataChan                   = "MF_AGENT_DATA_CHANNEL"
 	envEncryption                 = "MF_AGENT_ENCRYPTION"
 	envNatsURL                    = "MF_AGENT_NATS_URL"
+
+	envMqttUsername   = "MF_AGENT_MQTT_USERNAME"
+	envMqttPassword   = "MF_AGENT_MQTT_PASSWORD"
+	envMqttSkipTLSVer = "MF_AGENT_MQTT_SKIP_TLS"
+	envMqttMTLS       = "MF_AGENT_MQTT_MTLS"
+	envMqttCA         = "MF_AGENT_MQTT_CA"
+	envMqttQoS        = "MF_AGENT_MQTT_QOS"
+	envMqttRetain     = "MF_AGENT_MQTT_RETAIN"
+	envMqttCert       = "MF_AGENT_MQTT_CLIENT_CERT"
+	envMqttPrivKey    = "MF_AGENT_MQTT_CLIENT_PK"
 )
 
 func main() {
@@ -66,21 +87,28 @@ func main() {
 
 	cfg, err := loadConfig(logger)
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("Failed to load config: %s", err.Error()))
+		logger.Error(fmt.Sprintf("Failed to load config: %s", err.Error()))
+		os.Exit(1)
 	}
 
 	nc, err := nats.Connect(cfg.Agent.Server.NatsURL)
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Agent.Server.NatsURL))
+		logger.Error(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Agent.Server.NatsURL))
+		os.Exit(1)
 	}
 	defer nc.Close()
 
-	mqttClient := connectToMQTTBroker(cfg.Agent.MQTT.URL, cfg.Agent.Thing.ID, cfg.Agent.Thing.Key, logger)
+	mqttClient, err := connectToMQTTBroker(cfg.Agent.MQTT, logger)
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
+	}
 	edgexClient := edgex.NewClient(cfg.Agent.Edgex.URL, logger)
 
 	svc, err := agent.New(mqttClient, &cfg, edgexClient, nc, logger)
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("Error in agent service: %s", err.Error()))
+		logger.Error(fmt.Sprintf("Error in agent service: %s", err.Error()))
+		os.Exit(1)
 	}
 
 	svc = api.LoggingMiddleware(svc, logger)
@@ -138,60 +166,126 @@ func loadConfig(logger logger.Logger) (config.Config, error) {
 		NatsURL: mainflux.Env(envNatsURL, defNatsURL),
 		Port:    mainflux.Env(envLogLevel, defLogLevel),
 	}
-	tc := config.ThingConf{
-		ID:  mainflux.Env(envThingID, defThingID),
-		Key: mainflux.Env(envThingKey, defThingKey),
-	}
 	cc := config.ChanConf{
 		Control: mainflux.Env(envCtrlChan, defCtrlChan),
 		Data:    mainflux.Env(envDataChan, defDataChan),
 	}
 	ec := config.EdgexConf{URL: mainflux.Env(envEdgexURL, defEdgexURL)}
 	lc := config.LogConf{Level: mainflux.Env(envLogLevel, defLogLevel)}
-	mc := config.MQTTConf{URL: mainflux.Env(envMqttURL, defMqttURL)}
+	mc := config.MQTTConf{
+		URL:      mainflux.Env(envMqttURL, defMqttURL),
+		Username: mainflux.Env(envMqttUsername, defMqttUsername),
+		Password: mainflux.Env(envMqttPassword, defMqttPassword),
+	}
 
-	c := config.New(sc, tc, cc, ec, lc, mc, file)
-
+	c := config.New(sc, cc, ec, lc, mc, file)
 	if err := c.Read(); err != nil {
 		logger.Error(fmt.Sprintf("Failed to read config:  %s", err))
 		return config.Config{}, err
 	}
 
+	mc, err := loadCertificate(c.Agent.MQTT)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to set up mtls certs %s", err))
+	}
+	c.Agent.MQTT = mc
+
 	return *c, nil
 }
 
-func connectToMQTTBroker(mqttURL, thingID, thingKey string, logger logger.Logger) paho.Client {
-	clientID := fmt.Sprintf("agent-%s", thingID)
-	opts := paho.NewClientOptions()
-	opts.AddBroker(mqttURL)
-	opts.SetClientID(clientID)
-	opts.SetUsername(thingID)
-	opts.SetPassword(thingKey)
-	opts.SetCleanSession(true)
-	opts.SetAutoReconnect(true)
-	opts.SetOnConnectHandler(func(c paho.Client) {
-		logger.Info("Connected to MQTT broker")
-	})
-	opts.SetConnectionLostHandler(func(c paho.Client, err error) {
-		logger.Error(fmt.Sprintf("MQTT connection lost: %s", err.Error()))
-		os.Exit(1)
-	})
-
-	client := paho.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		logger.Error(fmt.Sprintf("Failed to connect to MQTT broker: %s", token.Error()))
-		os.Exit(1)
+func connectToMQTTBroker(conf config.MQTTConf, logger logger.Logger) (mqtt.Client, error) {
+	name := fmt.Sprintf("agent-%s", conf.Username)
+	conn := func(client mqtt.Client) {
+		logger.Info(fmt.Sprintf("Client %s connected", name))
 	}
 
-	return client
+	lost := func(client mqtt.Client, err error) {
+		logger.Info(fmt.Sprintf("Client %s disconnected", name))
+	}
+
+	opts := mqtt.NewClientOptions().
+		AddBroker(conf.URL).
+		SetClientID(name).
+		SetCleanSession(true).
+		SetAutoReconnect(true).
+		SetOnConnectHandler(conn).
+		SetConnectionLostHandler(lost)
+
+	if conf.Username != "" && conf.Password != "" {
+		opts.SetUsername(conf.Username)
+		opts.SetPassword(conf.Password)
+	}
+
+	if conf.MTLS {
+		cfg := &tls.Config{
+			InsecureSkipVerify: conf.SkipTLSVer,
+		}
+
+		if conf.CA != nil {
+			cfg.RootCAs = x509.NewCertPool()
+			cfg.RootCAs.AppendCertsFromPEM(conf.CA)
+		}
+		if conf.Cert.Certificate != nil {
+			cfg.Certificates = []tls.Certificate{conf.Cert}
+		}
+
+		cfg.BuildNameToCertificate()
+		opts.SetTLSConfig(cfg)
+		opts.SetProtocolVersion(4)
+	}
+	client := mqtt.NewClient(opts)
+	token := client.Connect()
+	token.Wait()
+
+	if token.Error() != nil {
+		return nil, token.Error()
+	}
+	return client, nil
 }
 
-func subscribeToMQTTBroker(svc agent.Service, mc paho.Client, ctrlChan string, nc *nats.Conn, logger logger.Logger) {
-	broker := mqtt.NewBroker(svc, mc, nc, logger)
+func subscribeToMQTTBroker(svc agent.Service, mc mqtt.Client, ctrlChan string, nc *nats.Conn, logger logger.Logger) {
+	broker := conn.NewBroker(svc, mc, nc, logger)
 	topic := fmt.Sprintf("channels/%s/messages", ctrlChan)
 	if err := broker.Subscribe(topic); err != nil {
 		logger.Error(fmt.Sprintf("Failed to subscribe to MQTT broker: %s", err.Error()))
 		os.Exit(1)
 	}
 	logger.Info("Subscribed to MQTT broker")
+}
+
+func loadCertificate(cfg config.MQTTConf) (config.MQTTConf, error) {
+	c := cfg
+	caByte := []byte{}
+	cert := tls.Certificate{}
+	if !cfg.MTLS {
+		return c, nil
+	}
+	caFile, err := os.Open(cfg.CAPath)
+	defer caFile.Close()
+	if err != nil {
+		return c, err
+	}
+	caByte, err = ioutil.ReadAll(caFile)
+	if err != nil {
+		return c, err
+	}
+	clientCert, err := os.Open(cfg.CertPath)
+	defer clientCert.Close()
+	if err != nil {
+		return c, err
+	}
+	cc, _ := ioutil.ReadAll(clientCert)
+	privKey, err := os.Open(cfg.PrivKeyPath)
+	defer clientCert.Close()
+	if err != nil {
+		return c, err
+	}
+	pk, _ := ioutil.ReadAll((privKey))
+	cert, err = tls.X509KeyPair([]byte(cc), []byte(pk))
+	if err != nil {
+		return c, err
+	}
+	cfg.Cert = cert
+	cfg.CA = caByte
+	return c, nil
 }
