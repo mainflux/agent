@@ -185,6 +185,12 @@ func loadConfig(logger logger.Logger) (config.Config, error) {
 		return config.Config{}, err
 	}
 
+	mc, err := loadCertificate(c.Agent.MQTT)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Failed to set up mtls certs %s", err))
+	}
+	c.Agent.MQTT = mc
+
 	return *c, nil
 }
 
@@ -248,37 +254,40 @@ func subscribeToMQTTBroker(svc agent.Service, mc mqtt.Client, ctrlChan string, n
 	logger.Info("Subscribed to MQTT broker")
 }
 
-func loadCertificate(cfg *config.MQTTConf) error {
+func loadCertificate(cfg config.MQTTConf) (config.MQTTConf, error) {
+	c := cfg
 	caByte := []byte{}
 	cert := tls.Certificate{}
-	if cfg.MTLS {
-		caFile, err := os.Open(cfg.CAPath)
-		defer caFile.Close()
-		if err != nil {
-			return err
-		}
-		caByte, err = ioutil.ReadAll(caFile)
-		if err != nil {
-			return err
-		}
-		clientCert, err := os.Open(cfg.CertPath)
-		defer clientCert.Close()
-		if err != nil {
-			return err
-		}
-		cc, _ := ioutil.ReadAll(clientCert)
-		privKey, err := os.Open(cfg.PrivKeyPath)
-		defer clientCert.Close()
-		if err != nil {
-			return err
-		}
-		pk, _ := ioutil.ReadAll((privKey))
-		cert, err = tls.X509KeyPair([]byte(cc), []byte(pk))
-		if err != nil {
-			return err
-		}
-		cfg.Cert = cert
-		cfg.CA = caByte
+	if !cfg.MTLS {
+		return c, nil
 	}
-	return nil
+
+	caFile, err := os.Open(cfg.CAPath)
+	defer caFile.Close()
+	if err != nil {
+		return c, err
+	}
+	caByte, err = ioutil.ReadAll(caFile)
+	if err != nil {
+		return c, err
+	}
+	clientCert, err := os.Open(cfg.CertPath)
+	defer clientCert.Close()
+	if err != nil {
+		return c, err
+	}
+	cc, _ := ioutil.ReadAll(clientCert)
+	privKey, err := os.Open(cfg.PrivKeyPath)
+	defer clientCert.Close()
+	if err != nil {
+		return c, err
+	}
+	pk, _ := ioutil.ReadAll((privKey))
+	cert, err = tls.X509KeyPair([]byte(cc), []byte(pk))
+	if err != nil {
+		return c, err
+	}
+	cfg.Cert = cert
+	cfg.CA = caByte
+	return c, nil
 }
