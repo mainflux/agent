@@ -179,7 +179,6 @@ func loadConfig(logger logger.Logger) (config.Config, error) {
 	}
 
 	c := config.New(sc, cc, ec, lc, mc, file)
-
 	if err := c.Read(); err != nil {
 		logger.Error(fmt.Sprintf("Failed to read config:  %s", err))
 		return config.Config{}, err
@@ -261,7 +260,6 @@ func loadCertificate(cfg config.MQTTConf) (config.MQTTConf, error) {
 	if !cfg.MTLS {
 		return c, nil
 	}
-
 	caFile, err := os.Open(cfg.CAPath)
 	defer caFile.Close()
 	if err != nil {
