@@ -200,7 +200,6 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 	}
 	resp := ""
 	cmd := cmdArgs[0]
-
 	switch cmd {
 	case view:
 		services, err := json.Marshal(a.Services())
@@ -240,7 +239,6 @@ func (a *agent) saveConfig(service, fileName, fileCont string) error {
 		if err != nil {
 			return err
 		}
-
 		c := &export.Config{}
 		if err := c.ReadBytes([]byte(content)); err != nil {
 			return err

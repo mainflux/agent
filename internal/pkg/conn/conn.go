@@ -119,7 +119,7 @@ func (b *broker) handleMsg(mc mqtt.Client, msg mqtt.Message) {
 	case config:
 		b.logger.Info(fmt.Sprintf("Config service for uuid %s and command string %s", uuid, cmdStr))
 		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
-			b.logger.Warn(fmt.Sprintf("Config service operation failed: %s", err))
+			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
 		}
 	case service:
 		b.logger.Info(fmt.Sprintf("Services view for uuid %s and command string %s", uuid, cmdStr))
