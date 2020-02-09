@@ -16,7 +16,7 @@ import (
 	"github.com/mainflux/agent/internal/app/agent/services"
 	"github.com/mainflux/agent/internal/pkg/config"
 	"github.com/mainflux/agent/pkg/edgex"
-	export "github.com/mainflux/export/pkg/config"
+	exp "github.com/mainflux/export/pkg/config"
 	"github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/senml"
@@ -31,6 +31,8 @@ const (
 
 	view = "view"
 	save = "save"
+
+	export = "export"
 )
 
 var (
@@ -234,12 +236,12 @@ func (a *agent) processResponse(uuid, cmd, resp string) error {
 
 func (a *agent) saveConfig(service, fileName, fileCont string) error {
 	switch service {
-	case "export":
+	case export:
 		content, err := base64.StdEncoding.DecodeString(fileCont)
 		if err != nil {
 			return err
 		}
-		c := &export.Config{}
+		c := &exp.Config{}
 		if err := c.ReadBytes([]byte(content)); err != nil {
 			return err
 		}
