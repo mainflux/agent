@@ -101,6 +101,10 @@ func (b *broker) handleMsg(mc mqtt.Client, msg mqtt.Message) {
 		return
 	}
 
+	if len(sm.Records) == 0 {
+		b.logger.Error(fmt.Sprintf("SenML payload empty: `%s`", string(msg.Payload())))
+		return
+	}
 	cmdType := sm.Records[0].Name
 	cmdStr := *sm.Records[0].StringValue
 	uuid := strings.TrimSuffix(sm.Records[0].BaseName, ":")
