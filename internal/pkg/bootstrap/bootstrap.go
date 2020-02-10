@@ -19,6 +19,8 @@ import (
 	"github.com/mainflux/mainflux/things"
 )
 
+const exportConfigFile = "/configs/export/config.toml"
+
 // Config represents the parameters for boostraping
 type Config struct {
 	URL           string
@@ -44,8 +46,6 @@ type infraConfig struct {
 	NatsURL      string        `json:"nats_url"`
 	ExportConfig export.Config `json:"export_config"`
 }
-
-const exportConfigFile = "export.toml"
 
 // Bootstrap - Retrieve device config
 func Bootstrap(cfg Config, logger log.Logger, file string) error {
