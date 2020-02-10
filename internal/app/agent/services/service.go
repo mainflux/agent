@@ -9,8 +9,8 @@ const (
 	timeout  = 3
 	interval = 10000
 
-	Online  = "online"
-	Offline = "offline"
+	online  = "online"
+	offline = "offline"
 )
 
 type Service struct {
@@ -27,7 +27,7 @@ type Service struct {
 func NewService(name string) *Service {
 	ticker := time.NewTicker(interval * time.Millisecond)
 	done := make(chan bool)
-	s := Service{Name: name, Status: Online, done: done, counter: timeout, ticker: ticker}
+	s := Service{Name: name, Status: online, done: done, counter: timeout, ticker: ticker}
 	s.Listen()
 	return &s
 }
@@ -42,7 +42,7 @@ func (s *Service) Listen() {
 				s.mu.Lock()
 				s.counter = s.counter - 1
 				if s.counter == 0 {
-					s.Status = Offline
+					s.Status = offline
 					s.counter = timeout
 				}
 				s.mu.Unlock()
@@ -56,5 +56,5 @@ func (s *Service) Update() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.counter = timeout
-	s.Status = Online
+	s.Status = online
 }

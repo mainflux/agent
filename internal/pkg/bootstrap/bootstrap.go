@@ -14,9 +14,12 @@ import (
 
 	"github.com/mainflux/agent/internal/app/agent"
 	"github.com/mainflux/agent/internal/pkg/config"
+	export "github.com/mainflux/export/pkg/config"
 	log "github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/mainflux/things"
 )
+
+const exportConfigFile = "/configs/export/config.toml"
 
 // Config represents the parameters for boostraping
 type Config struct {
@@ -36,11 +39,12 @@ type deviceConfig struct {
 }
 
 type infraConfig struct {
-	LogLevel string `json:"log_level"`
-	HTTPPort string `json:"http_port"`
-	MqttURL  string `json:"mqtt_url"`
-	EdgexURL string `json:"edgex_url"`
-	NatsURL  string `json:"nats_url"`
+	LogLevel     string        `json:"log_level"`
+	HTTPPort     string        `json:"http_port"`
+	MqttURL      string        `json:"mqtt_url"`
+	EdgexURL     string        `json:"edgex_url"`
+	NatsURL      string        `json:"nats_url"`
+	ExportConfig export.Config `json:"export_config"`
 }
 
 // Bootstrap - Retrieve device config
@@ -79,6 +83,16 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	ic := infraConfig{}
 	if err := json.Unmarshal([]byte(dc.Content), &ic); err != nil {
 		return err
+	}
+	econf := &ic.ExportConfig
+	if econf != nil {
+		if econf.File == "" {
+			econf.File = exportConfigFile
+		}
+		logger.Info(fmt.Sprintf("Saving export config file %s", econf.File))
+		if err := econf.Save(); err != nil {
+			logger.Error(fmt.Sprintf("Failed to save export config file %s", err))
+		}
 	}
 
 	if len(dc.MainfluxChannels) < 2 {

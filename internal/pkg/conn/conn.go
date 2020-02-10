@@ -101,6 +101,10 @@ func (b *broker) handleMsg(mc mqtt.Client, msg mqtt.Message) {
 		return
 	}
 
+	if len(sm.Records) == 0 {
+		b.logger.Error(fmt.Sprintf("SenML payload empty: `%s`", string(msg.Payload())))
+		return
+	}
 	cmdType := sm.Records[0].Name
 	cmdStr := *sm.Records[0].StringValue
 	uuid := strings.TrimSuffix(sm.Records[0].BaseName, ":")
@@ -119,7 +123,7 @@ func (b *broker) handleMsg(mc mqtt.Client, msg mqtt.Message) {
 	case config:
 		b.logger.Info(fmt.Sprintf("Config service for uuid %s and command string %s", uuid, cmdStr))
 		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
-			b.logger.Warn(fmt.Sprintf("Config service operation failed: %s", err))
+			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
 		}
 	case service:
 		b.logger.Info(fmt.Sprintf("Services view for uuid %s and command string %s", uuid, cmdStr))
