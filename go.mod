@@ -7,7 +7,6 @@ require (
 	github.com/edgexfoundry/go-mod-core-contracts v0.1.35
 	github.com/go-kit/kit v0.9.0
 	github.com/go-zoo/bone v1.3.0
-	github.com/gogo/protobuf v1.3.1
 	github.com/mainflux/export v0.0.0-20200115134529-0de5a13ec451
 	github.com/mainflux/mainflux v0.0.0-20191223163044-f42f2095bab4
 	github.com/mainflux/senml v1.0.0
