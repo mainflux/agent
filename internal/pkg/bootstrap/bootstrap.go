@@ -47,8 +47,6 @@ type infraConfig struct {
 	ExportConfig export.Config `json:"export_config"`
 }
 
-const exportConfigFile = "export.toml"
-
 // Bootstrap - Retrieve device config
 func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	retries, err := strconv.ParseUint(cfg.Retries, 10, 64)
