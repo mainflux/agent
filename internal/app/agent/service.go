@@ -241,12 +241,12 @@ func (a *agent) saveConfig(service, fileName, fileCont string) error {
 		if err != nil {
 			return err
 		}
-		c := &exp.Config{}
-		if err := c.ReadBytes([]byte(content)); err != nil {
+		c, err := exp.ReadBytes([]byte(content))
+		if err != nil {
 			return err
 		}
 		c.File = fileName
-		if err := c.Save(); err != nil {
+		if err := exp.Save(c); err != nil {
 			return err
 		}
 
