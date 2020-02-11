@@ -84,15 +84,13 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	if err := json.Unmarshal([]byte(dc.Content), &ic); err != nil {
 		return err
 	}
-	econf := &ic.ExportConfig
-	if econf != nil {
-		if econf.File == "" {
-			econf.File = exportConfigFile
-		}
-		logger.Info(fmt.Sprintf("Saving export config file %s", econf.File))
-		if err := econf.Save(); err != nil {
-			logger.Error(fmt.Sprintf("Failed to save export config file %s", err))
-		}
+	econf := ic.ExportConfig
+	if econf.File == "" {
+		econf.File = exportConfigFile
+	}
+	logger.Info(fmt.Sprintf("Saving export config file %s", econf.File))
+	if err := export.Save(econf); err != nil {
+		logger.Error(fmt.Sprintf("Failed to save export config file %s", err))
 	}
 
 	if len(dc.MainfluxChannels) < 2 {
