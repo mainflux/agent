@@ -21,7 +21,7 @@ import (
 	"github.com/mainflux/agent/pkg/edgex"
 	"github.com/mainflux/mainflux"
 	"github.com/mainflux/mainflux/logger"
-	nats "github.com/nats-io/go-nats"
+	nats "github.com/nats-io/nats.go"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 )
 
