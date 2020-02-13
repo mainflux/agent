@@ -11,7 +11,7 @@ import (
 	"github.com/mainflux/agent/internal/app/agent"
 	"github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/senml"
-	"github.com/nats-io/go-nats"
+	"github.com/nats-io/nats.go"
 	"robpike.io/filter"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"

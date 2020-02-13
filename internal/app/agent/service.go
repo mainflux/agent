@@ -20,7 +20,7 @@ import (
 	"github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/senml"
-	"github.com/nats-io/go-nats"
+	"github.com/nats-io/nats.go"
 )
 
 const (
