@@ -25,7 +25,7 @@ import (
 
 const (
 	Path     = "./config.toml"
-	Hearbeat = "heartbeat.*"
+	Hearbeat = "heartbeat.>"
 	Commands = "commands"
 	Config   = "config"
 

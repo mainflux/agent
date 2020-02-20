@@ -19,7 +19,7 @@ import (
 	"github.com/mainflux/mainflux/things"
 )
 
-const exportConfigFile = "export.toml"
+const exportConfigFile = "/configs/export/config.toml"
 
 // Config represents the parameters for boostraping
 type Config struct {
