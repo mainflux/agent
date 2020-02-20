@@ -4,6 +4,8 @@
 package bootstrap
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -127,7 +129,18 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 }
 
 func getConfig(bsID, bsKey, bsSvrURL string) (deviceConfig, error) {
-	client := &http.Client{}
+	// Get the SystemCertPool, continue with an empty pool on error
+	rootCAs, _ := x509.SystemCertPool()
+	if rootCAs == nil {
+		rootCAs = x509.NewCertPool()
+	}
+	// Trust the augmented cert pool in our client
+	config := &tls.Config{
+		InsecureSkipVerify: false,
+		RootCAs:            rootCAs,
+	}
+	tr := &http.Transport{TLSClientConfig: config}
+	client := &http.Client{Transport: tr}
 	url := fmt.Sprintf("%s/%s", bsSvrURL, bsID)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
