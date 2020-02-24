@@ -157,8 +157,8 @@ func getConfig(bsID, bsKey, bsSvrURL string, logger log.Logger) (deviceConfig, e
 	if err != nil {
 		return deviceConfig{}, errors.New(err.Error())
 	}
-	if resp.StatusCode == http.StatusForbidden {
-		return deviceConfig{}, errors.New("Unauthorized access")
+	if resp.StatusCode >= http.StatusBadRequest {
+		return deviceConfig{}, errors.New(http.StatusText(resp.StatusCode))
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
