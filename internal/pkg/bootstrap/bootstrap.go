@@ -65,7 +65,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 
 	dc := deviceConfig{}
 	for i := 0; i < int(retries); i++ {
-		dc, err = getConfig(cfg.ID, cfg.Key, cfg.URL)
+		dc, err = getConfig(cfg.ID, cfg.Key, cfg.URL, logger)
 		if err == nil {
 			break
 		}
@@ -128,9 +128,12 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	return c.Save()
 }
 
-func getConfig(bsID, bsKey, bsSvrURL string) (deviceConfig, error) {
+func getConfig(bsID, bsKey, bsSvrURL string, logger log.Logger) (deviceConfig, error) {
 	// Get the SystemCertPool, continue with an empty pool on error
-	rootCAs, _ := x509.SystemCertPool()
+	rootCAs, err := x509.SystemCertPool()
+	if err != nil {
+		logger.Error(err.Error())
+	}
 	if rootCAs == nil {
 		rootCAs = x509.NewCertPool()
 	}
