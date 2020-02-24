@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/mainflux/mainflux/errors"
 	"github.com/pelletier/go-toml"
 )
 
@@ -74,32 +75,28 @@ func New(sc ServerConf, cc ChanConf, ec EdgexConf, lc LogConf, mc MQTTConf, file
 }
 
 // Save - store config in a file
-func (c *Config) Save() error {
+func (c *Config) Save() errors.Error {
 	b, err := toml.Marshal(*c)
 	if err != nil {
-		fmt.Printf("Error reading config file: %s", err)
-		return err
+		return errors.New(fmt.Sprintf("Error reading config file: %s", err))
 	}
 
 	if err := ioutil.WriteFile(c.File, b, 0644); err != nil {
-		fmt.Printf("Error writing toml: %s", err)
-		return err
+		return errors.New(fmt.Sprintf("Error writing toml: %s", err))
 	}
 
 	return nil
 }
 
 // Read - retrieve config from a file
-func (c *Config) Read() error {
+func (c *Config) Read() errors.Error {
 	data, err := ioutil.ReadFile(c.File)
 	if err != nil {
-		fmt.Printf("Error reading config file: %s", err)
-		return err
+		return errors.New(fmt.Sprintf("Error reading config file: %s", err))
 	}
 
 	if err := toml.Unmarshal(data, c); err != nil {
-		fmt.Printf("Error unmarshaling toml: %s", err)
-		return err
+		return errors.New(fmt.Sprintf("Error unmarshaling toml: %s", err))
 	}
 
 	return nil

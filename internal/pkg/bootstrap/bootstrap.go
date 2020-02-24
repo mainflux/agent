@@ -4,8 +4,10 @@
 package bootstrap
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
-	"errors"
+
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -15,6 +17,7 @@ import (
 	"github.com/mainflux/agent/internal/app/agent"
 	"github.com/mainflux/agent/internal/pkg/config"
 	export "github.com/mainflux/export/pkg/config"
+	errors "github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/mainflux/things"
 )
@@ -48,22 +51,22 @@ type infraConfig struct {
 }
 
 // Bootstrap - Retrieve device config
-func Bootstrap(cfg Config, logger log.Logger, file string) error {
+func Bootstrap(cfg Config, logger log.Logger, file string) errors.Error {
 	retries, err := strconv.ParseUint(cfg.Retries, 10, 64)
 	if err != nil {
-		return fmt.Errorf("Invalid BOOTSTRAP_RETRIES value: %s", err)
+		return errors.New(fmt.Sprintf("Invalid BOOTSTRAP_RETRIES value: %s", err))
 	}
 
 	retryDelaySec, err := strconv.ParseUint(cfg.RetryDelaySec, 10, 64)
 	if err != nil {
-		return fmt.Errorf("Invalid BOOTSTRAP_RETRY_DELAY_SECONDS value: %s", err)
+		return errors.New(fmt.Sprintf("Invalid BOOTSTRAP_RETRY_DELAY_SECONDS value: %s", err))
 	}
 
 	logger.Info(fmt.Sprintf("Requesting config for %s from %s", cfg.ID, cfg.URL))
 
 	dc := deviceConfig{}
 	for i := 0; i < int(retries); i++ {
-		dc, err = getConfig(cfg.ID, cfg.Key, cfg.URL)
+		dc, err = getConfig(cfg.ID, cfg.Key, cfg.URL, logger)
 		if err == nil {
 			break
 		}
@@ -82,7 +85,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 
 	ic := infraConfig{}
 	if err := json.Unmarshal([]byte(dc.Content), &ic); err != nil {
-		return err
+		return errors.New(err.Error())
 	}
 	econf := ic.ExportConfig
 	if econf.File == "" {
@@ -126,33 +129,47 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	return c.Save()
 }
 
-func getConfig(bsID, bsKey, bsSvrURL string) (deviceConfig, error) {
-	client := &http.Client{}
+func getConfig(bsID, bsKey, bsSvrURL string, logger log.Logger) (deviceConfig, errors.Error) {
+	// Get the SystemCertPool, continue with an empty pool on error
+	rootCAs, err := x509.SystemCertPool()
+	if err != nil {
+		logger.Error(err.Error())
+	}
+	if rootCAs == nil {
+		rootCAs = x509.NewCertPool()
+	}
+	// Trust the augmented cert pool in our client
+	config := &tls.Config{
+		InsecureSkipVerify: false,
+		RootCAs:            rootCAs,
+	}
+	tr := &http.Transport{TLSClientConfig: config}
+	client := &http.Client{Transport: tr}
 	url := fmt.Sprintf("%s/%s", bsSvrURL, bsID)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return deviceConfig{}, err
+		return deviceConfig{}, errors.New(err.Error())
 	}
 
 	req.Header.Add("Authorization", bsKey)
 	resp, err := client.Do(req)
 	if err != nil {
-		return deviceConfig{}, err
+		return deviceConfig{}, errors.New(err.Error())
 	}
-	if resp.StatusCode == http.StatusForbidden {
-		return deviceConfig{}, errors.New("Unauthorized access")
+	if resp.StatusCode >= http.StatusBadRequest {
+		return deviceConfig{}, errors.New(http.StatusText(resp.StatusCode))
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return deviceConfig{}, err
+		return deviceConfig{}, errors.New(err.Error())
 	}
 	defer resp.Body.Close()
 
 	dc := deviceConfig{}
 	if err := json.Unmarshal(body, &dc); err != nil {
-		return deviceConfig{}, err
+		return deviceConfig{}, errors.New(err.Error())
 	}
 
 	return dc, nil
