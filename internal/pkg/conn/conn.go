@@ -78,6 +78,10 @@ func (b *broker) Subscribe() error {
 	return nil
 }
 
+func (b *broker) Write([]byte) (n int, err error) {
+	return 0, nil
+}
+
 // handleNatsMsg triggered when new message is received on MQTT broker
 func (b *broker) handleNatsMsg(mc mqtt.Client, msg mqtt.Message) {
 	if topic := extractNatsTopic(msg.Topic()); topic != "" {
