@@ -5,6 +5,7 @@ package conn
 
 import (
 	"fmt"
+	"io"
 	"regexp"
 	"strings"
 
@@ -36,6 +37,7 @@ var _ MqttBroker = (*broker)(nil)
 type MqttBroker interface {
 	// Subscribes to given topic and receives events.
 	Subscribe(string) error
+	io.Writer
 }
 
 type broker struct {
@@ -70,6 +72,10 @@ func (b *broker) Subscribe(topic string) error {
 	}
 
 	return nil
+}
+
+func (b *broker) Write([]byte) (n int, err error) {
+	return 0, nil
 }
 
 // handleNatsMsg triggered when new message is received on MQTT broker
