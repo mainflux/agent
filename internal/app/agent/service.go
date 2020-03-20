@@ -15,6 +15,7 @@ import (
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mainflux/agent/internal/app/agent/services"
 	"github.com/mainflux/agent/internal/pkg/config"
+	"github.com/mainflux/agent/internal/pkg/terminal"
 	"github.com/mainflux/agent/pkg/edgex"
 	exp "github.com/mainflux/export/pkg/config"
 	"github.com/mainflux/mainflux/errors"
@@ -75,6 +76,9 @@ type Service interface {
 	// Services returns service list
 	Services() []ServiceInfo
 
+	// Terminal used for terminal control of gateway
+	Terminal(string, string) error
+
 	// Publish message
 	Publish(string, string) error
 }
@@ -85,6 +89,7 @@ type ServiceInfo struct {
 	Name     string
 	LastSeen time.Time
 	Status   string
+	Terminal int
 }
 
 type agent struct {
@@ -94,6 +99,7 @@ type agent struct {
 	logger      log.Logger
 	nats        *nats.Conn
 	svcs        map[string]*services.Service
+	terms       map[string]terminal.Session
 }
 
 // New returns agent service implementation.
@@ -105,6 +111,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		nats:        nc,
 		logger:      logger,
 		svcs:        make(map[string]*services.Service),
+		terms:       make(map[string]*terminal.Session),
 	}
 
 	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {
@@ -221,6 +228,17 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 		}
 	}
 	return a.processResponse(uuid, cmd, resp)
+}
+
+func (a *agent) Terminal(uuid, cmdStr string) error {
+	var session terminal.Session
+	if _, ok := a.terms[uuid]; !ok {
+		session = terminal.NewSession()
+		session.Start()
+		a.terms[uuid] = session
+	}
+	p := []byte(cmdStr)
+	session.Write(p)
 }
 
 func (a *agent) processResponse(uuid, cmd, resp string) error {
