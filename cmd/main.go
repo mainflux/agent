@@ -127,7 +127,8 @@ func main() {
 			Help:      "Total duration of requests in microseconds.",
 		}, []string{"method"}),
 	)
-	go subscribeToMQTTBroker(svc, mqttClient, cfg.Agent.Channels.Control, nc, logger)
+	b := conn.NewBroker(svc, mqttClient, cfg.Agent.Channels.Control, nc, logger)
+	go b.Subscribe()
 
 	errs := make(chan error, 3)
 
@@ -241,16 +242,6 @@ func connectToMQTTBroker(conf config.MQTTConf, logger logger.Logger) (mqtt.Clien
 		return nil, token.Error()
 	}
 	return client, nil
-}
-
-func subscribeToMQTTBroker(svc agent.Service, mc mqtt.Client, ctrlChan string, nc *nats.Conn, logger logger.Logger) {
-	broker := conn.NewBroker(svc, mc, nc, logger)
-	topic := fmt.Sprintf("channels/%s/messages", ctrlChan)
-	if err := broker.Subscribe(topic); err != nil {
-		logger.Error(fmt.Sprintf("Failed to subscribe to MQTT broker: %s", err.Error()))
-		os.Exit(1)
-	}
-	logger.Info("Subscribed to MQTT broker")
 }
 
 func loadCertificate(cfg config.MQTTConf) (config.MQTTConf, error) {
