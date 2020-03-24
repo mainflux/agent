@@ -9,6 +9,7 @@ import (
 
 	"github.com/mainflux/agent/internal/app/agent"
 	"github.com/mainflux/agent/internal/pkg/config"
+	"github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
 )
 
@@ -24,7 +25,7 @@ func LoggingMiddleware(svc agent.Service, logger log.Logger) agent.Service {
 	return &loggingMiddleware{logger, svc}
 }
 
-func (lm loggingMiddleware) Publish(topic string, payload string) (err error) {
+func (lm loggingMiddleware) Publish(topic string, payload string) (err errors.Error) {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method pub for topic %s and payload %s took %s to complete", topic, payload, time.Since(begin))
 		if err != nil {
@@ -37,7 +38,7 @@ func (lm loggingMiddleware) Publish(topic string, payload string) (err error) {
 	return lm.svc.Publish(topic, payload)
 }
 
-func (lm loggingMiddleware) Execute(uuid, cmd string) (str string, err error) {
+func (lm loggingMiddleware) Execute(uuid, cmd string) (str string, err errors.Error) {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method exec for uuid %s and cmd %s took %s to complete", uuid, cmd, time.Since(begin))
 		if err != nil {
@@ -50,7 +51,7 @@ func (lm loggingMiddleware) Execute(uuid, cmd string) (str string, err error) {
 	return lm.svc.Execute(uuid, cmd)
 }
 
-func (lm loggingMiddleware) Control(uuid, cmd string) (err error) {
+func (lm loggingMiddleware) Control(uuid, cmd string) (err errors.Error) {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method control for uuid %s and cmd %s took %s to complete", uuid, cmd, time.Since(begin))
 		if err != nil {
@@ -63,7 +64,7 @@ func (lm loggingMiddleware) Control(uuid, cmd string) (err error) {
 	return lm.svc.Control(uuid, cmd)
 }
 
-func (lm loggingMiddleware) AddConfig(c config.Config) (err error) {
+func (lm loggingMiddleware) AddConfig(c config.Config) (err errors.Error) {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method add_config took %s to complete", time.Since(begin))
 		if err != nil {
@@ -85,7 +86,7 @@ func (lm loggingMiddleware) Config() config.Config {
 	return lm.svc.Config()
 }
 
-func (lm loggingMiddleware) ServiceConfig(uuid, cmdStr string) (err error) {
+func (lm loggingMiddleware) ServiceConfig(uuid, cmdStr string) (err errors.Error) {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method service_config took %s to complete", time.Since(begin))
 		if err != nil {
@@ -105,4 +106,30 @@ func (lm loggingMiddleware) Services() []agent.ServiceInfo {
 	}(time.Now())
 
 	return lm.svc.Services()
+}
+
+func (lm loggingMiddleware) Terminal(uuid, cmdStr string) (err errors.Error) {
+	defer func(begin time.Time) {
+		message := fmt.Sprintf("Method terminal for uuid %s and payload %s took %s to complete", uuid, cmdStr, time.Since(begin))
+		if err != nil {
+			lm.logger.Warn(fmt.Sprintf("%s with error: %s.", message, err))
+			return
+		}
+		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
+	}(time.Now())
+
+	return lm.svc.Terminal(uuid, cmdStr)
+}
+
+func (lm loggingMiddleware) Write(p []byte) (n int, err error) {
+	defer func(begin time.Time) {
+		message := fmt.Sprintf("Method write for payload %s took %s to complete", p, time.Since(begin))
+		if err != nil {
+			lm.logger.Warn(fmt.Sprintf("%s with error: %s.", message, err))
+			return
+		}
+		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
+	}(time.Now())
+
+	return lm.svc.Write(p)
 }
