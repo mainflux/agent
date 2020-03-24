@@ -3,6 +3,7 @@ module github.com/mainflux/agent
 go 1.13
 
 require (
+	github.com/creack/pty v1.1.9
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/edgexfoundry/go-mod-core-contracts v0.1.48
 	github.com/go-kit/kit v0.9.0
