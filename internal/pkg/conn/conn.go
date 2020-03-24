@@ -78,10 +78,6 @@ func (b *broker) Subscribe() error {
 	return nil
 }
 
-func (b *broker) Write([]byte) (n int, err error) {
-	return 0, nil
-}
-
 // handleNatsMsg triggered when new message is received on MQTT broker
 func (b *broker) handleNatsMsg(mc mqtt.Client, msg mqtt.Message) {
 	if topic := extractNatsTopic(msg.Topic()); topic != "" {
@@ -137,7 +133,7 @@ func (b *broker) handleMsg(mc mqtt.Client, msg mqtt.Message) {
 		}
 	case term:
 		b.logger.Info(fmt.Sprintf("Services view for uuid %s and command string %s", uuid, cmdStr))
-		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
+		if err := b.svc.Terminal(uuid, cmdStr); err != nil {
 			b.logger.Warn(fmt.Sprintf("Services view operation failed: %s", err))
 		}
 	case term:
