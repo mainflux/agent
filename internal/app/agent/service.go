@@ -34,6 +34,10 @@ const (
 	view = "view"
 	save = "save"
 
+	char  = "c"
+	open  = "open"
+	close = "close"
+
 	export = "export"
 )
 
@@ -70,6 +74,12 @@ var (
 
 	// errFailedCreateService
 	errFailedCreateService = errors.New("failed to create agent service")
+
+	//errFailedToCreateTerminalSession
+	errFailedToCreateTerminalSession = errors.New("failed to create terminal session")
+
+	// errNoSuchTerminalSession terminal session doesnt exist error on closing
+	errNoSuchTerminalSession = errors.New("no such terminal session")
 )
 
 // Service specifies API for publishing messages and subscribing to topics.
@@ -117,7 +127,7 @@ type agent struct {
 	logger      log.Logger
 	nats        *nats.Conn
 	svcs        map[string]*services.Service
-	terminal    terminal.Session
+	terminals   map[string]terminal.Session
 }
 
 // New returns agent service implementation.
@@ -129,6 +139,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		nats:        nc,
 		logger:      logger,
 		svcs:        make(map[string]*services.Service),
+		terminals:   make(map[string]terminal.Session),
 	}
 
 	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {
@@ -150,13 +161,6 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		serv := ag.svcs[svcname]
 		serv.Update()
 	})
-
-	term, err := terminal.NewSession(ag)
-	if err != nil {
-		return ag, errors.Wrap(errFailedCreateService, err)
-	}
-
-	ag.terminal = term
 
 	if err != nil {
 		return ag, errors.Wrap(errNatsSubscribing, err)
@@ -255,9 +259,54 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) errors.Error {
 }
 
 func (a *agent) Terminal(uuid, cmdStr string) errors.Error {
+	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
+	if len(cmdArgs) < 1 {
+		return errInvalidCommand
+	}
+	cmd := base64.StdEncoding.DecodeString() [0]
+	switch cmd {
+	case char:
+		if err := a.terminalWrite(uuid, cmd); err != nil {
+			return err
+		}
+	case open:
+		if err := a.terminalOpen(uuid, cmd); err != nil {
+			return err
+		}
+	case close:
+		if err := a.terminalClose(uuid, cmd); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-	p := []byte(cmdStr)
-	return a.terminal.Send(p)
+func (a *agent) terminalOpen(uuid, cmd string) errors.Error {
+	if _, ok := a.terminals[uuid]; !ok {
+		term, err := terminal.NewSession(a, a.logger)
+		if err != nil {
+			return errors.Wrap(errors.Wrap(errFailedToCreateTerminalSession, err), fmt.Errorf("failed for %s", uuid))
+		}
+		a.terminals[uuid] = term
+	}
+	return nil
+}
+
+func (a *agent) terminalClose(uuid, cmd string) errors.Error {
+	if _, ok := a.terminals[uuid]; ok {
+		delete(a.terminals, uuid)
+		return nil
+	}
+	return errors.Wrap(errNoSuchTerminalSession, fmt.Errorf("session :%s", uuid))
+}
+
+func (a *agent) terminalWrite(uuid, cmd string) errors.Error {
+	if err := a.terminalOpen(uuid, cmd); err != nil {
+		return err
+	}
+	term := a.terminals[uuid]
+	p := []byte(cmd)
+	return term.Send(p)
 }
 
 func (a *agent) processResponse(uuid, cmd, resp string) errors.Error {
@@ -328,7 +377,10 @@ func (a *agent) Publish(crtlChan, payload string) errors.Error {
 	token.Wait()
 
 	err := token.Error()
-	return errors.New(err.Error())
+	if err != nil {
+		return errors.New(err.Error())
+	}
+	return nil
 }
 
 func (a *agent) Write(p []byte) (int, error) {

@@ -27,9 +27,10 @@ type Session interface {
 	Send(p []byte) errors.Error
 }
 
-func NewSession(w io.Writer) (Session, errors.Error) {
+func NewSession(w io.Writer, logger logger.Logger) (Session, errors.Error) {
 	t := &term{
 		writer: w,
+		logger: logger,
 	}
 
 	// Prepare the command to execute.
@@ -64,4 +65,5 @@ func (t *term) Send(p []byte) errors.Error {
 		return errors.New(err.Error())
 	}
 	return nil
+
 }

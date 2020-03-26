@@ -67,7 +67,7 @@ func (b *broker) Subscribe() error {
 	if err := s.Error(); s.Wait() && err != nil {
 		return err
 	}
-	topic = fmt.Sprintf("channels/%s/messages/%s/#", b.channel, reqTopic)
+	topic = fmt.Sprintf("channels/%s/messages/%s/#", b.channel, servTopic)
 	if b.nats != nil {
 		n := b.client.Subscribe(topic, 0, b.handleNatsMsg)
 		if err := n.Error(); n.Wait() && err != nil {
