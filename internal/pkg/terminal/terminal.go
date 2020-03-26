@@ -126,4 +126,5 @@ func (t *term) Send(p []byte) error {
 		return errors.New(err.Error())
 	}
 	return nil
+
 }

@@ -166,13 +166,6 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		serv.Update()
 	})
 
-	term, err := terminal.NewSession(ag)
-	if err != nil {
-		return ag, errors.Wrap(errFailedCreateService, err)
-	}
-
-	ag.terminal = term
-
 	if err != nil {
 		return ag, errors.Wrap(errNatsSubscribing, err)
 	}
