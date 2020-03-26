@@ -263,7 +263,11 @@ func (a *agent) Terminal(uuid, cmdStr string) errors.Error {
 	if len(cmdArgs) < 1 {
 		return errInvalidCommand
 	}
-	cmd := base64.StdEncoding.DecodeString() [0]
+	b, err := base64.StdEncoding.DecodeString(cmdArgs[0])
+	if err != nil {
+		return errors.New(err.Error())
+	}
+	cmd := string(b)
 	switch cmd {
 	case char:
 		if err := a.terminalWrite(uuid, cmd); err != nil {
