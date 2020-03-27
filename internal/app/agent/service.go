@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os/exec"
 	"sort"
 	"strings"
@@ -17,11 +16,11 @@ import (
 	"github.com/mainflux/agent/internal/app/agent/services"
 	"github.com/mainflux/agent/internal/pkg/config"
 	"github.com/mainflux/agent/internal/pkg/terminal"
+	"github.com/mainflux/agent/internal/pkg/util"
 	"github.com/mainflux/agent/pkg/edgex"
 	exp "github.com/mainflux/export/pkg/config"
 	"github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
-	"github.com/mainflux/senml"
 	"github.com/nats-io/nats.go"
 )
 
@@ -34,9 +33,10 @@ const (
 	view = "view"
 	save = "save"
 
-	char  = "c"
-	open  = "open"
-	close = "close"
+	char    = "c"
+	open    = "open"
+	close   = "close"
+	control = "control"
 
 	export = "export"
 )
@@ -107,8 +107,6 @@ type Service interface {
 
 	// Publish message
 	Publish(string, string) errors.Error
-
-	io.Writer
 }
 
 var _ Service = (*agent)(nil)
@@ -181,7 +179,7 @@ func (a *agent) Execute(uuid, cmd string) (string, errors.Error) {
 		return "", errors.Wrap(errFailedExecute, err)
 	}
 
-	payload, err := encodeSenML(uuid, cmdArr[0], string(out))
+	payload, err := util.EncodeSenML(uuid, cmdArr[0], string(out))
 	if err != nil {
 		return "", errors.Wrap(errFailedEncode, err)
 	}
@@ -259,26 +257,30 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) errors.Error {
 }
 
 func (a *agent) Terminal(uuid, cmdStr string) errors.Error {
-	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
-	if len(cmdArgs) < 1 {
-		return errInvalidCommand
-	}
-	b, err := base64.StdEncoding.DecodeString(cmdArgs[0])
+	b, err := base64.StdEncoding.DecodeString(cmdStr)
 	if err != nil {
 		return errors.New(err.Error())
 	}
+	cmdArgs := strings.Split(strings.Replace(string(b), " ", "", -1), ",")
+	fmt.Printf("cmdStr:%s\n", cmdStr)
+	if len(cmdArgs) < 1 {
+		return errInvalidCommand
+	}
+
+	ch := cmdArgs[1]
 	cmd := string(b)
+	fmt.Printf("op:%s, %s\n", cmd, ch)
 	switch cmd {
 	case char:
-		if err := a.terminalWrite(uuid, cmd); err != nil {
+		if err := a.terminalWrite(uuid, ch); err != nil {
 			return err
 		}
 	case open:
-		if err := a.terminalOpen(uuid, cmd); err != nil {
+		if err := a.terminalOpen(uuid, ch); err != nil {
 			return err
 		}
 	case close:
-		if err := a.terminalClose(uuid, cmd); err != nil {
+		if err := a.terminalClose(uuid, ch); err != nil {
 			return err
 		}
 	}
@@ -287,18 +289,20 @@ func (a *agent) Terminal(uuid, cmdStr string) errors.Error {
 
 func (a *agent) terminalOpen(uuid, cmd string) errors.Error {
 	if _, ok := a.terminals[uuid]; !ok {
-		term, err := terminal.NewSession(a, a.logger)
+		term, err := terminal.NewSession(uuid, a.Publish, a.logger)
 		if err != nil {
 			return errors.Wrap(errors.Wrap(errFailedToCreateTerminalSession, err), fmt.Errorf("failed for %s", uuid))
 		}
 		a.terminals[uuid] = term
 	}
+	a.logger.Debug(fmt.Sprintf("Opened terminal session %s", uuid))
 	return nil
 }
 
 func (a *agent) terminalClose(uuid, cmd string) errors.Error {
 	if _, ok := a.terminals[uuid]; ok {
 		delete(a.terminals, uuid)
+		a.logger.Debug(fmt.Sprintf("Clossing terminal session %s", uuid))
 		return nil
 	}
 	return errors.Wrap(errNoSuchTerminalSession, fmt.Errorf("session :%s", uuid))
@@ -314,7 +318,7 @@ func (a *agent) terminalWrite(uuid, cmd string) errors.Error {
 }
 
 func (a *agent) processResponse(uuid, cmd, resp string) errors.Error {
-	payload, err := encodeSenML(uuid, cmd, resp)
+	payload, err := util.EncodeSenML(uuid, cmd, resp)
 	if err != nil {
 		return errors.Wrap(errFailedEncode, err)
 	}
@@ -375,46 +379,21 @@ func (a *agent) Services() []ServiceInfo {
 	return services
 }
 
-func (a *agent) Publish(crtlChan, payload string) errors.Error {
-	topic := fmt.Sprintf("channels/%s/messages/res", crtlChan)
-	token := a.mqttClient.Publish(topic, 0, false, payload)
+func (a *agent) Publish(channel, payload string) errors.Error {
+	ch := a.config.Agent.Channels.Data
+	switch channel {
+	case control:
+		ch = a.config.Agent.Channels.Control
+	default:
+		ch = a.config.Agent.Channels.Data
+	}
+	mqtt := a.config.Agent.MQTT
+	topic := fmt.Sprintf("channels/%s/messages/res", ch)
+	token := a.mqttClient.Publish(topic, mqtt.QoS, mqtt.Retain, payload)
 	token.Wait()
-
 	err := token.Error()
 	if err != nil {
 		return errors.New(err.Error())
 	}
 	return nil
-}
-
-func (a *agent) Write(p []byte) (int, error) {
-	n := len(p)
-	payload, err := encodeSenML("XXX", "TEST", string(p))
-	if err != nil {
-		return n, err
-	}
-	if err := a.Publish(a.config.Agent.Channels.Control, string(payload)); err != nil {
-		return n, err
-	}
-	return n, nil
-
-}
-
-func encodeSenML(bn, n, sv string) ([]byte, error) {
-	s := senml.Pack{
-		Records: []senml.Record{
-			senml.Record{
-				BaseName:    bn,
-				Name:        n,
-				StringValue: &sv,
-			},
-		},
-	}
-
-	payload, err := senml.Encode(s, senml.JSON)
-	if err != nil {
-		return nil, err
-	}
-
-	return payload, nil
 }

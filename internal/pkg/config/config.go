@@ -37,7 +37,7 @@ type MQTTConf struct {
 	MTLS        bool            `json:"mtls" toml:"mtls" mapstructure:"mtls"`
 	SkipTLSVer  bool            `json:"skip_tls_ver" toml:"skip_tls_ver" mapstructure:"skip_tls_ver"`
 	Retain      bool            `json:"retain" toml:"retain" mapstructure:"retain"`
-	QoS         int             `json:"qos" toml:"qos" mapstructure:"qos"`
+	QoS         byte            `json:"qos" toml:"qos" mapstructure:"qos"`
 	CAPath      string          `json:"ca_path" toml:"ca_path" mapstructure:"ca_path"`
 	CertPath    string          `json:"cert_path" toml:"cert_path" mapstructure:"cert_path"`
 	PrivKeyPath string          `json:"priv_key_path" toml:"priv_key_path" mapstructure:"priv_key_path"`
