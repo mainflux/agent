@@ -262,7 +262,7 @@ func (a *agent) Terminal(uuid, cmdStr string) errors.Error {
 	if err != nil {
 		return errors.New(err.Error())
 	}
-	cmdArgs := strings.Split(strings.Replace(string(b), " ", "", -1), ",")
+	cmdArgs := strings.Split(string(b), ",")
 	fmt.Printf("cmdStr:%s\n", cmdStr)
 	if len(cmdArgs) < 1 {
 		return errInvalidCommand
