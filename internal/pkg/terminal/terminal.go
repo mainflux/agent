@@ -66,6 +66,7 @@ func NewSession(uuid string, publish func(channel, payload string) error, logger
 		n, err := io.Copy(t, t.ptmx)
 		if err != nil {
 			t.logger.Error(fmt.Sprintf("Error sending data: %s", err))
+			return
 		}
 		t.logger.Debug(fmt.Sprintf("Data being sent: %d", n))
 	}()

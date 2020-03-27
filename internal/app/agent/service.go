@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os/exec"
 	"sort"
 	"strings"
@@ -109,8 +108,6 @@ type Service interface {
 
 	// Publish message
 	Publish(string, string) errors.Error
-
-	io.Writer
 }
 
 var _ Service = (*agent)(nil)
