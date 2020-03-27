@@ -37,6 +37,7 @@ const (
 	open    = "open"
 	close   = "close"
 	control = "control"
+	term    = "term"
 
 	export = "export"
 )
@@ -184,7 +185,7 @@ func (a *agent) Execute(uuid, cmd string) (string, errors.Error) {
 		return "", errors.Wrap(errFailedEncode, err)
 	}
 
-	if err := a.Publish(a.config.Agent.Channels.Control, string(payload)); err != nil {
+	if err := a.Publish(control, string(payload)); err != nil {
 		return "", errors.Wrap(errFailedToPublish, err)
 	}
 
@@ -267,8 +268,8 @@ func (a *agent) Terminal(uuid, cmdStr string) errors.Error {
 		return errInvalidCommand
 	}
 
+	cmd := cmdArgs[0]
 	ch := cmdArgs[1]
-	cmd := string(b)
 	fmt.Printf("op:%s, %s\n", cmd, ch)
 	switch cmd {
 	case char:
@@ -322,7 +323,7 @@ func (a *agent) processResponse(uuid, cmd, resp string) errors.Error {
 	if err != nil {
 		return errors.Wrap(errFailedEncode, err)
 	}
-	if err := a.Publish(a.config.Agent.Channels.Control, string(payload)); err != nil {
+	if err := a.Publish(control, string(payload)); err != nil {
 		return errors.Wrap(errFailedToPublish, err)
 	}
 	return nil
@@ -380,15 +381,16 @@ func (a *agent) Services() []ServiceInfo {
 }
 
 func (a *agent) Publish(channel, payload string) errors.Error {
-	ch := a.config.Agent.Channels.Data
+	topic := fmt.Sprintf("channels/%s/messages/res", a.config.Agent.Channels.Data)
 	switch channel {
 	case control:
-		ch = a.config.Agent.Channels.Control
+		topic = fmt.Sprintf("channels/%s/messages/res", a.config.Agent.Channels.Control)
+	case term:
+		topic = fmt.Sprintf("channels/%s/messages/res/term", a.config.Agent.Channels.Control)
 	default:
-		ch = a.config.Agent.Channels.Data
+		topic = fmt.Sprintf("channels/%s/messages/res", a.config.Agent.Channels.Data)
 	}
 	mqtt := a.config.Agent.MQTT
-	topic := fmt.Sprintf("channels/%s/messages/res", ch)
 	token := a.mqttClient.Publish(topic, mqtt.QoS, mqtt.Retain, payload)
 	token.Wait()
 	err := token.Error()

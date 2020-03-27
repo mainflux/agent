@@ -57,19 +57,19 @@ func NewSession(uuid string, publish func(channel, payload string) errors.Error,
 		t.logger.Debug(fmt.Sprintf("Data being sent: %d", n))
 	}()
 
-	go func() {
-		stderr, err := c.StderrPipe()
-		if err != nil {
-			t.logger.Error(fmt.Sprintf("Error opening pipe: %s", err))
-			return
-		}
-		n, err := io.Copy(t, stderr)
-		if err != nil {
-			t.logger.Error(fmt.Sprintf("Error sending data: %s", err))
-			return
-		}
-		t.logger.Debug(fmt.Sprintf("Data being sent: %d", n))
-	}()
+	// go func() {
+	// 	stderr, err := c.StderrPipe()
+	// 	if err != nil {
+	// 		t.logger.Error(fmt.Sprintf("Error opening pipe: %s", err))
+	// 		return
+	// 	}
+	// 	n, err := io.Copy(t, stderr)
+	// 	if err != nil {
+	// 		t.logger.Error(fmt.Sprintf("Error sending data: %s", err))
+	// 		return
+	// 	}
+	// 	t.logger.Debug(fmt.Sprintf("Data being sent: %d", n))
+	// }()
 
 	return t, nil
 }
@@ -80,7 +80,7 @@ func (t *term) Write(p []byte) (int, error) {
 	if err != nil {
 		return n, err
 	}
-	if err := t.publish("control", string(payload)); err != nil {
+	if err := t.publish("term", string(payload)); err != nil {
 		return n, err
 	}
 	return n, nil
