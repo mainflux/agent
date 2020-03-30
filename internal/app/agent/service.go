@@ -86,28 +86,28 @@ var (
 // Service specifies API for publishing messages and subscribing to topics.
 type Service interface {
 	// Execute command
-	Execute(string, string) (string, errors.Error)
+	Execute(string, string) (string, error)
 
 	// Control command
-	Control(string, string) errors.Error
+	Control(string, string) error
 
 	// Update configuration file
-	AddConfig(config.Config) errors.Error
+	AddConfig(config.Config) error
 
 	// Config returns Config struct created from config file
 	Config() config.Config
 
 	// Saves config file
-	ServiceConfig(uuid, cmdStr string) errors.Error
+	ServiceConfig(uuid, cmdStr string) error
 
 	// Services returns service list
 	Services() []ServiceInfo
 
 	// Terminal used for terminal control of gateway
-	Terminal(string, string) errors.Error
+	Terminal(string, string) error
 
 	// Publish message
-	Publish(string, string) errors.Error
+	Publish(string, string) error
 }
 
 var _ Service = (*agent)(nil)
@@ -171,7 +171,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 
 }
 
-func (a *agent) Execute(uuid, cmd string) (string, errors.Error) {
+func (a *agent) Execute(uuid, cmd string) (string, error) {
 	cmdArr := strings.Split(strings.Replace(cmd, " ", "", -1), ",")
 	if len(cmdArr) < 2 {
 		return "", errInvalidCommand
@@ -194,7 +194,7 @@ func (a *agent) Execute(uuid, cmd string) (string, errors.Error) {
 	return string(payload), nil
 }
 
-func (a *agent) Control(uuid, cmdStr string) errors.Error {
+func (a *agent) Control(uuid, cmdStr string) error {
 	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
 	if len(cmdArgs) < 2 {
 		return errInvalidCommand
@@ -231,7 +231,7 @@ func (a *agent) Control(uuid, cmdStr string) errors.Error {
 // Example of creation:
 // 	b, _ := toml.Marshal(cfg)
 // 	config_file_content := base64.StdEncoding.EncodeToString(b)
-func (a *agent) ServiceConfig(uuid, cmdStr string) errors.Error {
+func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
 	if len(cmdArgs) < 1 {
 		return errInvalidCommand
@@ -341,7 +341,7 @@ func (a *agent) processResponse(uuid, cmd, resp string) error {
 	return nil
 }
 
-func (a *agent) saveConfig(service, fileName, fileCont string) errors.Error {
+func (a *agent) saveConfig(service, fileName, fileCont string) error {
 	switch service {
 	case export:
 		content, err := base64.StdEncoding.DecodeString(fileCont)
