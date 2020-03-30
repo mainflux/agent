@@ -68,7 +68,7 @@ var (
 	errFailedToPublish = errors.New("failed to publish")
 
 	// errEdgexFailed
-	errEdgexFailed = errors.New("edgex operation failed")
+	errEdgexFailed = errors.New("failed to execute edgex operation")
 
 	// errFailedExecute
 	errFailedExecute = errors.New("failed to execute command")
@@ -171,7 +171,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 
 func (a *agent) Execute(uuid, cmd string) (string, error) {
 	cmdArr := strings.Split(strings.Replace(cmd, " ", "", -1), ",")
-	if len(cmd) < 1 {
+	if len(cmdArr) < 1 {
 		return "", errInvalidCommand
 	}
 

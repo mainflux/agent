@@ -59,7 +59,6 @@ func NewSession(uuid string, publish func(channel, payload string) error, logger
 	if err != nil {
 		return t, errors.New(err.Error())
 	}
-
 	t.ptmx = ptmx
 
 	// Copy output to mqtt
