@@ -270,7 +270,6 @@ func (a *agent) Terminal(uuid, cmdStr string) errors.Error {
 
 	cmd := cmdArgs[0]
 	ch := cmdArgs[1]
-	fmt.Printf("op:%s, %s\n", cmd, ch)
 	switch cmd {
 	case char:
 		if err := a.terminalWrite(uuid, ch); err != nil {
@@ -295,6 +294,15 @@ func (a *agent) terminalOpen(uuid, cmd string) errors.Error {
 			return errors.Wrap(errors.Wrap(errFailedToCreateTerminalSession, err), fmt.Errorf("failed for %s", uuid))
 		}
 		a.terminals[uuid] = term
+		go func() {
+			for _ = range term.IsDone() {
+				// Terminal is inactive, should be closed
+				a.logger.Debug((fmt.Sprintf("Closing terminal session %s", uuid)))
+				a.terminalClose(uuid, "")
+				delete(a.terminals, uuid)
+				return
+			}
+		}()
 	}
 	a.logger.Debug(fmt.Sprintf("Opened terminal session %s", uuid))
 	return nil
@@ -303,7 +311,7 @@ func (a *agent) terminalOpen(uuid, cmd string) errors.Error {
 func (a *agent) terminalClose(uuid, cmd string) errors.Error {
 	if _, ok := a.terminals[uuid]; ok {
 		delete(a.terminals, uuid)
-		a.logger.Debug(fmt.Sprintf("Clossing terminal session %s", uuid))
+		a.logger.Debug(fmt.Sprintf("Terminal session: %s closed", uuid))
 		return nil
 	}
 	return errors.Wrap(errNoSuchTerminalSession, fmt.Errorf("session :%s", uuid))

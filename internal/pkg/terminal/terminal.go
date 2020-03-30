@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"sync"
+	"time"
 
 	"github.com/creack/pty"
 
@@ -14,7 +16,10 @@ import (
 	"github.com/mainflux/mainflux/logger"
 )
 
-const terminal = "term"
+const (
+	timeoutInterval = 30
+	terminal        = "term"
+)
 
 var (
 	errTerminalSessionStart = errors.New("failed to start terminal session")
@@ -24,12 +29,18 @@ type term struct {
 	uuid    string
 	ptmx    *os.File
 	writer  io.Writer
+	done    chan bool
+	topic   string
+	timeout int
+	timer   *time.Ticker
 	publish func(channel, payload string) errors.Error
 	logger  logger.Logger
+	mu      sync.Mutex
 }
 
 type Session interface {
 	Send(p []byte) errors.Error
+	IsDone() chan bool
 	io.Writer
 }
 
@@ -38,8 +49,11 @@ func NewSession(uuid string, publish func(channel, payload string) errors.Error,
 		logger:  logger,
 		uuid:    uuid,
 		publish: publish,
+		timeout: timeoutInterval,
+		topic:   fmt.Sprintf("term/%s", uuid),
+		done:    make(chan bool),
 	}
-	// Prepare the command to execute.
+
 	c := exec.Command("bash")
 	// Start the command with a pty.
 	ptmx, err := pty.Start(c)
@@ -49,6 +63,7 @@ func NewSession(uuid string, publish func(channel, payload string) errors.Error,
 
 	t.ptmx = ptmx
 	// Copy output to mqtt
+
 	go func() {
 		n, err := io.Copy(t, t.ptmx)
 		if err != nil {
@@ -57,17 +72,45 @@ func NewSession(uuid string, publish func(channel, payload string) errors.Error,
 		t.logger.Debug(fmt.Sprintf("Data being sent: %d", n))
 	}()
 
+	t.timer = time.NewTicker(1 * time.Second)
+
+	go func() {
+		for range t.timer.C {
+			t.updateCounter(0)
+		}
+		t.logger.Debug("exiting timer routine")
+	}()
+
 	return t, nil
 }
 
+func (t *term) updateCounter(timeout int) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if timeout > 0 {
+		t.timeout = timeout
+		return
+	}
+	t.timeout = t.timeout - 1
+	if t.timeout == 0 {
+		t.done <- true
+		t.timer.Stop()
+	}
+}
+
+func (t *term) IsDone() chan bool {
+	return t.done
+}
+
 func (t *term) Write(p []byte) (int, error) {
+	t.updateCounter(timeoutInterval)
 	n := len(p)
 	payload, err := util.EncodeSenML(t.uuid, terminal, string(p))
 	if err != nil {
 		return n, err
 	}
-	topic := fmt.Sprintf("term/%s", t.uuid)
-	if err := t.publish(topic, string(payload)); err != nil {
+
+	if err := t.publish(t.topic, string(payload)); err != nil {
 		return n, err
 	}
 	return n, nil
