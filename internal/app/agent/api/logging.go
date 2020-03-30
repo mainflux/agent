@@ -120,16 +120,3 @@ func (lm loggingMiddleware) Terminal(uuid, cmdStr string) (err errors.Error) {
 
 	return lm.svc.Terminal(uuid, cmdStr)
 }
-
-// func (lm loggingMiddleware) Write(p []byte) (n int, err error) {
-// 	defer func(begin time.Time) {
-// 		message := fmt.Sprintf("Method write for payload %s took %s to complete", p, time.Since(begin))
-// 		if err != nil {
-// 			lm.logger.Warn(fmt.Sprintf("%s with error: %s.", message, err))
-// 			return
-// 		}
-// 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
-// 	}(time.Now())
-
-// 	return lm.svc.Write(p)
-// }
