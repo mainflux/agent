@@ -11,7 +11,6 @@ import (
 	"github.com/go-kit/kit/metrics"
 	"github.com/mainflux/agent/internal/app/agent"
 	"github.com/mainflux/agent/internal/pkg/config"
-	"github.com/mainflux/mainflux/errors"
 )
 
 var _ agent.Service = (*metricsMiddleware)(nil)
@@ -31,7 +30,7 @@ func MetricsMiddleware(svc agent.Service, counter metrics.Counter, latency metri
 	}
 }
 
-func (ms *metricsMiddleware) Execute(uuid, cmdStr string) (string, errors.Error) {
+func (ms *metricsMiddleware) Execute(uuid, cmdStr string) (string, error) {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "execute").Add(1)
 		ms.latency.With("method", "execute").Observe(time.Since(begin).Seconds())
@@ -40,7 +39,7 @@ func (ms *metricsMiddleware) Execute(uuid, cmdStr string) (string, errors.Error)
 	return ms.svc.Execute(uuid, cmdStr)
 }
 
-func (ms *metricsMiddleware) Control(uuid, cmdStr string) errors.Error {
+func (ms *metricsMiddleware) Control(uuid, cmdStr string) error {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "control").Add(1)
 		ms.latency.With("method", "control").Observe(time.Since(begin).Seconds())
@@ -49,7 +48,7 @@ func (ms *metricsMiddleware) Control(uuid, cmdStr string) errors.Error {
 	return ms.svc.Control(uuid, cmdStr)
 }
 
-func (ms *metricsMiddleware) AddConfig(ec config.Config) errors.Error {
+func (ms *metricsMiddleware) AddConfig(ec config.Config) error {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "add_config").Add(1)
 		ms.latency.With("method", "add_config").Observe(time.Since(begin).Seconds())
@@ -58,7 +57,7 @@ func (ms *metricsMiddleware) AddConfig(ec config.Config) errors.Error {
 	return ms.svc.AddConfig(ec)
 }
 
-func (ms *metricsMiddleware) ServiceConfig(uuid, cmdStr string) errors.Error {
+func (ms *metricsMiddleware) ServiceConfig(uuid, cmdStr string) error {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "service_config").Add(1)
 		ms.latency.With("method", "service_config").Observe(time.Since(begin).Seconds())
@@ -85,7 +84,7 @@ func (ms *metricsMiddleware) Services() []agent.ServiceInfo {
 	return ms.svc.Services()
 }
 
-func (ms *metricsMiddleware) Publish(topic, payload string) errors.Error {
+func (ms *metricsMiddleware) Publish(topic, payload string) error {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "publish").Add(1)
 		ms.latency.With("method", "publish").Observe(time.Since(begin).Seconds())
@@ -94,7 +93,7 @@ func (ms *metricsMiddleware) Publish(topic, payload string) errors.Error {
 	return ms.svc.Publish(topic, payload)
 }
 
-func (ms *metricsMiddleware) Terminal(topic, payload string) errors.Error {
+func (ms *metricsMiddleware) Terminal(topic, payload string) error {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "publish").Add(1)
 		ms.latency.With("method", "publish").Observe(time.Since(begin).Seconds())

@@ -75,7 +75,7 @@ func New(sc ServerConf, cc ChanConf, ec EdgexConf, lc LogConf, mc MQTTConf, file
 }
 
 // Save - store config in a file
-func (c *Config) Save() errors.Error {
+func (c *Config) Save() error {
 	b, err := toml.Marshal(*c)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error reading config file: %s", err))
@@ -89,7 +89,7 @@ func (c *Config) Save() errors.Error {
 }
 
 // Read - retrieve config from a file
-func (c *Config) Read() errors.Error {
+func (c *Config) Read() error {
 	data, err := ioutil.ReadFile(c.File)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error reading config file: %s", err))

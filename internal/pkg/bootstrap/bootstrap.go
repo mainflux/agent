@@ -51,7 +51,7 @@ type infraConfig struct {
 }
 
 // Bootstrap - Retrieve device config
-func Bootstrap(cfg Config, logger log.Logger, file string) errors.Error {
+func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	retries, err := strconv.ParseUint(cfg.Retries, 10, 64)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Invalid BOOTSTRAP_RETRIES value: %s", err))
@@ -129,7 +129,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) errors.Error {
 	return c.Save()
 }
 
-func getConfig(bsID, bsKey, bsSvrURL string, logger log.Logger) (deviceConfig, errors.Error) {
+func getConfig(bsID, bsKey, bsSvrURL string, logger log.Logger) (deviceConfig, error) {
 	// Get the SystemCertPool, continue with an empty pool on error
 	rootCAs, err := x509.SystemCertPool()
 	if err != nil {

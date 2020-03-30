@@ -86,28 +86,28 @@ var (
 // Service specifies API for publishing messages and subscribing to topics.
 type Service interface {
 	// Execute command
-	Execute(string, string) (string, errors.Error)
+	Execute(string, string) (string, error)
 
 	// Control command
-	Control(string, string) errors.Error
+	Control(string, string) error
 
 	// Update configuration file
-	AddConfig(config.Config) errors.Error
+	AddConfig(config.Config) error
 
 	// Config returns Config struct created from config file
 	Config() config.Config
 
 	// Saves config file
-	ServiceConfig(uuid, cmdStr string) errors.Error
+	ServiceConfig(uuid, cmdStr string) error
 
 	// Services returns service list
 	Services() []ServiceInfo
 
 	// Terminal used for terminal control of gateway
-	Terminal(string, string) errors.Error
+	Terminal(string, string) error
 
 	// Publish message
-	Publish(string, string) errors.Error
+	Publish(string, string) error
 }
 
 var _ Service = (*agent)(nil)
@@ -130,7 +130,7 @@ type agent struct {
 }
 
 // New returns agent service implementation.
-func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, logger log.Logger) (Service, errors.Error) {
+func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, logger log.Logger) (Service, error) {
 	ag := &agent{
 		mqttClient:  mc,
 		edgexClient: ec,
@@ -169,7 +169,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 
 }
 
-func (a *agent) Execute(uuid, cmd string) (string, errors.Error) {
+func (a *agent) Execute(uuid, cmd string) (string, error) {
 	cmdArr := strings.Split(strings.Replace(cmd, " ", "", -1), ",")
 	if len(cmd) < 1 {
 		return "", errInvalidCommand
@@ -192,7 +192,7 @@ func (a *agent) Execute(uuid, cmd string) (string, errors.Error) {
 	return string(payload), nil
 }
 
-func (a *agent) Control(uuid, cmdStr string) errors.Error {
+func (a *agent) Control(uuid, cmdStr string) error {
 	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
 	if len(cmdArgs) < 2 {
 		return errInvalidCommand
@@ -229,7 +229,7 @@ func (a *agent) Control(uuid, cmdStr string) errors.Error {
 // Example of creation:
 // 	b, _ := toml.Marshal(cfg)
 // 	config_file_content := base64.StdEncoding.EncodeToString(b)
-func (a *agent) ServiceConfig(uuid, cmdStr string) errors.Error {
+func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
 	if len(cmdArgs) < 1 {
 		return errInvalidCommand
@@ -257,13 +257,12 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) errors.Error {
 	return a.processResponse(uuid, cmd, resp)
 }
 
-func (a *agent) Terminal(uuid, cmdStr string) errors.Error {
+func (a *agent) Terminal(uuid, cmdStr string) error {
 	b, err := base64.StdEncoding.DecodeString(cmdStr)
 	if err != nil {
 		return errors.New(err.Error())
 	}
 	cmdArgs := strings.Split(string(b), ",")
-	fmt.Printf("cmdStr:%s\n", cmdStr)
 	if len(cmdArgs) < 1 {
 		return errInvalidCommand
 	}
@@ -287,11 +286,11 @@ func (a *agent) Terminal(uuid, cmdStr string) errors.Error {
 	return nil
 }
 
-func (a *agent) terminalOpen(uuid, cmd string) errors.Error {
+func (a *agent) terminalOpen(uuid, cmd string) error {
 	if _, ok := a.terminals[uuid]; !ok {
 		term, err := terminal.NewSession(uuid, a.Publish, a.logger)
 		if err != nil {
-			return errors.Wrap(errors.Wrap(errFailedToCreateTerminalSession, err), fmt.Errorf("failed for %s", uuid))
+			return errors.Wrap(errors.Wrap(errFailedToCreateTerminalSession, fmt.Errorf("failed for %s", uuid)), err)
 		}
 		a.terminals[uuid] = term
 		go func() {
@@ -308,7 +307,7 @@ func (a *agent) terminalOpen(uuid, cmd string) errors.Error {
 	return nil
 }
 
-func (a *agent) terminalClose(uuid, cmd string) errors.Error {
+func (a *agent) terminalClose(uuid, cmd string) error {
 	if _, ok := a.terminals[uuid]; ok {
 		delete(a.terminals, uuid)
 		a.logger.Debug(fmt.Sprintf("Terminal session: %s closed", uuid))
@@ -317,7 +316,7 @@ func (a *agent) terminalClose(uuid, cmd string) errors.Error {
 	return errors.Wrap(errNoSuchTerminalSession, fmt.Errorf("session :%s", uuid))
 }
 
-func (a *agent) terminalWrite(uuid, cmd string) errors.Error {
+func (a *agent) terminalWrite(uuid, cmd string) error {
 	if err := a.terminalOpen(uuid, cmd); err != nil {
 		return err
 	}
@@ -326,7 +325,7 @@ func (a *agent) terminalWrite(uuid, cmd string) errors.Error {
 	return term.Send(p)
 }
 
-func (a *agent) processResponse(uuid, cmd, resp string) errors.Error {
+func (a *agent) processResponse(uuid, cmd, resp string) error {
 	payload, err := util.EncodeSenML(uuid, cmd, resp)
 	if err != nil {
 		return errors.Wrap(errFailedEncode, err)
@@ -337,7 +336,7 @@ func (a *agent) processResponse(uuid, cmd, resp string) errors.Error {
 	return nil
 }
 
-func (a *agent) saveConfig(service, fileName, fileCont string) errors.Error {
+func (a *agent) saveConfig(service, fileName, fileCont string) error {
 	switch service {
 	case export:
 		content, err := base64.StdEncoding.DecodeString(fileCont)
@@ -361,7 +360,7 @@ func (a *agent) saveConfig(service, fileName, fileCont string) errors.Error {
 	return errors.New(err.Error())
 }
 
-func (a *agent) AddConfig(c config.Config) errors.Error {
+func (a *agent) AddConfig(c config.Config) error {
 	err := c.Save()
 	return errors.New(err.Error())
 }
@@ -388,7 +387,7 @@ func (a *agent) Services() []ServiceInfo {
 	return services
 }
 
-func (a *agent) Publish(t, payload string) errors.Error {
+func (a *agent) Publish(t, payload string) error {
 	topic := a.getTopic(t)
 	mqtt := a.config.Agent.MQTT
 	token := a.mqttClient.Publish(topic, mqtt.QoS, mqtt.Retain, payload)

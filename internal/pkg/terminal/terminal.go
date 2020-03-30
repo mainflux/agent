@@ -33,18 +33,18 @@ type term struct {
 	topic   string
 	timeout int
 	timer   *time.Ticker
-	publish func(channel, payload string) errors.Error
+	publish func(channel, payload string) error
 	logger  logger.Logger
 	mu      sync.Mutex
 }
 
 type Session interface {
-	Send(p []byte) errors.Error
+	Send(p []byte) error
 	IsDone() chan bool
 	io.Writer
 }
 
-func NewSession(uuid string, publish func(channel, payload string) errors.Error, logger logger.Logger) (Session, errors.Error) {
+func NewSession(uuid string, publish func(channel, payload string) error, logger logger.Logger) (Session, error) {
 	t := &term{
 		logger:  logger,
 		uuid:    uuid,
@@ -55,15 +55,14 @@ func NewSession(uuid string, publish func(channel, payload string) errors.Error,
 	}
 
 	c := exec.Command("bash")
-	// Start the command with a pty.
 	ptmx, err := pty.Start(c)
 	if err != nil {
 		return t, errors.New(err.Error())
 	}
 
 	t.ptmx = ptmx
-	// Copy output to mqtt
 
+	// Copy output to mqtt
 	go func() {
 		n, err := io.Copy(t, t.ptmx)
 		if err != nil {
@@ -116,14 +115,12 @@ func (t *term) Write(p []byte) (int, error) {
 	return n, nil
 }
 
-func (t *term) Send(p []byte) errors.Error {
+func (t *term) Send(p []byte) error {
 	in := bytes.NewReader(p)
 	nr, err := io.Copy(t.ptmx, in)
 	t.logger.Debug(fmt.Sprintf("Writtern to ptmx: %d", nr))
-	//
 	if err != nil {
 		return errors.New(err.Error())
 	}
 	return nil
-
 }
