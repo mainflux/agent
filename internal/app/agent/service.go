@@ -37,7 +37,7 @@ const (
 	open    = "open"
 	close   = "close"
 	control = "control"
-	term    = "term"
+	data    = "data"
 
 	export = "export"
 )
@@ -380,16 +380,8 @@ func (a *agent) Services() []ServiceInfo {
 	return services
 }
 
-func (a *agent) Publish(channel, payload string) errors.Error {
-	topic := fmt.Sprintf("channels/%s/messages/res", a.config.Agent.Channels.Data)
-	switch channel {
-	case control:
-		topic = fmt.Sprintf("channels/%s/messages/res", a.config.Agent.Channels.Control)
-	case term:
-		topic = fmt.Sprintf("channels/%s/messages/res/term", a.config.Agent.Channels.Control)
-	default:
-		topic = fmt.Sprintf("channels/%s/messages/res", a.config.Agent.Channels.Data)
-	}
+func (a *agent) Publish(t, payload string) errors.Error {
+	topic := a.getTopic(t)
 	mqtt := a.config.Agent.MQTT
 	token := a.mqttClient.Publish(topic, mqtt.QoS, mqtt.Retain, payload)
 	token.Wait()
@@ -398,4 +390,16 @@ func (a *agent) Publish(channel, payload string) errors.Error {
 		return errors.New(err.Error())
 	}
 	return nil
+}
+
+func (a *agent) getTopic(topic string) (t string) {
+	switch topic {
+	case control:
+		t = fmt.Sprintf("channels/%s/messages/res", a.config.Agent.Channels.Control)
+	case data:
+		t = fmt.Sprintf("channels/%s/messages/res", a.config.Agent.Channels.Data)
+	default:
+		t = fmt.Sprintf("channels/%s/messages/res/%s", a.config.Agent.Channels.Control, topic)
+	}
+	return t
 }
