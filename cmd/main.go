@@ -80,7 +80,8 @@ const (
 )
 
 func main() {
-	logger, err := logger.New(os.Stdout, defLogLevel)
+	logLvl := mainflux.Env(envLogLevel, defLogLevel)
+	logger, err := logger.New(os.Stdout, logLvl)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("Failed to create logger: %s", err.Error()))
 	}
@@ -150,6 +151,7 @@ func main() {
 
 func loadConfig(logger logger.Logger) (config.Config, error) {
 	file := mainflux.Env(envConfigFile, defConfigFile)
+
 	bcfg := bootstrap.Config{
 		URL:           mainflux.Env(envBootstrapURL, defBootstrapURL),
 		ID:            mainflux.Env(envBootstrapID, defBootstrapID),
@@ -165,7 +167,7 @@ func loadConfig(logger logger.Logger) (config.Config, error) {
 
 	sc := config.ServerConf{
 		NatsURL: mainflux.Env(envNatsURL, defNatsURL),
-		Port:    mainflux.Env(envLogLevel, defLogLevel),
+		Port:    mainflux.Env(envHTTPPort, defHTTPPort),
 	}
 	cc := config.ChanConf{
 		Control: mainflux.Env(envCtrlChan, defCtrlChan),
