@@ -275,18 +275,18 @@ func (a *agent) Terminal(uuid, cmdStr string) error {
 			return err
 		}
 	case open:
-		if err := a.terminalOpen(uuid, ch); err != nil {
+		if err := a.terminalOpen(uuid); err != nil {
 			return err
 		}
 	case close:
-		if err := a.terminalClose(uuid, ch); err != nil {
+		if err := a.terminalClose(uuid); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (a *agent) terminalOpen(uuid, cmd string) error {
+func (a *agent) terminalOpen(uuid string) error {
 	if _, ok := a.terminals[uuid]; !ok {
 		term, err := terminal.NewSession(uuid, a.Publish, a.logger)
 		if err != nil {
@@ -297,7 +297,7 @@ func (a *agent) terminalOpen(uuid, cmd string) error {
 			for _ = range term.IsDone() {
 				// Terminal is inactive, should be closed
 				a.logger.Debug((fmt.Sprintf("Closing terminal session %s", uuid)))
-				a.terminalClose(uuid, "")
+				a.terminalClose(uuid)
 				delete(a.terminals, uuid)
 				return
 			}
@@ -307,7 +307,7 @@ func (a *agent) terminalOpen(uuid, cmd string) error {
 	return nil
 }
 
-func (a *agent) terminalClose(uuid, cmd string) error {
+func (a *agent) terminalClose(uuid string) error {
 	if _, ok := a.terminals[uuid]; ok {
 		delete(a.terminals, uuid)
 		a.logger.Debug(fmt.Sprintf("Terminal session: %s closed", uuid))
@@ -317,7 +317,7 @@ func (a *agent) terminalClose(uuid, cmd string) error {
 }
 
 func (a *agent) terminalWrite(uuid, cmd string) error {
-	if err := a.terminalOpen(uuid, cmd); err != nil {
+	if err := a.terminalOpen(uuid); err != nil {
 		return err
 	}
 	term := a.terminals[uuid]
