@@ -13,6 +13,7 @@ require (
 	github.com/mainflux/senml v1.0.0
 	github.com/nats-io/nats.go v1.9.1
 	github.com/pelletier/go-toml v1.6.0
+	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.4.1
 	github.com/stretchr/testify v1.4.0
 	robpike.io/filter v0.0.0-20150108201509-2984852a2183
