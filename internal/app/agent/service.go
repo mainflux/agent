@@ -15,8 +15,8 @@ import (
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mainflux/agent/internal/app/agent/services"
 	"github.com/mainflux/agent/internal/pkg/config"
+	"github.com/mainflux/agent/internal/pkg/encoder"
 	"github.com/mainflux/agent/internal/pkg/terminal"
-	"github.com/mainflux/agent/internal/pkg/util"
 	"github.com/mainflux/agent/pkg/edgex"
 	exp "github.com/mainflux/export/pkg/config"
 	"github.com/mainflux/mainflux/errors"
@@ -180,7 +180,7 @@ func (a *agent) Execute(uuid, cmd string) (string, error) {
 		return "", errors.Wrap(errFailedExecute, err)
 	}
 
-	payload, err := util.EncodeSenML(uuid, cmdArr[0], string(out))
+	payload, err := encoder.EncodeSenML(uuid, cmdArr[0], string(out))
 	if err != nil {
 		return "", errors.Wrap(errFailedEncode, err)
 	}
@@ -329,7 +329,7 @@ func (a *agent) terminalWrite(uuid, cmd string) error {
 }
 
 func (a *agent) processResponse(uuid, cmd, resp string) error {
-	payload, err := util.EncodeSenML(uuid, cmd, resp)
+	payload, err := encoder.EncodeSenML(uuid, cmd, resp)
 	if err != nil {
 		return errors.Wrap(errFailedEncode, err)
 	}

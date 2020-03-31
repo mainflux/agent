@@ -11,7 +11,7 @@ import (
 
 	"github.com/creack/pty"
 
-	"github.com/mainflux/agent/internal/pkg/util"
+	"github.com/mainflux/agent/internal/pkg/encoder"
 	"github.com/mainflux/mainflux/errors"
 	"github.com/mainflux/mainflux/logger"
 )
@@ -107,7 +107,7 @@ func (t *term) IsDone() chan bool {
 func (t *term) Write(p []byte) (int, error) {
 	t.resetCounter(timeoutInterval)
 	n := len(p)
-	payload, err := util.EncodeSenML(t.uuid, terminal, string(p))
+	payload, err := encoder.EncodeSenML(t.uuid, terminal, string(p))
 	if err != nil {
 		return n, err
 	}
