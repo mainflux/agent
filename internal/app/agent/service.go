@@ -268,7 +268,10 @@ func (a *agent) Terminal(uuid, cmdStr string) error {
 	}
 
 	cmd := cmdArgs[0]
-	ch := cmdArgs[1]
+	ch := ""
+	if len(cmdArgs) > 1 {
+		ch = cmdArgs[1]
+	}
 	switch cmd {
 	case char:
 		if err := a.terminalWrite(uuid, ch); err != nil {
