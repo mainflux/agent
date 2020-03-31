@@ -74,7 +74,7 @@ func NewSession(uuid string, publish func(channel, payload string) error, logger
 
 	go func() {
 		for range t.timer.C {
-			t.updateCounter(0)
+			t.decrementCounter()
 		}
 		t.logger.Debug("exiting timer routine")
 	}()
@@ -82,13 +82,17 @@ func NewSession(uuid string, publish func(channel, payload string) error, logger
 	return t, nil
 }
 
-func (t *term) updateCounter(timeout int) {
+func (t *term) resetCounter(timeout int) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if timeout > 0 {
 		t.timeout = timeout
 		return
 	}
+}
+func (t *term) decrementCounter() {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.timeout = t.timeout - 1
 	if t.timeout == 0 {
 		t.done <- true
@@ -101,7 +105,7 @@ func (t *term) IsDone() chan bool {
 }
 
 func (t *term) Write(p []byte) (int, error) {
-	t.updateCounter(timeoutInterval)
+	t.resetCounter(timeoutInterval)
 	n := len(p)
 	payload, err := util.EncodeSenML(t.uuid, terminal, string(p))
 	if err != nil {
@@ -117,7 +121,7 @@ func (t *term) Write(p []byte) (int, error) {
 func (t *term) Send(p []byte) error {
 	in := bytes.NewReader(p)
 	nr, err := io.Copy(t.ptmx, in)
-	t.logger.Debug(fmt.Sprintf("Writtern to ptmx: %d", nr))
+	t.logger.Debug(fmt.Sprintf("Written to ptmx: %d", nr))
 	if err != nil {
 		return errors.New(err.Error())
 	}
