@@ -26,6 +26,7 @@ const (
 	exec    = "exec"
 	config  = "config"
 	service = "service"
+	term    = "term"
 )
 
 var channelPartRegExp = regexp.MustCompile(`^channels/([\w\-]+)/messages/services(/[^?]*)?(\?.*)?$`)
@@ -35,35 +36,40 @@ var _ MqttBroker = (*broker)(nil)
 // MqttBroker represents the MQTT broker.
 type MqttBroker interface {
 	// Subscribes to given topic and receives events.
-	Subscribe(string) error
+	Subscribe() error
 }
 
 type broker struct {
-	svc    agent.Service
-	client mqtt.Client
-	logger logger.Logger
-	nats   *nats.Conn
+	svc     agent.Service
+	client  mqtt.Client
+	logger  logger.Logger
+	nats    *nats.Conn
+	channel string
 }
 
 // NewBroker returns new MQTT broker instance.
-func NewBroker(svc agent.Service, client mqtt.Client, nats *nats.Conn, log logger.Logger) MqttBroker {
+func NewBroker(svc agent.Service, client mqtt.Client, chann string, nats *nats.Conn, log logger.Logger) MqttBroker {
+
 	return &broker{
-		svc:    svc,
-		client: client,
-		logger: log,
-		nats:   nats,
+		svc:     svc,
+		client:  client,
+		logger:  log,
+		nats:    nats,
+		channel: chann,
 	}
+
 }
 
 // Subscribe subscribes to the MQTT message broker
-func (b *broker) Subscribe(topic string) error {
-	s := b.client.Subscribe(fmt.Sprintf("%s/%s", topic, reqTopic), 0, b.handleMsg)
+func (b *broker) Subscribe() error {
+	topic := fmt.Sprintf("channels/%s/messages/%s", b.channel, reqTopic)
+	s := b.client.Subscribe(topic, 0, b.handleMsg)
 	if err := s.Error(); s.Wait() && err != nil {
 		return err
 	}
-
+	topic = fmt.Sprintf("channels/%s/messages/%s/#", b.channel, servTopic)
 	if b.nats != nil {
-		n := b.client.Subscribe(fmt.Sprintf("%s/%s/#", topic, servTopic), 0, b.handleNatsMsg)
+		n := b.client.Subscribe(topic, 0, b.handleNatsMsg)
 		if err := n.Error(); n.Wait() && err != nil {
 			return err
 		}
@@ -128,6 +134,11 @@ func (b *broker) handleMsg(mc mqtt.Client, msg mqtt.Message) {
 	case service:
 		b.logger.Info(fmt.Sprintf("Services view for uuid %s and command string %s", uuid, cmdStr))
 		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
+			b.logger.Warn(fmt.Sprintf("Services view operation failed: %s", err))
+		}
+	case term:
+		b.logger.Info(fmt.Sprintf("Services view for uuid %s and command string %s", uuid, cmdStr))
+		if err := b.svc.Terminal(uuid, cmdStr); err != nil {
 			b.logger.Warn(fmt.Sprintf("Services view operation failed: %s", err))
 		}
 	}

@@ -80,7 +80,8 @@ const (
 )
 
 func main() {
-	logger, err := logger.New(os.Stdout, defLogLevel)
+	logLvl := mainflux.Env(envLogLevel, defLogLevel)
+	logger, err := logger.New(os.Stdout, logLvl)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("Failed to create logger: %s", err.Error()))
 	}
@@ -127,7 +128,8 @@ func main() {
 			Help:      "Total duration of requests in microseconds.",
 		}, []string{"method"}),
 	)
-	go subscribeToMQTTBroker(svc, mqttClient, cfg.Agent.Channels.Control, nc, logger)
+	b := conn.NewBroker(svc, mqttClient, cfg.Agent.Channels.Control, nc, logger)
+	go b.Subscribe()
 
 	errs := make(chan error, 3)
 
@@ -149,6 +151,7 @@ func main() {
 
 func loadConfig(logger logger.Logger) (config.Config, error) {
 	file := mainflux.Env(envConfigFile, defConfigFile)
+
 	bcfg := bootstrap.Config{
 		URL:           mainflux.Env(envBootstrapURL, defBootstrapURL),
 		ID:            mainflux.Env(envBootstrapID, defBootstrapID),
@@ -164,7 +167,7 @@ func loadConfig(logger logger.Logger) (config.Config, error) {
 
 	sc := config.ServerConf{
 		NatsURL: mainflux.Env(envNatsURL, defNatsURL),
-		Port:    mainflux.Env(envLogLevel, defLogLevel),
+		Port:    mainflux.Env(envHTTPPort, defHTTPPort),
 	}
 	cc := config.ChanConf{
 		Control: mainflux.Env(envCtrlChan, defCtrlChan),
@@ -241,16 +244,6 @@ func connectToMQTTBroker(conf config.MQTTConf, logger logger.Logger) (mqtt.Clien
 		return nil, token.Error()
 	}
 	return client, nil
-}
-
-func subscribeToMQTTBroker(svc agent.Service, mc mqtt.Client, ctrlChan string, nc *nats.Conn, logger logger.Logger) {
-	broker := conn.NewBroker(svc, mc, nc, logger)
-	topic := fmt.Sprintf("channels/%s/messages", ctrlChan)
-	if err := broker.Subscribe(topic); err != nil {
-		logger.Error(fmt.Sprintf("Failed to subscribe to MQTT broker: %s", err.Error()))
-		os.Exit(1)
-	}
-	logger.Info("Subscribed to MQTT broker")
 }
 
 func loadCertificate(cfg config.MQTTConf) (config.MQTTConf, error) {

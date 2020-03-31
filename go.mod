@@ -3,11 +3,12 @@ module github.com/mainflux/agent
 go 1.13
 
 require (
+	github.com/creack/pty v1.1.9
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/edgexfoundry/go-mod-core-contracts v0.1.48
 	github.com/go-kit/kit v0.9.0
 	github.com/go-zoo/bone v1.3.0
-	github.com/mainflux/export v0.0.0-20200212162137-ef1cd8e48d44
+	github.com/mainflux/export v0.0.0-20200323141637-120ec7179230
 	github.com/mainflux/mainflux v0.0.0-20200212173448-51cd0524a11e
 	github.com/mainflux/senml v1.0.0
 	github.com/nats-io/nats.go v1.9.1

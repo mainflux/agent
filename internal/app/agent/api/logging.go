@@ -106,3 +106,16 @@ func (lm loggingMiddleware) Services() []agent.ServiceInfo {
 
 	return lm.svc.Services()
 }
+
+func (lm loggingMiddleware) Terminal(uuid, cmdStr string) (err error) {
+	defer func(begin time.Time) {
+		message := fmt.Sprintf("Method terminal for uuid %s and payload %s took %s to complete", uuid, cmdStr, time.Since(begin))
+		if err != nil {
+			lm.logger.Warn(fmt.Sprintf("%s with error: %s.", message, err))
+			return
+		}
+		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
+	}(time.Now())
+
+	return lm.svc.Terminal(uuid, cmdStr)
+}
