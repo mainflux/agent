@@ -11,12 +11,16 @@ const (
 
 	online  = "online"
 	offline = "offline"
+
+	service = "service"
+	device  = "device"
 )
 
 type Service struct {
 	Name     string
 	LastSeen time.Time
 	Status   string
+	Type     string
 
 	counter int
 	done    chan bool
@@ -24,10 +28,10 @@ type Service struct {
 	mu      sync.Mutex
 }
 
-func NewService(name string) *Service {
+func NewService(name, svctype string) *Service {
 	ticker := time.NewTicker(interval * time.Millisecond)
 	done := make(chan bool)
-	s := Service{Name: name, Status: online, done: done, counter: timeout, ticker: ticker}
+	s := Service{Name: name, Status: online, Type: svctype, done: done, counter: timeout, ticker: ticker}
 	s.Listen()
 	return &s
 }
