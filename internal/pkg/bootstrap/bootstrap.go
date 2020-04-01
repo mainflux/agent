@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"os"
 
 	"fmt"
 	"io/ioutil"
@@ -87,14 +88,8 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	if err := json.Unmarshal([]byte(dc.Content), &ic); err != nil {
 		return errors.New(err.Error())
 	}
-	econf := ic.ExportConfig
-	if econf.File == "" {
-		econf.File = exportConfigFile
-	}
-	logger.Info(fmt.Sprintf("Saving export config file %s", econf.File))
-	if err := export.Save(econf); err != nil {
-		logger.Error(fmt.Sprintf("Failed to save export config file %s", err))
-	}
+
+	saveExportConfig(ic.ExportConfig, logger)
 
 	if len(dc.MainfluxChannels) < 2 {
 		return agent.ErrMalformedEntity
@@ -127,6 +122,23 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	c := config.New(sc, cc, ec, lc, mc, file)
 
 	return c.Save()
+}
+
+func saveExportConfig(econf export.Config, logger log.Logger) {
+	if econf.File == "" {
+		econf.File = exportConfigFile
+	}
+	exConfFileExist := false
+	if _, err := os.Stat(econf.File); err == nil {
+		exConfFileExist = true
+		logger.Info(fmt.Sprintf("Export config file %s exists", econf.File))
+	}
+	if !exConfFileExist {
+		logger.Info(fmt.Sprintf("Saving export config file %s", econf.File))
+		if err := export.Save(econf); err != nil {
+			logger.Error(fmt.Sprintf("Failed to save export config file %s", err))
+		}
+	}
 }
 
 func getConfig(bsID, bsKey, bsSvrURL string, logger log.Logger) (deviceConfig, error) {
