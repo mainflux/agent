@@ -116,6 +116,7 @@ type ServiceInfo struct {
 	Name     string
 	LastSeen time.Time
 	Status   string
+	Type     string
 	Terminal int
 }
 
@@ -385,6 +386,7 @@ func (a *agent) Services() []ServiceInfo {
 			Name:     a.svcs[key].Name,
 			LastSeen: a.svcs[key].LastSeen,
 			Status:   a.svcs[key].Status,
+			Type:     a.svcs[key].Type,
 		}
 		services = append(services, service)
 	}
