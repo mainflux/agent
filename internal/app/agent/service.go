@@ -173,7 +173,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 
 func (a *agent) Execute(uuid, cmd string) (string, error) {
 	cmdArr := strings.Split(strings.Replace(cmd, " ", "", -1), ",")
-	if len(cmdArr) < 1 {
+	if len(cmdArr) < 2 {
 		return "", errInvalidCommand
 	}
 
@@ -295,7 +295,7 @@ func (a *agent) terminalOpen(uuid string) error {
 	if _, ok := a.terminals[uuid]; !ok {
 		term, err := terminal.NewSession(uuid, a.Publish, a.logger)
 		if err != nil {
-			return errors.Wrap(errors.Wrap(errFailedToCreateTerminalSession, fmt.Errorf("failed for %s", uuid)), err)
+			return errors.Wrap(errors.Wrap(errFailedToCreateTerminalSession, fmt.Errorf(" for %s", uuid)), err)
 		}
 		a.terminals[uuid] = term
 		go func() {
