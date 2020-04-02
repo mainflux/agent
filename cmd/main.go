@@ -80,13 +80,7 @@ const (
 )
 
 func main() {
-	logLvl := mainflux.Env(envLogLevel, defLogLevel)
-	logger, err := logger.New(os.Stdout, logLvl)
-	if err != nil {
-		log.Fatalf(fmt.Sprintf("Failed to create logger: %s", err.Error()))
-	}
-
-	cfg, err := loadConfig(logger)
+	cfg, logger, err := loadConfig()
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to load config: %s", err.Error()))
 		os.Exit(1)
@@ -149,9 +143,13 @@ func main() {
 	logger.Error(fmt.Sprintf("Agent terminated: %s", err))
 }
 
-func loadConfig(logger logger.Logger) (config.Config, error) {
+func loadConfig() (config.Config, logger.Logger, error) {
+	lc := config.LogConf{Level: mainflux.Env(envLogLevel, defLogLevel)}
+	logg, err := logger.New(os.Stdout, lc.Level)
+	if err != nil {
+		log.Fatalf(fmt.Sprintf("Failed to create logger: %s", err.Error()))
+	}
 	file := mainflux.Env(envConfigFile, defConfigFile)
-
 	bcfg := bootstrap.Config{
 		URL:           mainflux.Env(envBootstrapURL, defBootstrapURL),
 		ID:            mainflux.Env(envBootstrapID, defBootstrapID),
@@ -160,9 +158,9 @@ func loadConfig(logger logger.Logger) (config.Config, error) {
 		RetryDelaySec: mainflux.Env(envBootstrapRetryDelaySeconds, defBootstrapRetryDelaySeconds),
 		Encrypt:       mainflux.Env(envEncryption, defEncryption),
 	}
-	if err := bootstrap.Bootstrap(bcfg, logger, file); err != nil {
-		logger.Error(fmt.Sprintf("Fetching bootstrap failed with error: %s", err))
-		return config.Config{}, err
+	if err := bootstrap.Bootstrap(bcfg, logg, file); err != nil {
+		logg.Error(fmt.Sprintf("Fetching bootstrap failed with error: %s", err))
+		return config.Config{}, logg, err
 	}
 
 	sc := config.ServerConf{
@@ -174,7 +172,7 @@ func loadConfig(logger logger.Logger) (config.Config, error) {
 		Data:    mainflux.Env(envDataChan, defDataChan),
 	}
 	ec := config.EdgexConf{URL: mainflux.Env(envEdgexURL, defEdgexURL)}
-	lc := config.LogConf{Level: mainflux.Env(envLogLevel, defLogLevel)}
+
 	mc := config.MQTTConf{
 		URL:      mainflux.Env(envMqttURL, defMqttURL),
 		Username: mainflux.Env(envMqttUsername, defMqttUsername),
@@ -183,17 +181,21 @@ func loadConfig(logger logger.Logger) (config.Config, error) {
 
 	c := config.New(sc, cc, ec, lc, mc, file)
 	if err := c.Read(); err != nil {
-		logger.Error(fmt.Sprintf("Failed to read config:  %s", err))
-		return config.Config{}, err
+		logg.Error(fmt.Sprintf("Failed to read config:  %s", err))
+		return config.Config{}, logg, err
+	}
+	logg, err = logger.New(os.Stdout, c.Agent.Log.Level)
+	if err != nil {
+		log.Fatalf("Failed to recreate logger: %s", err)
 	}
 
-	mc, err := loadCertificate(c.Agent.MQTT)
+	mc, err = loadCertificate(c.Agent.MQTT)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Failed to set up mtls certs %s", err))
+		logg.Error(fmt.Sprintf("Failed to set up mtls certs %s", err))
 	}
 	c.Agent.MQTT = mc
 
-	return *c, nil
+	return *c, logg, nil
 }
 
 func connectToMQTTBroker(conf config.MQTTConf, logger logger.Logger) (mqtt.Client, error) {
