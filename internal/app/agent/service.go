@@ -116,6 +116,7 @@ type ServiceInfo struct {
 	Name     string
 	LastSeen time.Time
 	Status   string
+	Type     string
 	Terminal int
 }
 
@@ -144,18 +145,19 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {
 		sub := msg.Subject
 		tok := strings.Split(sub, ".")
-		if len(tok) < 2 {
-			ag.logger.Error(fmt.Sprintf("Failed: Subject has incorrect length %s" + sub))
+		if len(tok) < 3 {
+			ag.logger.Error(fmt.Sprintf("Failed: Subject has incorrect length %s", sub))
 			return
 		}
 		svcname := tok[1]
+		svctype := tok[2]
 		// Service name is extracted from the subtopic
 		// if there is multiple instances of the same service
 		// we will have to add another distinction
 		if _, ok := ag.svcs[svcname]; !ok {
-			svc := services.NewService(svcname)
+			svc := services.NewService(svcname, svctype)
 			ag.svcs[svcname] = svc
-			ag.logger.Info(fmt.Sprintf("Services '%s' registered", svcname))
+			ag.logger.Info(fmt.Sprintf("Services '%s-%s' registered", svcname, svctype))
 		}
 		serv := ag.svcs[svcname]
 		serv.Update()
@@ -384,6 +386,7 @@ func (a *agent) Services() []ServiceInfo {
 			Name:     a.svcs[key].Name,
 			LastSeen: a.svcs[key].LastSeen,
 			Status:   a.svcs[key].Status,
+			Type:     a.svcs[key].Type,
 		}
 		services = append(services, service)
 	}
