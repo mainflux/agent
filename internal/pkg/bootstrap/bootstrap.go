@@ -83,7 +83,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 
 	logger.Info(fmt.Sprintf("Getting config for %s from %s succeeded",
 		cfg.ID, cfg.URL))
-
+	fmt.Printf("cont:%s", dc.Content)
 	ic := infraConfig{}
 	if err := json.Unmarshal([]byte(dc.Content), &ic); err != nil {
 		return errors.New(err.Error())
@@ -121,7 +121,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 
 	c := config.New(sc, cc, ec, lc, mc, file)
 
-	return c.Save()
+	return config.Save(c)
 }
 
 func saveExportConfig(econf export.Config, logger log.Logger) {
@@ -178,7 +178,8 @@ func getConfig(bsID, bsKey, bsSvrURL string, logger log.Logger) (deviceConfig, e
 		return deviceConfig{}, errors.New(err.Error())
 	}
 	defer resp.Body.Close()
-
+	fmt.Printf("url:%s", url)
+	fmt.Printf("body:%s", string(body))
 	dc := deviceConfig{}
 	if err := json.Unmarshal(body, &dc); err != nil {
 		return deviceConfig{}, errors.New(err.Error())

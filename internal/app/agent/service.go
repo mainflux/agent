@@ -366,7 +366,7 @@ func (a *agent) saveConfig(service, fileName, fileCont string) error {
 }
 
 func (a *agent) AddConfig(c config.Config) error {
-	err := c.Save()
+	err := config.Save(c)
 	return errors.New(err.Error())
 }
 

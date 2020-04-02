@@ -22,6 +22,7 @@ import (
 	"github.com/mainflux/mainflux"
 	"github.com/mainflux/mainflux/logger"
 	nats "github.com/nats-io/nats.go"
+	"github.com/pkg/errors"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 )
 
@@ -79,11 +80,26 @@ const (
 	envMqttPrivKey    = "MF_AGENT_MQTT_CLIENT_PK"
 )
 
+var (
+	errFailedToSetupMTLS       = errors.New("Failed to set up mtls certs")
+	errFetchingBootstrapFailed = errors.New("Fetching bootstrap failed with error")
+	errFailedToReadConfig      = errors.New("Failed to read config")
+)
+
 func main() {
-	cfg, logger, err := loadConfig()
+	cfg, err := loadEnvConfig()
+	if err != nil {
+		log.Fatalf(fmt.Sprintf("Failed to load config: %s", err.Error()))
+	}
+
+	logger, err := logger.New(os.Stdout, cfg.Agent.Log.Level)
+	if err != nil {
+		log.Fatalf(fmt.Sprintf("Failed create logger: %s", err.Error()))
+	}
+
+	cfg, err = loadBootConfig(cfg, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to load config: %s", err.Error()))
-		os.Exit(1)
 	}
 
 	nc, err := nats.Connect(cfg.Agent.Server.NatsURL)
@@ -143,26 +159,7 @@ func main() {
 	logger.Error(fmt.Sprintf("Agent terminated: %s", err))
 }
 
-func loadConfig() (config.Config, logger.Logger, error) {
-	lc := config.LogConf{Level: mainflux.Env(envLogLevel, defLogLevel)}
-	logg, err := logger.New(os.Stdout, lc.Level)
-	if err != nil {
-		log.Fatalf(fmt.Sprintf("Failed to create logger: %s", err.Error()))
-	}
-	file := mainflux.Env(envConfigFile, defConfigFile)
-	bcfg := bootstrap.Config{
-		URL:           mainflux.Env(envBootstrapURL, defBootstrapURL),
-		ID:            mainflux.Env(envBootstrapID, defBootstrapID),
-		Key:           mainflux.Env(envBootstrapKey, defBootstrapKey),
-		Retries:       mainflux.Env(envBootstrapRetries, defBootstrapRetries),
-		RetryDelaySec: mainflux.Env(envBootstrapRetryDelaySeconds, defBootstrapRetryDelaySeconds),
-		Encrypt:       mainflux.Env(envEncryption, defEncryption),
-	}
-	if err := bootstrap.Bootstrap(bcfg, logg, file); err != nil {
-		logg.Error(fmt.Sprintf("Fetching bootstrap failed with error: %s", err))
-		return config.Config{}, logg, err
-	}
-
+func loadEnvConfig() (config.Config, error) {
 	sc := config.ServerConf{
 		NatsURL: mainflux.Env(envNatsURL, defNatsURL),
 		Port:    mainflux.Env(envHTTPPort, defHTTPPort),
@@ -172,30 +169,49 @@ func loadConfig() (config.Config, logger.Logger, error) {
 		Data:    mainflux.Env(envDataChan, defDataChan),
 	}
 	ec := config.EdgexConf{URL: mainflux.Env(envEdgexURL, defEdgexURL)}
+	lc := config.LogConf{Level: mainflux.Env(envLogLevel, defLogLevel)}
 
 	mc := config.MQTTConf{
 		URL:      mainflux.Env(envMqttURL, defMqttURL),
 		Username: mainflux.Env(envMqttUsername, defMqttUsername),
 		Password: mainflux.Env(envMqttPassword, defMqttPassword),
 	}
-
+	file := mainflux.Env(envConfigFile, defConfigFile)
 	c := config.New(sc, cc, ec, lc, mc, file)
-	if err := c.Read(); err != nil {
-		logg.Error(fmt.Sprintf("Failed to read config:  %s", err))
-		return config.Config{}, logg, err
-	}
-	logg, err = logger.New(os.Stdout, c.Agent.Log.Level)
+	mc, err := loadCertificate(c.Agent.MQTT)
 	if err != nil {
-		log.Fatalf("Failed to recreate logger: %s", err)
-	}
-
-	mc, err = loadCertificate(c.Agent.MQTT)
-	if err != nil {
-		logg.Error(fmt.Sprintf("Failed to set up mtls certs %s", err))
+		return c, errors.Wrap(errFailedToSetupMTLS, err.Error())
 	}
 	c.Agent.MQTT = mc
+	return c, nil
+}
 
-	return *c, logg, nil
+func loadBootConfig(c config.Config, logger logger.Logger) (bsc config.Config, err error) {
+	file := mainflux.Env(envConfigFile, defConfigFile)
+	bsConfig := bootstrap.Config{
+		URL:           mainflux.Env(envBootstrapURL, defBootstrapURL),
+		ID:            mainflux.Env(envBootstrapID, defBootstrapID),
+		Key:           mainflux.Env(envBootstrapKey, defBootstrapKey),
+		Retries:       mainflux.Env(envBootstrapRetries, defBootstrapRetries),
+		RetryDelaySec: mainflux.Env(envBootstrapRetryDelaySeconds, defBootstrapRetryDelaySeconds),
+		Encrypt:       mainflux.Env(envEncryption, defEncryption),
+	}
+
+	if err := bootstrap.Bootstrap(bsConfig, logger, file); err != nil {
+		return c, errors.Wrap(errFetchingBootstrapFailed, err.Error())
+	}
+
+	if bsc, err = config.Read(file); err != nil {
+		return c, errors.Wrap(errFailedToReadConfig, err.Error())
+	}
+
+	mc, err := loadCertificate(bsc.Agent.MQTT)
+	if err != nil {
+		return bsc, errors.Wrap(errFailedToSetupMTLS, err.Error())
+	}
+
+	bsc.Agent.MQTT = mc
+	return bsc, nil
 }
 
 func connectToMQTTBroker(conf config.MQTTConf, logger logger.Logger) (mqtt.Client, error) {
