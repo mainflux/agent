@@ -83,7 +83,6 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 
 	logger.Info(fmt.Sprintf("Getting config for %s from %s succeeded",
 		cfg.ID, cfg.URL))
-	fmt.Printf("cont:%s", dc.Content)
 	ic := infraConfig{}
 	if err := json.Unmarshal([]byte(dc.Content), &ic); err != nil {
 		return errors.New(err.Error())
