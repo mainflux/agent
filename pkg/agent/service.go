@@ -16,8 +16,8 @@ import (
 	"github.com/mainflux/agent/pkg/agent/services"
 	"github.com/mainflux/agent/pkg/config"
 	"github.com/mainflux/agent/pkg/edgex"
+	"github.com/mainflux/agent/pkg/encoder"
 	"github.com/mainflux/agent/pkg/terminal"
-	"github.com/mainflux/agent/pkg/util"
 	exp "github.com/mainflux/export/pkg/config"
 	"github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
@@ -116,6 +116,7 @@ type ServiceInfo struct {
 	Name     string
 	LastSeen time.Time
 	Status   string
+	Type     string
 	Terminal int
 }
 
@@ -144,18 +145,19 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {
 		sub := msg.Subject
 		tok := strings.Split(sub, ".")
-		if len(tok) < 2 {
-			ag.logger.Error(fmt.Sprintf("Failed: Subject has incorrect length %s" + sub))
+		if len(tok) < 3 {
+			ag.logger.Error(fmt.Sprintf("Failed: Subject has incorrect length %s", sub))
 			return
 		}
 		svcname := tok[1]
+		svctype := tok[2]
 		// Service name is extracted from the subtopic
 		// if there is multiple instances of the same service
 		// we will have to add another distinction
 		if _, ok := ag.svcs[svcname]; !ok {
-			svc := services.NewService(svcname)
+			svc := services.NewService(svcname, svctype)
 			ag.svcs[svcname] = svc
-			ag.logger.Info(fmt.Sprintf("Services '%s' registered", svcname))
+			ag.logger.Info(fmt.Sprintf("Services '%s-%s' registered", svcname, svctype))
 		}
 		serv := ag.svcs[svcname]
 		serv.Update()
@@ -171,7 +173,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 
 func (a *agent) Execute(uuid, cmd string) (string, error) {
 	cmdArr := strings.Split(strings.Replace(cmd, " ", "", -1), ",")
-	if len(cmdArr) < 1 {
+	if len(cmdArr) < 2 {
 		return "", errInvalidCommand
 	}
 
@@ -180,7 +182,7 @@ func (a *agent) Execute(uuid, cmd string) (string, error) {
 		return "", errors.Wrap(errFailedExecute, err)
 	}
 
-	payload, err := util.EncodeSenML(uuid, cmdArr[0], string(out))
+	payload, err := encoder.EncodeSenML(uuid, cmdArr[0], string(out))
 	if err != nil {
 		return "", errors.Wrap(errFailedEncode, err)
 	}
@@ -293,7 +295,7 @@ func (a *agent) terminalOpen(uuid string) error {
 	if _, ok := a.terminals[uuid]; !ok {
 		term, err := terminal.NewSession(uuid, a.Publish, a.logger)
 		if err != nil {
-			return errors.Wrap(errors.Wrap(errFailedToCreateTerminalSession, fmt.Errorf("failed for %s", uuid)), err)
+			return errors.Wrap(errors.Wrap(errFailedToCreateTerminalSession, fmt.Errorf(" for %s", uuid)), err)
 		}
 		a.terminals[uuid] = term
 		go func() {
@@ -329,7 +331,7 @@ func (a *agent) terminalWrite(uuid, cmd string) error {
 }
 
 func (a *agent) processResponse(uuid, cmd, resp string) error {
-	payload, err := util.EncodeSenML(uuid, cmd, resp)
+	payload, err := encoder.EncodeSenML(uuid, cmd, resp)
 	if err != nil {
 		return errors.Wrap(errFailedEncode, err)
 	}
@@ -364,7 +366,7 @@ func (a *agent) saveConfig(service, fileName, fileCont string) error {
 }
 
 func (a *agent) AddConfig(c config.Config) error {
-	err := c.Save()
+	err := config.Save(c)
 	return errors.New(err.Error())
 }
 
@@ -384,6 +386,7 @@ func (a *agent) Services() []ServiceInfo {
 			Name:     a.svcs[key].Name,
 			LastSeen: a.svcs[key].LastSeen,
 			Status:   a.svcs[key].Status,
+			Type:     a.svcs[key].Type,
 		}
 		services = append(services, service)
 	}

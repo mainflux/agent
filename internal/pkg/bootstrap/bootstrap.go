@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mainflux/agent/internal/app/agent"
-	"github.com/mainflux/agent/internal/pkg/config"
+	"github.com/mainflux/agent/pkg/agent"
+	"github.com/mainflux/agent/pkg/config"
 	export "github.com/mainflux/export/pkg/config"
 	errors "github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
