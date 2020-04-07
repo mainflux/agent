@@ -4,7 +4,7 @@
 package api
 
 import (
-	"github.com/mainflux/agent/internal/app/agent"
+	"github.com/mainflux/agent/pkg/agent"
 )
 
 type pubReq struct {

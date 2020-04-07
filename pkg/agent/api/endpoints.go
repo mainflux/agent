@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/mainflux/agent/internal/app/agent"
-	"github.com/mainflux/agent/internal/pkg/config"
+	"github.com/mainflux/agent/pkg/agent"
+	"github.com/mainflux/agent/pkg/config"
 )
 
 func pubEndpoint(svc agent.Service) endpoint.Endpoint {

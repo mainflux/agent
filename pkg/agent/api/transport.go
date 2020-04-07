@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 
 	"github.com/go-zoo/bone"
-	"github.com/mainflux/agent/internal/app/agent"
+	"github.com/mainflux/agent/pkg/agent"
 	"github.com/mainflux/mainflux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 

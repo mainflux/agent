@@ -11,7 +11,7 @@ import (
 
 	"github.com/creack/pty"
 
-	"github.com/mainflux/agent/internal/pkg/encoder"
+	"github.com/mainflux/agent/pkg/encoder"
 	"github.com/mainflux/mainflux/errors"
 	"github.com/mainflux/mainflux/logger"
 )

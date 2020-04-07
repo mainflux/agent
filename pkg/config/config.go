@@ -59,7 +59,7 @@ type Config struct {
 	File  string
 }
 
-func New(sc ServerConf, cc ChanConf, ec EdgexConf, lc LogConf, mc MQTTConf, file string) *Config {
+func New(sc ServerConf, cc ChanConf, ec EdgexConf, lc LogConf, mc MQTTConf, file string) Config {
 	ac := AgentConf{
 		Server:   sc,
 		Channels: cc,
@@ -68,36 +68,34 @@ func New(sc ServerConf, cc ChanConf, ec EdgexConf, lc LogConf, mc MQTTConf, file
 		MQTT:     mc,
 	}
 
-	return &Config{
+	return Config{
 		Agent: ac,
 		File:  file,
 	}
 }
 
 // Save - store config in a file
-func (c *Config) Save() error {
-	b, err := toml.Marshal(*c)
+func Save(c Config) error {
+	b, err := toml.Marshal(c)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error reading config file: %s", err))
 	}
-
 	if err := ioutil.WriteFile(c.File, b, 0644); err != nil {
 		return errors.New(fmt.Sprintf("Error writing toml: %s", err))
 	}
-
 	return nil
 }
 
 // Read - retrieve config from a file
-func (c *Config) Read() error {
-	data, err := ioutil.ReadFile(c.File)
+func Read(file string) (Config, error) {
+	data, err := ioutil.ReadFile(file)
+	c := Config{}
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error reading config file: %s", err))
+		return c, errors.New(fmt.Sprintf("Error reading config file: %s", err))
 	}
 
-	if err := toml.Unmarshal(data, c); err != nil {
-		return errors.New(fmt.Sprintf("Error unmarshaling toml: %s", err))
+	if err := toml.Unmarshal(data, &c); err != nil {
+		return Config{}, errors.New(fmt.Sprintf("Error unmarshaling toml: %s", err))
 	}
-
-	return nil
+	return c, nil
 }

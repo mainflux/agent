@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/metrics"
-	"github.com/mainflux/agent/internal/app/agent"
-	"github.com/mainflux/agent/internal/pkg/config"
+	"github.com/mainflux/agent/pkg/agent"
+	"github.com/mainflux/agent/pkg/config"
 )
 
 var _ agent.Service = (*metricsMiddleware)(nil)

@@ -14,10 +14,10 @@ import (
 	"testing"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mainflux/agent/internal/app/agent"
-	"github.com/mainflux/agent/internal/app/agent/api"
-	"github.com/mainflux/agent/internal/app/agent/mocks"
-	"github.com/mainflux/agent/internal/pkg/config"
+	"github.com/mainflux/agent/pkg/agent"
+	"github.com/mainflux/agent/pkg/agent/api"
+	"github.com/mainflux/agent/pkg/agent/mocks"
+	"github.com/mainflux/agent/pkg/config"
 	"github.com/mainflux/mainflux/logger"
 	"github.com/stretchr/testify/assert"
 )

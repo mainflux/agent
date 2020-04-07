@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/mainflux/agent/internal/app/agent"
-	"github.com/mainflux/agent/internal/pkg/config"
+	"github.com/mainflux/agent/pkg/agent"
+	"github.com/mainflux/agent/pkg/config"
 	export "github.com/mainflux/export/pkg/config"
 	errors "github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
@@ -83,7 +83,6 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 
 	logger.Info(fmt.Sprintf("Getting config for %s from %s succeeded",
 		cfg.ID, cfg.URL))
-
 	ic := infraConfig{}
 	if err := json.Unmarshal([]byte(dc.Content), &ic); err != nil {
 		return errors.New(err.Error())
@@ -121,7 +120,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 
 	c := config.New(sc, cc, ec, lc, mc, file)
 
-	return c.Save()
+	return config.Save(c)
 }
 
 func saveExportConfig(econf export.Config, logger log.Logger) {
@@ -178,7 +177,6 @@ func getConfig(bsID, bsKey, bsSvrURL string, logger log.Logger) (deviceConfig, e
 		return deviceConfig{}, errors.New(err.Error())
 	}
 	defer resp.Body.Close()
-
 	dc := deviceConfig{}
 	if err := json.Unmarshal(body, &dc); err != nil {
 		return deviceConfig{}, errors.New(err.Error())

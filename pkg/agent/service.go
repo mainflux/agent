@@ -13,11 +13,11 @@ import (
 	"time"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mainflux/agent/internal/app/agent/services"
-	"github.com/mainflux/agent/internal/pkg/config"
-	"github.com/mainflux/agent/internal/pkg/encoder"
-	"github.com/mainflux/agent/internal/pkg/terminal"
+	"github.com/mainflux/agent/pkg/agent/services"
+	"github.com/mainflux/agent/pkg/config"
 	"github.com/mainflux/agent/pkg/edgex"
+	"github.com/mainflux/agent/pkg/encoder"
+	"github.com/mainflux/agent/pkg/terminal"
 	exp "github.com/mainflux/export/pkg/config"
 	"github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
@@ -173,7 +173,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 
 func (a *agent) Execute(uuid, cmd string) (string, error) {
 	cmdArr := strings.Split(strings.Replace(cmd, " ", "", -1), ",")
-	if len(cmdArr) < 1 {
+	if len(cmdArr) < 2 {
 		return "", errInvalidCommand
 	}
 
@@ -295,7 +295,7 @@ func (a *agent) terminalOpen(uuid string) error {
 	if _, ok := a.terminals[uuid]; !ok {
 		term, err := terminal.NewSession(uuid, a.Publish, a.logger)
 		if err != nil {
-			return errors.Wrap(errors.Wrap(errFailedToCreateTerminalSession, fmt.Errorf("failed for %s", uuid)), err)
+			return errors.Wrap(errors.Wrap(errFailedToCreateTerminalSession, fmt.Errorf(" for %s", uuid)), err)
 		}
 		a.terminals[uuid] = term
 		go func() {
@@ -366,7 +366,7 @@ func (a *agent) saveConfig(service, fileName, fileCont string) error {
 }
 
 func (a *agent) AddConfig(c config.Config) error {
-	err := c.Save()
+	err := config.Save(c)
 	return errors.New(err.Error())
 }
 

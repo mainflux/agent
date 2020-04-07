@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/mainflux/agent/internal/app/agent"
+	"github.com/mainflux/agent/pkg/agent"
 	"github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/senml"
 	"github.com/nats-io/nats.go"
