@@ -94,7 +94,7 @@ func main() {
 
 	logger, err := logger.New(os.Stdout, cfg.Agent.Log.Level)
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("Failed create logger: %s", err.Error()))
+		log.Fatalf(fmt.Sprintf("Failed to create logger: %s", err.Error()))
 	}
 
 	cfg, err = loadBootConfig(cfg, logger)
