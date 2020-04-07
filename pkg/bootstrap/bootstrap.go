@@ -177,8 +177,6 @@ func getConfig(bsID, bsKey, bsSvrURL string, logger log.Logger) (deviceConfig, e
 		return deviceConfig{}, errors.New(err.Error())
 	}
 	defer resp.Body.Close()
-	fmt.Printf("url:%s", url)
-	fmt.Printf("body:%s", string(body))
 	dc := deviceConfig{}
 	if err := json.Unmarshal(body, &dc); err != nil {
 		return deviceConfig{}, errors.New(err.Error())
