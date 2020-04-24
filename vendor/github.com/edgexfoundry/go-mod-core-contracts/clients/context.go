@@ -20,7 +20,7 @@ import (
 
 // FromContext allows for the retrieval of the specified key's value from the supplied Context.
 // If the value is not found, an empty string is returned.
-func FromContext(key string, ctx context.Context) string {
+func FromContext(ctx context.Context, key string) string {
 	hdr, ok := ctx.Value(key).(string)
 	if !ok {
 		hdr = ""

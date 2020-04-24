@@ -7,6 +7,7 @@ package config
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"io/ioutil"
 
 	"github.com/mainflux/mainflux/errors"
@@ -23,7 +24,7 @@ var (
 	errUnmarshalConfigContent = errors.New("Error unmarshaling config file conent")
 )
 
-type MQTTConf struct {
+type MQTT struct {
 	Host        string          `json:"host" toml:"host" mapstructure:"host"`
 	Username    string          `json:"username" toml:"username" mapstructure:"username"`
 	Password    string          `json:"password" toml:"password" mapstructure:"password"`
@@ -39,17 +40,20 @@ type MQTTConf struct {
 	Cert        tls.Certificate `json:"-" toml:"-"`
 }
 
-type ServerConf struct {
-	NatsURL  string `json:"nats" toml:"nats" mapstructure:"nats"`
-	LogLevel string `json:"log_level" toml:"log_level" mapstructure:"log_level"`
-	Port     string `json:"port" toml:"port" mapstructure:"port"`
+type Server struct {
+	NatsURL   string `json:"nats" toml:"nats" mapstructure:"nats"`
+	LogLevel  string `json:"log_level" toml:"log_level" mapstructure:"log_level"`
+	Port      string `json:"port" toml:"port" mapstructure:"port"`
+	CacheURL  string `json:"cache_url" toml:"cache_url" mapstructure:"port"`
+	CachePass string `json:"cache_pass" toml:"cache_pass" mapstructure:"port"`
+	CacheDB   string `json:"cache_db" toml:"cache_db" mapstructure:"port"`
 }
 
 type Config struct {
-	Server ServerConf `json:"exp" toml:"exp" mapstructure:"exp"`
-	Routes []Route    `json:"routes" toml:"routes" mapstructure:"routes"`
-	MQTT   MQTTConf   `json:"mqtt" toml:"mqtt" mapstructure:"mqtt"`
-	File   string     `json:"-"`
+	Server Server  `json:"exp" toml:"exp" mapstructure:"exp"`
+	Routes []Route `json:"routes" toml:"routes" mapstructure:"routes"`
+	MQTT   MQTT    `json:"mqtt" toml:"mqtt" mapstructure:"mqtt"`
+	File   string  `json:"file"`
 }
 
 type Route struct {
@@ -57,22 +61,12 @@ type Route struct {
 	NatsTopic string `json:"nats_topic" toml:"nats_topic" mapstructure:"nats_topic"`
 	SubTopic  string `json:"subtopic" toml:"subtopic" mapstructure:"subtopic"`
 	Type      string `json:"type" toml:"type" mapstructure:"type"`
-}
-
-func NewConfig(sc ServerConf, rc []Route, mc MQTTConf, file string) *Config {
-	ac := Config{
-		Server: sc,
-		Routes: rc,
-		MQTT:   mc,
-		File:   file,
-	}
-
-	return &ac
+	Workers   int    `json:"workers" toml:"workers" mapstructure:"workers"`
 }
 
 // Save - store config in a file
-func (c *Config) Save() errors.Error {
-	b, err := toml.Marshal(*c)
+func Save(c Config) errors.Error {
+	b, err := toml.Marshal(c)
 	if err != nil {
 		return errors.Wrap(errReadConfigFile, err)
 	}
@@ -88,26 +82,29 @@ func (c *Config) Save() errors.Error {
 }
 
 // ReadFile - retrieve config from a file
-func (c *Config) ReadFile() errors.Error {
-	file := c.File
-	if file == "" {
-		file = dfltFile
-	}
+func ReadFile(file string) (Config, errors.Error) {
+	c := Config{}
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
-		return errors.Wrap(errReadConfigFile, err)
+		return c, errors.Wrap(errReadConfigFile, err)
 	}
-	if err := toml.Unmarshal(data, c); err != nil {
-		return errors.Wrap(errUnmarshalConfigContent, err)
+	if err := toml.Unmarshal(data, &c); err != nil {
+		return c, errors.Wrap(errUnmarshalConfigContent, err)
 	}
 	c.File = file
-	return nil
+	return c, nil
 }
 
-// ReadBytes - retrieve config from a byte
-func (c *Config) ReadBytes(data []byte) errors.Error {
-	if err := toml.Unmarshal(data, c); err != nil {
-		return errors.Wrap(errUnmarshalConfigContent, err)
+// ReadBytes - read config from a bytes
+func ReadBytes(data []byte) (Config, errors.Error) {
+	c := Config{}
+	e := toml.Unmarshal(data, &c)
+	if e == nil {
+		return c, nil
 	}
-	return nil
+	err := errors.Wrap(errUnmarshalConfigContent, e)
+	if e := json.Unmarshal(data, &c); e != nil {
+		return c, errors.Wrap(err, e)
+	}
+	return c, nil
 }

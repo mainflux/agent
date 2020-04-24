@@ -40,7 +40,7 @@ type PropertyValue struct {
 	Assertion     string `json:"assertion,omitempty" yaml:"assertion,omitempty"`       // Required value of the property, set for checking error state.  Failing an assertion condition will mark the device with an error state
 	Precision     string `json:"precision,omitempty" yaml:"precision,omitempty"`
 	FloatEncoding string `json:"floatEncoding,omitempty" yaml:"floatEncoding,omitempty"` // FloatEncoding indicates the representation of floating value of reading.  It should be 'Base64' or 'eNotation'
-	MediaType     string `json:"mediaType,omitempty"`
+	MediaType     string `json:"mediaType,omitempty" yaml:"mediaType,omitempty"`
 }
 
 // String returns a JSON encoded string representation of the model
