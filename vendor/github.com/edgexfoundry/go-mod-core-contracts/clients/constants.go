@@ -59,8 +59,6 @@ const (
 	CoreCommandServiceKey               = "edgex-core-command"
 	CoreDataServiceKey                  = "edgex-core-data"
 	CoreMetaDataServiceKey              = "edgex-core-metadata"
-	ExportClientServiceKey              = "edgex-export-client"
-	ExportDistroServiceKey              = "edgex-export-distro"
 	SupportLoggingServiceKey            = "edgex-support-logging"
 	SupportNotificationsServiceKey      = "edgex-support-notifications"
 	SystemManagementAgentServiceKey     = "edgex-sys-mgmt-agent"

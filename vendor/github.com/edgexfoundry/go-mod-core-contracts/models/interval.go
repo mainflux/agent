@@ -32,8 +32,8 @@ type Interval struct {
 	Timestamps  Timestamps
 	ID          string `json:"id,omitempty"`
 	Name        string `json:"name,omitempty"`      // non-database identifier for a shcedule (*must be quitue)
-	Start       string `json:"start,omitempty"`     // Start time i ISO 8601 format YYYYMMDD'T'HHmmss 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyymmdd'T'HHmmss")
-	End         string `json:"end,omitempty"`       // Start time i ISO 8601 format YYYYMMDD'T'HHmmss 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyymmdd'T'HHmmss")
+	Start       string `json:"start,omitempty"`     // Start time i ISO 8601 format YYYYMMDD'T'HHmmss
+	End         string `json:"end,omitempty"`       // Start time i ISO 8601 format YYYYMMDD'T'HHmmss
 	Frequency   string `json:"frequency,omitempty"` // how frequently should the event occur according ISO 8601
 	Cron        string `json:"cron,omitempty"`      // cron styled regular expression indicating how often the action under interval should occur.  Use either runOnce, frequency or cron and not all.
 	RunOnce     bool   `json:"runOnce,omitempty"`   // boolean indicating that this interval runs one time - at the time indicated by the start
@@ -46,8 +46,8 @@ func (i Interval) MarshalJSON() ([]byte, error) {
 		Timestamps *Timestamps `json:",omitempty"`
 		ID         string      `json:"id,omitempty"`
 		Name       string      `json:"name,omitempty"`      // non-database identifier for a schedule (*must be quitue)
-		Start      string      `json:"start,omitempty"`     // Start time i ISO 8601 format YYYYMMDD'T'HHmmss 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyymmdd'T'HHmmss")
-		End        string      `json:"end,omitempty"`       // Start time i ISO 8601 format YYYYMMDD'T'HHmmss 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyymmdd'T'HHmmss")
+		Start      string      `json:"start,omitempty"`     // Start time i ISO 8601 format YYYYMMDD'T'HHmmss
+		End        string      `json:"end,omitempty"`       // Start time i ISO 8601 format YYYYMMDD'T'HHmmss
 		Frequency  string      `json:"frequency,omitempty"` // how frequently should the event occur
 		Cron       string      `json:"cron,omitempty"`      // cron styled regular expression indicating how often the action under schedule should occur.  Use either runOnce, frequency or cron and not all.
 		RunOnce    bool        `json:"runOnce,omitempty"`   // boolean indicating that this interval runs one time - at the time indicated by the start
