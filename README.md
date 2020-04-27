@@ -25,8 +25,14 @@ make
 ```
 
 ## Usage
+```
+go get github.com/nats-io/gnatsd
+gnatsd
+MF_AGENT_BOOTSTRAP_ID=11:22:33:44 MF_AGENT_BOOTSTRAP_KEY=5341a625-53a5-4a25-be74-5b648243fcbc MF_AGENT_NATS_URL=nats://localhost:4223 MF_AGENT_BOOTSTRAP_URL=https://mainflux.com/bs/things/bootstrap build/mainflux-agent
+```
+
 ### Config
-Agent configuration is kept in `cmd/config.toml`.
+Agent configuration is kept in `config.toml` if not otherwise specified with env var.
 
 Example configuration:
 ```
