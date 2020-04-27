@@ -135,7 +135,7 @@ func saveExportConfig(econf export.Config, logger log.Logger) {
 	if !exConfFileExist {
 		logger.Info(fmt.Sprintf("Saving export config file %s", econf.File))
 		if err := export.Save(econf); err != nil {
-			logger.Error(fmt.Sprintf("Failed to save export config file %s", err))
+			logger.Warn(fmt.Sprintf("Failed to save export config file %s", err))
 		}
 	}
 }
