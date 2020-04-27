@@ -1,19 +1,29 @@
-[server]
-port = "9000"
+File = "config.toml"
 
-[thing]
-id = "90f9aff0-73f6-476b-a4da-d277ab99d3ce"
-key = "e606945e-47bd-405f-85f3-a4c55bd069c8"
+[Agent]
 
-[channels]
-control = "3ace3fa3-aa84-4a02-b0ab-6d594268dc77"
-data = "0bdeea73-8de1-420c-8c4d-a4e7d6c46e3b"
+  [Agent.channels]
+    control = "1280c838-df6f-4532-b3f0-608d7c6e00ef"
+    data = "5e5f1397-4c42-40f1-84f0-72cc7c7efa5a"
 
-[edgex]
-url = "http://localhost:48090/api/v1/"
+  [Agent.edgex]
+    url = "http://localhost:48090/api/v1/"
 
-[log]
-level = "info"
+  [Agent.log]
+    level = "info"
 
-[mqtt]
-url = "localhost:1883"
+  [Agent.mqtt]
+    ca_path = ""
+    cert_path = ""
+    mtls = false
+    password = "0c6fd027-79fc-4fca-be27-814f7e842cf9"
+    priv_key_path = ""
+    qos = 0
+    retain = false
+    skip_tls_ver = false
+    url = "84.201.171.65:1883"
+    username = "fc430ab3-6765-49b0-af70-8629fe5d3900"
+
+  [Agent.server]
+    nats_url = "localhost:4223"
+    port = "9000"
