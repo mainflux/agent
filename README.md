@@ -51,6 +51,33 @@ level = "info"
 url = "localhost:1883"
 ```
 
+Environment:
+| Variable                               | Description                                                   | Default                           |
+|----------------------------------------|---------------------------------------------------------------|-----------------------------------|
+|	MF_AGENT_CONFIG_FILE                   | Location of configuration file                                | config.toml                       |
+|	MF_AGENT_LOG_LEVEL                     | Log level                                                     | info                              |
+|	MF_AGENT_EDGEX_URL                     | Edgex base url                                                | http://localhost:48090/api/v1/    |
+|	MF_AGENT_MQTT_URL                      | MQTT broker url                                               | localhost:1883                    |
+|	MF_AGENT_HTTP_PORT                     | Agent http port                                               | 9000                              |
+|	MF_AGENT_BOOTSTRAP_URL                 | Mainflux bootstrap url                                        | http://localhost:8202/things/bootstrap|
+|	MF_AGENT_BOOTSTRAP_ID                  | Mainflux bootstrap id                                         |                                   |
+|	MF_AGENT_BOOTSTRAP_KEY                 | Mainflux boostrap key                                         |                                   |
+|	MF_AGENT_BOOTSTRAP_RETRIES             | Number of retries for bootstrap procedure                     | 5                                 |
+|	MF_AGENT_BOOTSTRAP_RETRY_DELAY_SECONDS | Number of seconds between retries                             | 10                                |
+|	MF_AGENT_CONTROL_CHANNEL               | Channel for sending controls, commands                        |                                   |
+|	MF_AGENT_DATA_CHANNEL                  | Channel for data sending                                      |                                   |
+|	MF_AGENT_ENCRYPTION                    | Encryption                                                    | false                             |
+|	MF_AGENT_NATS_URL                      | Nats url                                                      | nats://localhost:4222             |
+|	MF_AGENT_MQTT_USERNAME                 | MQTT username, Mainflux thing id                              |                                   |
+|	MF_AGENT_MQTT_PASSWORD                 | MQTT password, Mainflux thing key                             |                                   |
+|	MF_AGENT_MQTT_SKIP_TLS                 | Skip TLS verification                                         | true                              |
+|	MF_AGENT_MQTT_MTLS                     | Use MTLS for MQTT                                             | false                             |
+|	MF_AGENT_MQTT_CA                       | Location for CA certificate for MTLS                          | ca.crt                            |
+|	MF_AGENT_MQTT_QOS                      | QoS                                                           | 0                                 |
+|	MF_AGENT_MQTT_RETAIN                   | MQTT retain                                                   | false                             |
+|	MF_AGENT_MQTT_CLIENT_CERT              | Location of client certificate for MTLS                       | thing.cert                        |
+|	MF_AGENT_MQTT_CLIENT_PK                | Location of client certificate key for MTLS                   | thing.key                         |
+
 Here `thing` is a Mainflux thing, and control channel from `channels` is used with `req` and `res` subtopic
 (i.e. app needs to PUB/SUB on `/channels/<channel_id>/messages/req` and `/channels/<channel_id>/messages/res`).
 
