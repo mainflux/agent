@@ -25,10 +25,17 @@ make
 ```
 
 ## Usage
+Get Nats server and start it
 ```
 go get github.com/nats-io/gnatsd
 gnatsd
-MF_AGENT_BOOTSTRAP_ID=11:22:33:44 MF_AGENT_BOOTSTRAP_KEY=5341a625-53a5-4a25-be74-5b648243fcbc MF_AGENT_NATS_URL=nats://localhost:4223 MF_AGENT_BOOTSTRAP_URL=https://mainflux.com/bs/things/bootstrap build/mainflux-agent
+```
+start Agent
+```
+MF_AGENT_BOOTSTRAP_ID=<boostrap_id> \
+MF_AGENT_BOOTSTRAP_KEY=<boostrap_key> \
+MF_AGENT_BOOTSTRAP_URL=https://mainflux.com/bs/things/bootstrap \
+build/mainflux-agent
 ```
 
 ### Config
