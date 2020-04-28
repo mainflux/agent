@@ -103,7 +103,7 @@ Environment:
 |	MF_AGENT_MQTT_CLIENT_PK                | Location of client certificate key for MTLS                   | thing.key                         |
 
 Here `thing` is a Mainflux thing, and control channel from `channels` is used with `req` and `res` subtopic
-(i.e. app needs to PUB/SUB on `/channels/<channel_id>/messages/req` and `/channels/<channel_id>/messages/res`).
+(i.e. app needs to PUB/SUB on `/channels/<control_channel>/messages/req` and `/channels/<control_channel>/messages/res`).
 
 ## Sending commands to other services
 You can send commands to other services that are subscribed on the same Nats server as Agent.  
@@ -119,7 +119,58 @@ Example of on command can be:
 mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_channel>/messages/services/adc -h <mqtt_host> -p 1883  -m  "[{\"bn\":\"1:\", \"n\":\"read\", \"vs\":\"temperature\"}]"
 ```
 
+## Heartbeat service
+Services running on the same host can publish to `heartbeat.<service-name>.<service-type>` a heartbeat message.  
+Agent will keep a record on those service and update their `live` status. If heartbeat is not received in 10 sec it marks it `offline`.
+Upon next heartbeat service will be marked `online` again.
+To check services that are currently registered to agent you can:
 
+```
+curl -s -S X GET http://localhost:9000/services
+```
+```
+[
+  {
+    "Name": "duster",
+    "LastSeen": "2020-04-28T18:06:56.158130519+02:00",
+    "Status": "offline",
+    "Type": "test",
+    "Terminal": 0
+  },
+  {
+    "Name": "scrape",
+    "LastSeen": "2020-04-28T18:06:39.58849766+02:00",
+    "Status": "offline",
+    "Type": "test",
+    "Terminal": 0
+  }
+]
+```
+
+
+Or you can send a command via MQTT to Agent and receive response on MQTT topic like this:
+
+In one terminal subscribe for result:
+```
+mosquitto_sub -u <thing_id> -P <thing_key> -t channels/<control_channel>/messages/req -h <mqtt_host> -p 1883  
+```
+In another terminal publish request to view the list of services:
+```
+mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_channel>/messages/req -h <mqtt_host> -p 1883  -m  '[{"bn":"1:", "n":"config", "vs":"view"}]'  
+```
+Check the output in terminal where you subscribed for results. You should see something like:
+```
+[
+  {
+    "bn": "1",
+    "n": "view",
+    "t": 1588091188.8872917,
+    "vs": "[{\"Name\":\"duster\",\"LastSeen\":\"2020-04-28T18:06:56.158130519+02:00\",\"Status\":\"offline\",\"Type\":\"test\",\"Terminal\":0},{\"Name\":\"scrape\",\"LastSeen\":\"2020-04-28T18:06:39.58849766+02:00\",\"Status\":\"offline\",\"Type\":\"test\",\"Terminal\":0}]"                                                                       
+  }
+]
+```
+
+And you should receive
 ## License
 
 [Apache-2.0](LICENSE)
