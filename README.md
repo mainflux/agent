@@ -170,7 +170,6 @@ Check the output in terminal where you subscribed for results. You should see so
 ]
 ```
 
-And you should receive
 ## License
 
 [Apache-2.0](LICENSE)
