@@ -32,8 +32,8 @@ gnatsd
 ```
 start Agent
 ```bash
-MF_AGENT_BOOTSTRAP_ID=<boostrap_id> \
-MF_AGENT_BOOTSTRAP_KEY=<boostrap_key> \
+MF_AGENT_BOOTSTRAP_ID=<bootstrap_id> \
+MF_AGENT_BOOTSTRAP_KEY=<bootstrap_key> \
 MF_AGENT_BOOTSTRAP_URL=https://mainflux.com/bs/things/bootstrap \
 build/mainflux-agent
 ```
