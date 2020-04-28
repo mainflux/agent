@@ -14,7 +14,7 @@ Mainflux IoT Agent is a communication, execution and SW management agent for Mai
 ## Install
 Get the code:
 
-```
+```bash
 go get github.com/mainflux/agent
 cd $GOPATH/github.com/mainflux/agent
 ```
@@ -26,12 +26,12 @@ make
 
 ## Usage
 Get Nats server and start it
-```
+```bash
 go get github.com/nats-io/gnatsd
 gnatsd
 ```
 start Agent
-```
+```bash
 MF_AGENT_BOOTSTRAP_ID=<boostrap_id> \
 MF_AGENT_BOOTSTRAP_KEY=<boostrap_key> \
 MF_AGENT_BOOTSTRAP_URL=https://mainflux.com/bs/things/bootstrap \
@@ -48,8 +48,8 @@ File = "config.toml"
 [Agent]
 
   [Agent.channels]
-    control = "1280c838-df6f-4532-b3f0-608d7c6e00ef"
-    data = "5e5f1397-4c42-40f1-84f0-72cc7c7efa5a"
+    control = ""
+    data = ""
 
   [Agent.edgex]
     url = "http://localhost:48090/api/v1/"
@@ -58,19 +58,19 @@ File = "config.toml"
     level = "info"
 
   [Agent.mqtt]
-    ca_path = ""
-    cert_path = ""
+    ca_path = "ca.crt"
+    cert_path = "thing.crt"
     mtls = false
-    password = "0c6fd027-79fc-4fca-be27-814f7e842cf9"
-    priv_key_path = ""
+    password = ""
+    priv_key_path = "thin.key"
     qos = 0
     retain = false
     skip_tls_ver = false
-    url = "84.201.171.65:1883"
-    username = "fc430ab3-6765-49b0-af70-8629fe5d3900"
+    url = "localhost:1883"
+    username = ""
 
   [Agent.server]
-    nats_url = "localhost:4223"
+    nats_url = "localhost:4222"
     port = "9000"
 
 ```
@@ -104,6 +104,21 @@ Environment:
 
 Here `thing` is a Mainflux thing, and control channel from `channels` is used with `req` and `res` subtopic
 (i.e. app needs to PUB/SUB on `/channels/<channel_id>/messages/req` and `/channels/<channel_id>/messages/res`).
+
+## Sending commands to other services
+You can send commands to other services that are subscribed on the same Nats server as Agent.  
+Commands are being sent via MQTT to topic:   
+`channels/<control_channel>/messages/services/<service_name>/<subtopic>`  
+when messages is received Agent forwards them to Nats on subject:   
+`commands.<service_name>.<subtopic>`.  
+Payload is up to the application and service itself.
+
+Example of on command can be:
+
+```
+mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_channel>/messages/services/adc -h <mqtt_host> -p 1883  -m  "[{\"bn\":\"1:\", \"n\":\"read\", \"vs\":\"temperature\"}]"
+```
+
 
 ## License
 
