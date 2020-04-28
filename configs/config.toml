@@ -3,8 +3,8 @@ File = "config.toml"
 [Agent]
 
   [Agent.channels]
-    control = "1280c838-df6f-4532-b3f0-608d7c6e00ef"
-    data = "5e5f1397-4c42-40f1-84f0-72cc7c7efa5a"
+    control = ""
+    data = ""
 
   [Agent.edgex]
     url = "http://localhost:48090/api/v1/"
@@ -13,17 +13,17 @@ File = "config.toml"
     level = "info"
 
   [Agent.mqtt]
-    ca_path = ""
-    cert_path = ""
+    ca_path = "ca.crt"
+    cert_path = "thing.crt"
     mtls = false
-    password = "0c6fd027-79fc-4fca-be27-814f7e842cf9"
-    priv_key_path = ""
+    password = ""
+    priv_key_path = "thing.key"
     qos = 0
     retain = false
     skip_tls_ver = false
-    url = "84.201.171.65:1883"
-    username = "fc430ab3-6765-49b0-af70-8629fe5d3900"
+    url = "localhost:1883"
+    username = ""
 
   [Agent.server]
-    nats_url = "localhost:4223"
+    nats_url = "localhost:4222"
     port = "9000"
