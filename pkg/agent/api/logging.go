@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mainflux/agent/pkg/agent"
+	"github.com/mainflux/agent/pkg/agent/services"
 	"github.com/mainflux/agent/pkg/config"
 	log "github.com/mainflux/mainflux/logger"
 )
@@ -98,7 +99,7 @@ func (lm loggingMiddleware) ServiceConfig(uuid, cmdStr string) (err error) {
 	return lm.svc.ServiceConfig(uuid, cmdStr)
 }
 
-func (lm loggingMiddleware) Services() []agent.ServiceInfo {
+func (lm loggingMiddleware) Services() []services.Info {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method services took %s to complete", time.Since(begin))
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
