@@ -35,6 +35,8 @@ type Info struct {
 	Terminal int
 }
 
+// Service specifies api for updating status and keeping track on services
+// that are sending heartbeat to NATS.
 type Service interface {
 	Update()
 	Info() Info
