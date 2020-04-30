@@ -20,7 +20,7 @@ cd $GOPATH/github.com/mainflux/agent
 ```
 
 Make:
-```
+```bash
 make
 ```
 
@@ -30,7 +30,7 @@ Get Nats server and start it
 go get github.com/nats-io/gnatsd
 gnatsd
 ```
-start Agent
+Start Agent
 ```bash
 MF_AGENT_BOOTSTRAP_ID=<bootstrap_id> \
 MF_AGENT_BOOTSTRAP_KEY=<bootstrap_key> \
@@ -42,9 +42,7 @@ build/mainflux-agent
 Agent configuration is kept in `config.toml` if not otherwise specified with env var.
 
 Example configuration:
-```
-File = "config.toml"
-
+```toml
 [Agent]
 
   [Agent.channels]
@@ -88,7 +86,7 @@ Environment:
 |	MF_AGENT_BOOTSTRAP_KEY                 | Mainflux boostrap key                                         |                                   |
 |	MF_AGENT_BOOTSTRAP_RETRIES             | Number of retries for bootstrap procedure                     | 5                                 |
 |	MF_AGENT_BOOTSTRAP_RETRY_DELAY_SECONDS | Number of seconds between retries                             | 10                                |
-|	MF_AGENT_CONTROL_CHANNEL               | Channel for sending controls, commands                        |                                   |
+|	MF_AGENT_control_channel_id               | Channel for sending controls, commands                        |                                   |
 |	MF_AGENT_DATA_CHANNEL                  | Channel for data sending                                      |                                   |
 |	MF_AGENT_ENCRYPTION                    | Encryption                                                    | false                             |
 |	MF_AGENT_NATS_URL                      | Nats url                                                      | nats://localhost:4222             |
@@ -103,20 +101,22 @@ Environment:
 |	MF_AGENT_MQTT_CLIENT_PK                | Location of client certificate key for MTLS                   | thing.key                         |
 
 Here `thing` is a Mainflux thing, and control channel from `channels` is used with `req` and `res` subtopic
-(i.e. app needs to PUB/SUB on `/channels/<control_channel>/messages/req` and `/channels/<control_channel>/messages/res`).
+(i.e. app needs to PUB/SUB on `/channels/<control_channel_id>/messages/req` and `/channels/<control_channel_id>/messages/res`).
 
 ## Sending commands to other services
 You can send commands to other services that are subscribed on the same Nats server as Agent.  
 Commands are being sent via MQTT to topic:   
-`channels/<control_channel>/messages/services/<service_name>/<subtopic>`  
+* `channels/<control_channel_id>/messages/services/<service_name>/<subtopic>`  
+
 when messages is received Agent forwards them to Nats on subject:   
-`commands.<service_name>.<subtopic>`.  
+* `commands.<service_name>.<subtopic>`.  
+
 Payload is up to the application and service itself.
 
 Example of on command can be:
 
-```
-mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_channel>/messages/services/adc -h <mqtt_host> -p 1883  -m  "[{\"bn\":\"1:\", \"n\":\"read\", \"vs\":\"temperature\"}]"
+```bash
+mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_channel_id>/messages/services/adc -h <mqtt_host> -p 1883  -m  "[{\"bn\":\"1:\", \"n\":\"read\", \"vs\":\"temperature\"}]"
 ```
 
 ## Heartbeat service
@@ -125,10 +125,10 @@ Agent will keep a record on those service and update their `live` status. If hea
 Upon next heartbeat service will be marked `online` again.
 To check services that are currently registered to agent you can:
 
-```
+```bash
 curl -s -S X GET http://localhost:9000/services
 ```
-```
+```json
 [
   {
     "Name": "duster",
@@ -147,19 +147,18 @@ curl -s -S X GET http://localhost:9000/services
 ]
 ```
 
-
 Or you can send a command via MQTT to Agent and receive response on MQTT topic like this:
 
 In one terminal subscribe for result:
-```
-mosquitto_sub -u <thing_id> -P <thing_key> -t channels/<control_channel>/messages/req -h <mqtt_host> -p 1883  
+```bash
+mosquitto_sub -u <thing_id> -P <thing_key> -t channels/<control_channel_id>/messages/req -h <mqtt_host> -p 1883  
 ```
 In another terminal publish request to view the list of services:
-```
-mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_channel>/messages/req -h <mqtt_host> -p 1883  -m  '[{"bn":"1:", "n":"config", "vs":"view"}]'  
+```bash
+mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_channel_id>/messages/req -h <mqtt_host> -p 1883  -m  '[{"bn":"1:", "n":"config", "vs":"view"}]'  
 ```
 Check the output in terminal where you subscribed for results. You should see something like:
-```
+```json
 [
   {
     "bn": "1",
