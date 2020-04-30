@@ -86,7 +86,7 @@ Environment:
 |	MF_AGENT_BOOTSTRAP_KEY                 | Mainflux boostrap key                                         |                                   |
 |	MF_AGENT_BOOTSTRAP_RETRIES             | Number of retries for bootstrap procedure                     | 5                                 |
 |	MF_AGENT_BOOTSTRAP_RETRY_DELAY_SECONDS | Number of seconds between retries                             | 10                                |
-|	MF_AGENT_control_channel_id               | Channel for sending controls, commands                        |                                   |
+|	MF_AGENT_CONTROL_CHANNEL               | Channel for sending controls, commands                        |                                   |
 |	MF_AGENT_DATA_CHANNEL                  | Channel for data sending                                      |                                   |
 |	MF_AGENT_ENCRYPTION                    | Encryption                                                    | false                             |
 |	MF_AGENT_NATS_URL                      | Nats url                                                      | nats://localhost:4222             |
@@ -169,6 +169,23 @@ Check the output in terminal where you subscribed for results. You should see so
 ]
 ```
 
+
+## How to save config via agent
+Agent can be used to send configuration file for the [Export][export] service from cloud to gateway via MQTT.
+Here is the example command
+
+```bash
+mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_ch_id>/messages/req -h localhost -p 18831  -m  "[{\"bn\":\"1:\", \"n\":\"config\", \"vs\":\"config.toml, RmlsZSA9ICIuLi9jb25maWdzL2NvbmZpZy50b21sIgoKW2V4cF0KICBsb2dfbGV2ZWwgPSAiZGVidWciCiAgbmF0cyA9ICJuYXRzOi8vMTI3LjAuMC4xOjQyMjIiCiAgcG9ydCA9ICI4MTcwIgoKW21xdHRdCiAgY2FfcGF0aCA9ICJjYS5jcnQiCiAgY2VydF9wYXRoID0gInRoaW5nLmNydCIKICBjaGFubmVsID0gIiIKICBob3N0ID0gInRjcDovL2xvY2FsaG9zdDoxODgzIgogIG10bHMgPSBmYWxzZQogIHBhc3N3b3JkID0gImFjNmI1N2UwLTliNzAtNDVkNi05NGM4LWU2N2FjOTA4NjE2NSIKICBwcml2X2tleV9wYXRoID0gInRoaW5nLmtleSIKICBxb3MgPSAwCiAgcmV0YWluID0gZmFsc2UKICBza2lwX3Rsc192ZXIgPSBmYWxzZQogIHVzZXJuYW1lID0gIjRhNDM3ZjQ2LWRhN2ItNDQ2OS05NmI3LWJlNzU0YjVlOGQzNiIKCltbcm91dGVzXV0KICBtcXR0X3RvcGljID0gIjRjNjZhNzg1LTE5MDAtNDg0NC04Y2FhLTU2ZmI4Y2ZkNjFlYiIKICBuYXRzX3RvcGljID0gIioiCg==\"}]"
+```
+
+`vs="config_file_path, file_cont_base64"` - vs determines where to save file and contains file content in base64 encoding payload.  
+
+Here is an example how to make payload for the command:
+```go
+b,_ := toml.Marshal(export.Config)
+payload := base64.StdEncoding.EncodeToString(b)
+```
+
 ## License
 
 [Apache-2.0](LICENSE)
@@ -180,3 +197,4 @@ Check the output in terminal where you subscribed for results. You should see so
 [gitter-badge]: https://badges.gitter.im/Join%20Chat.svg
 [license]: https://img.shields.io/badge/license-Apache%20v2.0-blue.svg
 
+[export]:https://github.com/mainflux/export
