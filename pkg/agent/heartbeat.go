@@ -17,10 +17,7 @@ const (
 )
 
 type svc struct {
-	name     string
-	lastSeen time.Time
-	status   string
-	typ      string
+	info Info
 
 	counter int
 	ticker  *time.Ticker
@@ -44,7 +41,16 @@ type Heartbeat interface {
 
 func NewHeartbeat(name, svctype string) Heartbeat {
 	ticker := time.NewTicker(interval * time.Millisecond)
-	s := svc{name: name, status: online, typ: svctype, counter: timeout, ticker: ticker}
+	s := svc{
+		info: Info{
+			Name:     name,
+			Status:   online,
+			Type:     svctype,
+			LastSeen: time.Now(),
+		},
+		counter: timeout,
+		ticker:  ticker,
+	}
 	s.listen()
 	return &s
 }
@@ -59,7 +65,7 @@ func (s *svc) listen() {
 				s.mu.Lock()
 				s.counter = s.counter - 1
 				if s.counter == 0 {
-					s.status = offline
+					s.info.Status = offline
 					s.counter = timeout
 				}
 				s.mu.Unlock()
@@ -71,16 +77,11 @@ func (s *svc) listen() {
 func (s *svc) Update() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.lastSeen = time.Now()
+	s.info.LastSeen = time.Now()
 	s.counter = timeout
-	s.status = online
+	s.info.Status = online
 }
 
 func (s *svc) Info() Info {
-	return Info{
-		Name:     s.name,
-		LastSeen: s.lastSeen,
-		Status:   s.status,
-		Type:     s.typ,
-	}
+	return s.info
 }
