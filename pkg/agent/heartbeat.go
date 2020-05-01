@@ -17,11 +17,10 @@ const (
 )
 
 // svc keeps info on service live status.
-// Services send heartbeat to nats updating last seen.
-// Whenservice doesnt send heartbeat for some time gets marked offline
+// Services send heartbeat to nats thus updating last seen.
+// When service doesnt send heartbeat for some time gets marked offline.
 type svc struct {
-	info Info
-
+	info    Info
 	counter int
 	ticker  *time.Ticker
 	mu      sync.Mutex
