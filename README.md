@@ -208,6 +208,6 @@ payload := base64.StdEncoding.EncodeToString(b)
 [gitter-badge]: https://badges.gitter.im/Join%20Chat.svg
 [license]: https://img.shields.io/badge/license-Apache%20v2.0-blue.svg
 
-[export]:https://github.com/mainflux/export
-[provision]:(https://github.com/mainflux/mainflux/tree/master/provision)
-[mfxui]:(https://github.com/mainflux/ui)
+[export]: https://github.com/mainflux/export
+[provision]: https://github.com/mainflux/mainflux/tree/master/provision
+[mfxui]: https://github.com/mainflux/ui
