@@ -25,12 +25,17 @@ make
 ```
 
 ## Usage
-Get Nats server and start it
+Get Nats server and start it, by default it starts on port `4222`
+
 ```bash
 go get github.com/nats-io/gnatsd
 gnatsd
 ```
-Start Agent
+
+Create gateway configuration with [Provision][provision] service or through [Mainflux UI][mfxui].  
+
+Start Agent with:
+
 ```bash
 MF_AGENT_BOOTSTRAP_ID=<bootstrap_id> \
 MF_AGENT_BOOTSTRAP_KEY=<bootstrap_key> \
@@ -151,14 +156,19 @@ curl -s -S X GET http://localhost:9000/services
 Or you can send a command via MQTT to Agent and receive response on MQTT topic like this:
 
 In one terminal subscribe for result:
+
 ```bash
 mosquitto_sub -u <thing_id> -P <thing_key> -t channels/<control_channel_id>/messages/req -h <mqtt_host> -p 1883  
 ```
+
 In another terminal publish request to view the list of services:
+
 ```bash
 mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_channel_id>/messages/req -h <mqtt_host> -p 1883  -m  '[{"bn":"1:", "n":"config", "vs":"view"}]'  
 ```
+
 Check the output in terminal where you subscribed for results. You should see something like:
+
 ```json
 [
   {
@@ -199,3 +209,5 @@ payload := base64.StdEncoding.EncodeToString(b)
 [license]: https://img.shields.io/badge/license-Apache%20v2.0-blue.svg
 
 [export]:https://github.com/mainflux/export
+[provision]:(https://github.com/mainflux/mainflux/tree/master/provision)
+[mfxui]:(https://github.com/mainflux/ui)
