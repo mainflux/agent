@@ -28,11 +28,11 @@ type svc struct {
 }
 
 type Info struct {
-	Name     string
-	LastSeen time.Time
-	Status   string
-	Type     string
-	Terminal int
+	Name     string    `json:"name"`
+	LastSeen time.Time `json:"last_seen"`
+	Status   string    `json:"status"`
+	Type     string    `json:"type"`
+	Terminal int       `json:"terminal"`
 }
 
 // Heartbeat specifies api for updating status and keeping track on services
