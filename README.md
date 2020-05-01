@@ -137,18 +137,18 @@ curl -s -S X GET http://localhost:9000/services
 ```json
 [
   {
-    "Name": "duster",
-    "LastSeen": "2020-04-28T18:06:56.158130519+02:00",
-    "Status": "offline",
-    "Type": "test",
-    "Terminal": 0
+    "name": "duster",
+    "last_seen": "2020-04-28T18:06:56.158130519+02:00",
+    "status": "offline",
+    "type": "test",
+    "terminal": 0
   },
   {
-    "Name": "scrape",
-    "LastSeen": "2020-04-28T18:06:39.58849766+02:00",
-    "Status": "offline",
-    "Type": "test",
-    "Terminal": 0
+    "name": "scrape",
+    "last_seen": "2020-04-28T18:06:39.58849766+02:00",
+    "status": "offline",
+    "type": "test",
+    "terminal": 0
   }
 ]
 ```
@@ -175,7 +175,7 @@ Check the output in terminal where you subscribed for results. You should see so
     "bn": "1",
     "n": "view",
     "t": 1588091188.8872917,
-    "vs": "[{\"Name\":\"duster\",\"LastSeen\":\"2020-04-28T18:06:56.158130519+02:00\",\"Status\":\"offline\",\"Type\":\"test\",\"Terminal\":0},{\"Name\":\"scrape\",\"LastSeen\":\"2020-04-28T18:06:39.58849766+02:00\",\"Status\":\"offline\",\"Type\":\"test\",\"Terminal\":0}]"                                                                       
+    "vs": "[{\"name\":\"duster\",\"last_seen\":\"2020-04-28T18:06:56.158130519+02:00\",\"status\":\"offline\",\"type\":\"test\",\"terminal\":0},{\"name\":\"scrape\",\"last_seen\":\"2020-04-28T18:06:39.58849766+02:00\",\"status\":\"offline\",\"type\":\"test\",\"terminal\":0}]"
   }
 ]
 ```
