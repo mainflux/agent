@@ -127,8 +127,10 @@ mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_channel_id>/mess
 
 ## Heartbeat service
 Services running on the same host can publish to `heartbeat.<service-name>.<service-type>` a heartbeat message.  
-Agent will keep a record on those service and update their `live` status. If heartbeat is not received in 10 sec it marks it `offline`.
+Agent will keep a record on those service and update their `live` status.
+If heartbeat is not received in 10 sec it marks it `offline`.
 Upon next heartbeat service will be marked `online` again.
+
 To check services that are currently registered to agent you can:
 
 ```bash
@@ -183,7 +185,7 @@ Check the output in terminal where you subscribed for results. You should see so
 
 ## How to save config via agent
 Agent can be used to send configuration file for the [Export][export] service from cloud to gateway via MQTT.
-Here is the example command
+Here is the example command:
 
 ```bash
 mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_ch_id>/messages/req -h localhost -p 18831  -m  "[{\"bn\":\"1:\", \"n\":\"config\", \"vs\":\"config.toml, RmlsZSA9ICIuLi9jb25maWdzL2NvbmZpZy50b21sIgoKW2V4cF0KICBsb2dfbGV2ZWwgPSAiZGVidWciCiAgbmF0cyA9ICJuYXRzOi8vMTI3LjAuMC4xOjQyMjIiCiAgcG9ydCA9ICI4MTcwIgoKW21xdHRdCiAgY2FfcGF0aCA9ICJjYS5jcnQiCiAgY2VydF9wYXRoID0gInRoaW5nLmNydCIKICBjaGFubmVsID0gIiIKICBob3N0ID0gInRjcDovL2xvY2FsaG9zdDoxODgzIgogIG10bHMgPSBmYWxzZQogIHBhc3N3b3JkID0gImFjNmI1N2UwLTliNzAtNDVkNi05NGM4LWU2N2FjOTA4NjE2NSIKICBwcml2X2tleV9wYXRoID0gInRoaW5nLmtleSIKICBxb3MgPSAwCiAgcmV0YWluID0gZmFsc2UKICBza2lwX3Rsc192ZXIgPSBmYWxzZQogIHVzZXJuYW1lID0gIjRhNDM3ZjQ2LWRhN2ItNDQ2OS05NmI3LWJlNzU0YjVlOGQzNiIKCltbcm91dGVzXV0KICBtcXR0X3RvcGljID0gIjRjNjZhNzg1LTE5MDAtNDg0NC04Y2FhLTU2ZmI4Y2ZkNjFlYiIKICBuYXRzX3RvcGljID0gIioiCg==\"}]"
