@@ -188,10 +188,10 @@ Agent can be used to send configuration file for the [Export][export] service fr
 Here is the example command:
 
 ```bash
-mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_channel_id>/messages/req -h localhost -p 1883  -m  "[{\"bn\":\"1:\", \"n\":\"config\", \"vs\":\"<config_file_path>, <file_cont_base64>\"}]"
+mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_channel_id>/messages/req -h localhost -p 1883  -m  "[{\"bn\":\"1:\", \"n\":\"config\", \"vs\":\"<config_file_path>, <file_content_base64>\"}]"
 ```
 * `<config_file_path>` - file path where to save contents
-* `<file_cont_base64>` - file content, base64 encoded marshaled toml.
+* `<file_content_base64>` - file content, base64 encoded marshaled toml.
 
 Here is an example how to make payload for the command:
 ```go
