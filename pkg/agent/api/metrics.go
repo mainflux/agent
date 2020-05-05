@@ -75,7 +75,7 @@ func (ms *metricsMiddleware) Config() config.Config {
 	return ms.svc.Config()
 }
 
-func (ms *metricsMiddleware) Services() []agent.ServiceInfo {
+func (ms *metricsMiddleware) Services() []agent.Info {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "services").Add(1)
 		ms.latency.With("method", "services").Observe(time.Since(begin).Seconds())

@@ -10,10 +10,8 @@ import (
 	"os/exec"
 	"sort"
 	"strings"
-	"time"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mainflux/agent/pkg/agent/services"
 	"github.com/mainflux/agent/pkg/config"
 	"github.com/mainflux/agent/pkg/edgex"
 	"github.com/mainflux/agent/pkg/encoder"
@@ -101,7 +99,7 @@ type Service interface {
 	ServiceConfig(uuid, cmdStr string) error
 
 	// Services returns service list
-	Services() []ServiceInfo
+	Services() []Info
 
 	// Terminal used for terminal control of gateway
 	Terminal(string, string) error
@@ -112,21 +110,13 @@ type Service interface {
 
 var _ Service = (*agent)(nil)
 
-type ServiceInfo struct {
-	Name     string
-	LastSeen time.Time
-	Status   string
-	Type     string
-	Terminal int
-}
-
 type agent struct {
 	mqttClient  paho.Client
 	config      *config.Config
 	edgexClient edgex.Client
 	logger      log.Logger
 	nats        *nats.Conn
-	svcs        map[string]*services.Service
+	svcs        map[string]Heartbeat
 	terminals   map[string]terminal.Session
 }
 
@@ -138,7 +128,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		config:      cfg,
 		nats:        nc,
 		logger:      logger,
-		svcs:        make(map[string]*services.Service),
+		svcs:        make(map[string]Heartbeat),
 		terminals:   make(map[string]terminal.Session),
 	}
 
@@ -155,7 +145,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		// if there is multiple instances of the same service
 		// we will have to add another distinction
 		if _, ok := ag.svcs[svcname]; !ok {
-			svc := services.NewService(svcname, svctype)
+			svc := NewHeartbeat(svcname, svctype)
 			ag.svcs[svcname] = svc
 			ag.logger.Info(fmt.Sprintf("Services '%s-%s' registered", svcname, svctype))
 		}
@@ -374,23 +364,18 @@ func (a *agent) Config() config.Config {
 	return *a.config
 }
 
-func (a *agent) Services() []ServiceInfo {
-	services := []ServiceInfo{}
+func (a *agent) Services() []Info {
+	svcInfos := []Info{}
 	keys := []string{}
 	for k := range a.svcs {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 	for _, key := range keys {
-		service := ServiceInfo{
-			Name:     a.svcs[key].Name,
-			LastSeen: a.svcs[key].LastSeen,
-			Status:   a.svcs[key].Status,
-			Type:     a.svcs[key].Type,
-		}
-		services = append(services, service)
+		service := a.svcs[key].Info()
+		svcInfos = append(svcInfos, service)
 	}
-	return services
+	return svcInfos
 }
 
 func (a *agent) Publish(t, payload string) error {
