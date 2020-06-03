@@ -45,13 +45,24 @@ type MQTTConf struct {
 	Cert        tls.Certificate `json:"-" toml:"-"`
 }
 
+type Heartbeat struct {
+	NumInterval int `toml:"num_interval"`
+	Interval    int `toml:"interval"`
+}
+
+type Terminal struct {
+	SessionTimeout int `toml:"session_timeout"`
+}
+
 // Config struct of Mainflux Agent
 type AgentConf struct {
-	Server   ServerConf `toml:"server"`
-	Channels ChanConf   `toml:"channels"`
-	Edgex    EdgexConf  `toml:"edgex"`
-	Log      LogConf    `toml:"log"`
-	MQTT     MQTTConf   `toml:"mqtt"`
+	Server    ServerConf `toml:"server"`
+	Terminal  Terminal   `toml:"terminal"`
+	Heartbeat Heartbeat  `toml:"heartbeat"`
+	Channels  ChanConf   `toml:"channels"`
+	Edgex     EdgexConf  `toml:"edgex"`
+	Log       LogConf    `toml:"log"`
+	MQTT      MQTTConf   `toml:"mqtt"`
 }
 
 type Config struct {
@@ -59,13 +70,15 @@ type Config struct {
 	File  string
 }
 
-func New(sc ServerConf, cc ChanConf, ec EdgexConf, lc LogConf, mc MQTTConf, file string) Config {
+func New(sc ServerConf, cc ChanConf, ec EdgexConf, lc LogConf, mc MQTTConf, hc Heartbeat, tc Terminal, file string) Config {
 	ac := AgentConf{
-		Server:   sc,
-		Channels: cc,
-		Edgex:    ec,
-		Log:      lc,
-		MQTT:     mc,
+		Server:    sc,
+		Channels:  cc,
+		Edgex:     ec,
+		Log:       lc,
+		MQTT:      mc,
+		Heartbeat: hc,
+		Terminal:  tc,
 	}
 
 	return Config{

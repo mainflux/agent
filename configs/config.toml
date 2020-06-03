@@ -25,3 +25,13 @@
   [Agent.server]
     nats_url = "localhost:4222"
     port = "9000"
+  
+  # num_interval - number of intervals in which heartbeat is expected
+  # interval - interval in seconds
+  [Agent.heartbeat]
+    num_interval = 3
+    interval = 10
+  
+  # session_timeout in sec, when expired terminal session ends
+  [Agent.terminal]
+    session_timeout = 30

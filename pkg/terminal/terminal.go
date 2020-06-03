@@ -26,16 +26,17 @@ var (
 )
 
 type term struct {
-	uuid    string
-	ptmx    *os.File
-	writer  io.Writer
-	done    chan bool
-	topic   string
-	timeout int
-	timer   *time.Ticker
-	publish func(channel, payload string) error
-	logger  logger.Logger
-	mu      sync.Mutex
+	uuid         string
+	ptmx         *os.File
+	writer       io.Writer
+	done         chan bool
+	topic        string
+	timeout      int
+	resetTimeout int
+	timer        *time.Ticker
+	publish      func(channel, payload string) error
+	logger       logger.Logger
+	mu           sync.Mutex
 }
 
 type Session interface {
@@ -44,14 +45,15 @@ type Session interface {
 	io.Writer
 }
 
-func NewSession(uuid string, publish func(channel, payload string) error, logger logger.Logger) (Session, error) {
+func NewSession(uuid string, timeout int, publish func(channel, payload string) error, logger logger.Logger) (Session, error) {
 	t := &term{
-		logger:  logger,
-		uuid:    uuid,
-		publish: publish,
-		timeout: timeoutInterval,
-		topic:   fmt.Sprintf("term/%s", uuid),
-		done:    make(chan bool),
+		logger:       logger,
+		uuid:         uuid,
+		publish:      publish,
+		timeout:      timeout,
+		resetTimeout: timeout,
+		topic:        fmt.Sprintf("term/%s", uuid),
+		done:         make(chan bool),
 	}
 
 	c := exec.Command("bash")
@@ -105,7 +107,7 @@ func (t *term) IsDone() chan bool {
 }
 
 func (t *term) Write(p []byte) (int, error) {
-	t.resetCounter(timeoutInterval)
+	t.resetCounter(t.resetTimeout)
 	n := len(p)
 	payload, err := encoder.EncodeSenML(t.uuid, terminal, string(p))
 	if err != nil {

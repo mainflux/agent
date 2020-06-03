@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"sort"
 	"strings"
+	"time"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mainflux/agent/pkg/config"
@@ -145,7 +146,8 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		// if there is multiple instances of the same service
 		// we will have to add another distinction
 		if _, ok := ag.svcs[svcname]; !ok {
-			svc := NewHeartbeat(svcname, svctype)
+			interval := time.Duration(cfg.Agent.Heartbeat.Interval * time.Now().Second())
+			svc := NewHeartbeat(svcname, svctype, cfg.Agent.Heartbeat.NumInterval, interval)
 			ag.svcs[svcname] = svc
 			ag.logger.Info(fmt.Sprintf("Services '%s-%s' registered", svcname, svctype))
 		}
@@ -270,7 +272,7 @@ func (a *agent) Terminal(uuid, cmdStr string) error {
 			return err
 		}
 	case open:
-		if err := a.terminalOpen(uuid); err != nil {
+		if err := a.terminalOpen(uuid, a.config.Agent.Terminal.SessionTimeout); err != nil {
 			return err
 		}
 	case close:
@@ -281,9 +283,9 @@ func (a *agent) Terminal(uuid, cmdStr string) error {
 	return nil
 }
 
-func (a *agent) terminalOpen(uuid string) error {
+func (a *agent) terminalOpen(uuid string, timeout int) error {
 	if _, ok := a.terminals[uuid]; !ok {
-		term, err := terminal.NewSession(uuid, a.Publish, a.logger)
+		term, err := terminal.NewSession(uuid, timeout, a.Publish, a.logger)
 		if err != nil {
 			return errors.Wrap(errors.Wrap(errFailedToCreateTerminalSession, fmt.Errorf(" for %s", uuid)), err)
 		}
@@ -312,7 +314,7 @@ func (a *agent) terminalClose(uuid string) error {
 }
 
 func (a *agent) terminalWrite(uuid, cmd string) error {
-	if err := a.terminalOpen(uuid); err != nil {
+	if err := a.terminalOpen(uuid, a.config.Agent.Terminal.SessionTimeout); err != nil {
 		return err
 	}
 	term := a.terminals[uuid]

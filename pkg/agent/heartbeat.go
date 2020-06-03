@@ -6,9 +6,6 @@ import (
 )
 
 const (
-	timeout  = 3
-	interval = 10000
-
 	online  = "online"
 	offline = "offline"
 
@@ -20,10 +17,11 @@ const (
 // Services send heartbeat to nats thus updating last seen.
 // When service doesnt send heartbeat for some time gets marked offline.
 type svc struct {
-	info    Info
-	counter int
-	ticker  *time.Ticker
-	mu      sync.Mutex
+	info        Info
+	counter     int
+	numInterval int
+	ticker      *time.Ticker
+	mu          sync.Mutex
 }
 
 type Info struct {
@@ -41,8 +39,11 @@ type Heartbeat interface {
 	Info() Info
 }
 
-func NewHeartbeat(name, svctype string) Heartbeat {
-	ticker := time.NewTicker(interval * time.Millisecond)
+// count - number of intervals that determines timeframe during which heartbeat is expected
+// interval - duration of interval
+// if service doesnt send heartbeat during count * interval it is marked offline
+func NewHeartbeat(name, svctype string, count int, interval time.Duration) Heartbeat {
+	ticker := time.NewTicker(interval)
 	s := svc{
 		info: Info{
 			Name:     name,
@@ -50,8 +51,9 @@ func NewHeartbeat(name, svctype string) Heartbeat {
 			Type:     svctype,
 			LastSeen: time.Now(),
 		},
-		counter: timeout,
-		ticker:  ticker,
+		counter:     count,
+		numInterval: count,
+		ticker:      ticker,
 	}
 	s.listen()
 	return &s
@@ -68,7 +70,7 @@ func (s *svc) listen() {
 				s.counter = s.counter - 1
 				if s.counter == 0 {
 					s.info.Status = offline
-					s.counter = timeout
+					s.counter = s.numInterval
 				}
 				s.mu.Unlock()
 			}
@@ -80,7 +82,7 @@ func (s *svc) Update() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.info.LastSeen = time.Now()
-	s.counter = timeout
+	s.counter = 1
 	s.info.Status = online
 }
 
