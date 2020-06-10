@@ -52,7 +52,7 @@ const (
 	defMqttPrivKey                = "thing.key"
 	defConfigFile                 = "config.toml"
 	defNatsURL                    = nats.DefaultURL
-	defNumInterval                = "3"
+	defNumOfIntervals             = "3"
 	defInterval                   = "10"
 	defTermSessionTimeout         = "30"
 
@@ -80,7 +80,7 @@ const (
 	envMqttRetain         = "MF_AGENT_MQTT_RETAIN"
 	envMqttCert           = "MF_AGENT_MQTT_CLIENT_CERT"
 	envMqttPrivKey        = "MF_AGENT_MQTT_CLIENT_PK"
-	envNumInterval        = "MF_AGENT_HEARTBEAT_NUM_INTERVAL"
+	envNumOfIntervals     = "MF_AGENT_HEARTBEAT_NUM_INTERVAL"
 	envInterval           = "MF_AGENT_HEARTBEAT_INTERVAL"
 	envTermSessionTimeout = "MF_AGENT_TERMINAL_SESSION_TIMEOUT"
 )
@@ -178,13 +178,13 @@ func loadEnvConfig() (config.Config, error) {
 	if err != nil {
 		return config.Config{}, errors.Wrap(errFailedToConfigHeartbeat, err)
 	}
-	numInterval, err := strconv.Atoi(mainflux.Env(envNumInterval, defNumInterval))
+	numInterval, err := strconv.Atoi(mainflux.Env(envNumOfIntervals, defNumOfIntervals))
 	if err != nil {
 		return config.Config{}, errors.Wrap(errFailedToConfigHeartbeat, err)
 	}
 	ch := config.Heartbeat{
-		Interval:    interval,
-		NumInterval: numInterval,
+		Interval:       interval,
+		NumOfIntervals: numInterval,
 	}
 	termSessionTimeout, err := strconv.Atoi(mainflux.Env(envTermSessionTimeout, defTermSessionTimeout))
 	if err != nil {
@@ -229,9 +229,6 @@ func loadBootConfig(c config.Config, logger logger.Logger) (bsc config.Config, e
 	if bsc, err = config.Read(file); err != nil {
 		return c, errors.Wrap(errFailedToReadConfig, err)
 	}
-
-	bsc.Agent.Heartbeat = c.Agent.Heartbeat
-	bsc.Agent.Terminal = c.Agent.Terminal
 
 	mc, err := loadCertificate(bsc.Agent.MQTT)
 	if err != nil {

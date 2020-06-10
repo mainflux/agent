@@ -147,7 +147,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		// we will have to add another distinction
 		if _, ok := ag.svcs[svcname]; !ok {
 			interval := time.Duration(cfg.Agent.Heartbeat.Interval * time.Now().Second())
-			svc := NewHeartbeat(svcname, svctype, cfg.Agent.Heartbeat.NumInterval, interval)
+			svc := NewHeartbeat(svcname, svctype, cfg.Agent.Heartbeat.NumOfIntervals, interval)
 			ag.svcs[svcname] = svc
 			ag.logger.Info(fmt.Sprintf("Services '%s-%s' registered", svcname, svctype))
 		}

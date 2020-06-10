@@ -46,8 +46,8 @@ type MQTTConf struct {
 }
 
 type Heartbeat struct {
-	NumInterval int `toml:"num_interval"`
-	Interval    int `toml:"interval"`
+	NumOfIntervals int `toml:"num_of_intervals"`
+	Interval       int `toml:"interval"`
 }
 
 type Terminal struct {
