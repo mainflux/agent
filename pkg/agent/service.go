@@ -132,9 +132,9 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		svcs:        make(map[string]Heartbeat),
 		terminals:   make(map[string]terminal.Session),
 	}
-	interval := time.Duration(cfg.Agent.Heartbeat.Interval * time.Now().Second())
-	if interval <= 0 {
-		ag.logger.Error(fmt.Sprintf("invalid heartbeat interval %d, heartbeat will not work", interval))
+
+	if cfg.Agent.Heartbeat.Interval <= 0 {
+		ag.logger.Error(fmt.Sprintf("invalid heartbeat interval %d, heartbeat will not work", cfg.Agent.Heartbeat.Interval))
 	}
 
 	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {
@@ -150,7 +150,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		// if there is multiple instances of the same service
 		// we will have to add another distinction
 		if _, ok := ag.svcs[svcname]; !ok {
-			svc := NewHeartbeat(svcname, svctype, cfg.Agent.Heartbeat.NumOfIntervals, interval)
+			svc := NewHeartbeat(svcname, svctype, cfg.Agent.Heartbeat.Interval)
 			ag.svcs[svcname] = svc
 			ag.logger.Info(fmt.Sprintf("Services '%s-%s' registered", svcname, svctype))
 		}
@@ -286,7 +286,7 @@ func (a *agent) Terminal(uuid, cmdStr string) error {
 	return nil
 }
 
-func (a *agent) terminalOpen(uuid string, timeout int) error {
+func (a *agent) terminalOpen(uuid string, timeout time.Duration) error {
 	if _, ok := a.terminals[uuid]; !ok {
 		term, err := terminal.NewSession(uuid, timeout, a.Publish, a.logger)
 		if err != nil {
@@ -294,7 +294,7 @@ func (a *agent) terminalOpen(uuid string, timeout int) error {
 		}
 		a.terminals[uuid] = term
 		go func() {
-			for _ = range term.IsDone() {
+			for range term.IsDone() {
 				// Terminal is inactive, should be closed
 				a.logger.Debug((fmt.Sprintf("Closing terminal session %s", uuid)))
 				a.terminalClose(uuid)

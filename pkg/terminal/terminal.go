@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	timeoutInterval = 30
-	terminal        = "term"
+	terminal = "term"
+	second   = time.Duration(1 * time.Second)
 )
 
 var (
@@ -31,8 +31,8 @@ type term struct {
 	writer       io.Writer
 	done         chan bool
 	topic        string
-	timeout      int
-	resetTimeout int
+	timeout      time.Duration
+	resetTimeout time.Duration
 	timer        *time.Ticker
 	publish      func(channel, payload string) error
 	logger       logger.Logger
@@ -45,7 +45,7 @@ type Session interface {
 	io.Writer
 }
 
-func NewSession(uuid string, timeout int, publish func(channel, payload string) error, logger logger.Logger) (Session, error) {
+func NewSession(uuid string, timeout time.Duration, publish func(channel, payload string) error, logger logger.Logger) (Session, error) {
 	t := &term{
 		logger:       logger,
 		uuid:         uuid,
@@ -84,7 +84,7 @@ func NewSession(uuid string, timeout int, publish func(channel, payload string) 
 	return t, nil
 }
 
-func (t *term) resetCounter(timeout int) {
+func (t *term) resetCounter(timeout time.Duration) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if timeout > 0 {
@@ -95,7 +95,7 @@ func (t *term) resetCounter(timeout int) {
 func (t *term) decrementCounter() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.timeout = t.timeout - 1
+	t.timeout = t.timeout - second
 	if t.timeout == 0 {
 		t.done <- true
 		t.timer.Stop()

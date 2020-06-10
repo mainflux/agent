@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	"github.com/mainflux/mainflux/errors"
 	"github.com/pelletier/go-toml"
@@ -46,12 +47,11 @@ type MQTTConf struct {
 }
 
 type Heartbeat struct {
-	NumOfIntervals int `toml:"num_of_intervals"`
-	Interval       int `toml:"interval"`
+	Interval time.Duration `toml:"interval"`
 }
 
 type Terminal struct {
-	SessionTimeout int `toml:"session_timeout"`
+	SessionTimeout time.Duration `toml:"session_timeout"`
 }
 
 // Config struct of Mainflux Agent

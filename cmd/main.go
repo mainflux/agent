@@ -9,9 +9,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"reflect"
-	"strconv"
 	"syscall"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
@@ -53,9 +52,8 @@ const (
 	defMqttPrivKey                = "thing.key"
 	defConfigFile                 = "config.toml"
 	defNatsURL                    = nats.DefaultURL
-	defNumOfIntervals             = "3"
-	defInterval                   = "10"
-	defTermSessionTimeout         = "30"
+	defInterval                   = "45s"
+	defTermSessionTimeout         = "40s"
 
 	envConfigFile                 = "MF_AGENT_CONFIG_FILE"
 	envLogLevel                   = "MF_AGENT_LOG_LEVEL"
@@ -81,7 +79,6 @@ const (
 	envMqttRetain         = "MF_AGENT_MQTT_RETAIN"
 	envMqttCert           = "MF_AGENT_MQTT_CLIENT_CERT"
 	envMqttPrivKey        = "MF_AGENT_MQTT_CLIENT_PK"
-	envNumOfIntervals     = "MF_AGENT_HEARTBEAT_NUM_OF_INTERVAL"
 	envInterval           = "MF_AGENT_HEARTBEAT_INTERVAL"
 	envTermSessionTimeout = "MF_AGENT_TERMINAL_SESSION_TIMEOUT"
 )
@@ -104,13 +101,9 @@ func main() {
 		log.Fatalf(fmt.Sprintf("Failed to create logger: %s", err))
 	}
 
-	if cfgBootstrap, err := loadBootConfig(cfg, logger); err != nil {
+	cfg, err = loadBootConfig(cfg, logger)
+	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to load config: %s", err))
-	} else {
-		// Merge environment variables and file settings.
-		mergeConfigs(&cfgBootstrap, &cfg)
-		cfg = cfgBootstrap
-		logger.Info("Continue with settings from file:" + cfg.File)
 	}
 
 	nc, err := nats.Connect(cfg.Agent.Server.NatsURL)
@@ -179,19 +172,15 @@ func loadEnvConfig() (config.Config, error) {
 		Control: mainflux.Env(envCtrlChan, defCtrlChan),
 		Data:    mainflux.Env(envDataChan, defDataChan),
 	}
-	interval, err := strconv.Atoi(mainflux.Env(envInterval, defInterval))
+	interval, err := time.ParseDuration(mainflux.Env(envInterval, defInterval))
 	if err != nil {
 		return config.Config{}, errors.Wrap(errFailedToConfigHeartbeat, err)
 	}
-	numOfInterval, err := strconv.Atoi(mainflux.Env(envNumOfIntervals, defNumOfIntervals))
-	if err != nil {
-		return config.Config{}, errors.Wrap(errFailedToConfigHeartbeat, err)
-	}
+
 	ch := config.Heartbeat{
-		Interval:       interval,
-		NumOfIntervals: numOfInterval,
+		Interval: interval,
 	}
-	termSessionTimeout, err := strconv.Atoi(mainflux.Env(envTermSessionTimeout, defTermSessionTimeout))
+	termSessionTimeout, err := time.ParseDuration(mainflux.Env(envTermSessionTimeout, defTermSessionTimeout))
 	if err != nil {
 		return config.Config{}, err
 	}
@@ -238,6 +227,14 @@ func loadBootConfig(c config.Config, logger logger.Logger) (bsc config.Config, e
 	mc, err := loadCertificate(bsc.Agent.MQTT)
 	if err != nil {
 		return bsc, errors.Wrap(errFailedToSetupMTLS, err)
+	}
+
+	if bsc.Agent.Heartbeat.Interval <= 0 {
+		bsc.Agent.Heartbeat.Interval = c.Agent.Heartbeat.Interval
+	}
+
+	if bsc.Agent.Terminal.SessionTimeout <= 0 {
+		bsc.Agent.Terminal.SessionTimeout = c.Agent.Terminal.SessionTimeout
 	}
 
 	bsc.Agent.MQTT = mc
@@ -329,36 +326,4 @@ func loadCertificate(cfg config.MQTTConf) (config.MQTTConf, error) {
 	cfg.Cert = cert
 	cfg.CA = caByte
 	return c, nil
-}
-
-func mergeConfigs(dst, src interface{}) interface{} {
-	d := reflect.ValueOf(dst).Elem()
-	s := reflect.ValueOf(src).Elem()
-
-	for i := 0; i < d.NumField(); i++ {
-		dField := d.Field(i)
-		sField := s.Field(i)
-		switch dField.Kind() {
-		case reflect.Struct:
-			dst := dField.Addr().Interface()
-			src := sField.Addr().Interface()
-			m := mergeConfigs(dst, src)
-			val := reflect.ValueOf(m).Elem().Interface()
-			dField.Set(reflect.ValueOf(val))
-		case reflect.Slice:
-		case reflect.Bool:
-			if dField.Interface() == false {
-				dField.Set(reflect.ValueOf(sField.Interface()))
-			}
-		case reflect.Int:
-			if dField.Interface() == 0 {
-				dField.Set(reflect.ValueOf(sField.Interface()))
-			}
-		case reflect.String:
-			if dField.Interface() == "" {
-				dField.Set(reflect.ValueOf(sField.Interface()))
-			}
-		}
-	}
-	return dst
 }
