@@ -104,7 +104,8 @@ Environment:
 |	MF_AGENT_MQTT_RETAIN                   | MQTT retain                                                   | false                             |
 |	MF_AGENT_MQTT_CLIENT_CERT              | Location of client certificate for MTLS                       | thing.cert                        |
 |	MF_AGENT_MQTT_CLIENT_PK                | Location of client certificate key for MTLS                   | thing.key                         |
-
+|	MF_AGENT_HEARTBEAT_INTERVAL            | Interval in which heartbeat from service is expected          | 30s                               |
+|	MF_AGENT_TERMINAL_SESSION_TIMEOUT      | Timeout for terminal session                                  | 30s                               |
 
 Here `thing` is a Mainflux thing, and control channel from `channels` is used with `req` and `res` subtopic
 (i.e. app needs to PUB/SUB on `/channels/<control_channel_id>/messages/req` and `/channels/<control_channel_id>/messages/res`).
