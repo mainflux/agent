@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"reflect"
 	"strconv"
 	"syscall"
 
@@ -80,7 +81,7 @@ const (
 	envMqttRetain         = "MF_AGENT_MQTT_RETAIN"
 	envMqttCert           = "MF_AGENT_MQTT_CLIENT_CERT"
 	envMqttPrivKey        = "MF_AGENT_MQTT_CLIENT_PK"
-	envNumOfIntervals     = "MF_AGENT_HEARTBEAT_NUM_INTERVAL"
+	envNumOfIntervals     = "MF_AGENT_HEARTBEAT_NUM_OF_INTERVAL"
 	envInterval           = "MF_AGENT_HEARTBEAT_INTERVAL"
 	envTermSessionTimeout = "MF_AGENT_TERMINAL_SESSION_TIMEOUT"
 )
@@ -103,9 +104,13 @@ func main() {
 		log.Fatalf(fmt.Sprintf("Failed to create logger: %s", err))
 	}
 
-	cfg, err = loadBootConfig(cfg, logger)
-	if err != nil {
+	if cfgBootstrap, err := loadBootConfig(cfg, logger); err != nil {
 		logger.Error(fmt.Sprintf("Failed to load config: %s", err))
+	} else {
+		// Merge environment variables and file settings.
+		mergeConfigs(&cfgBootstrap, &cfg)
+		cfg = cfgBootstrap
+		logger.Info("Continue with settings from file:" + cfg.File)
 	}
 
 	nc, err := nats.Connect(cfg.Agent.Server.NatsURL)
@@ -178,13 +183,13 @@ func loadEnvConfig() (config.Config, error) {
 	if err != nil {
 		return config.Config{}, errors.Wrap(errFailedToConfigHeartbeat, err)
 	}
-	numInterval, err := strconv.Atoi(mainflux.Env(envNumOfIntervals, defNumOfIntervals))
+	numOfInterval, err := strconv.Atoi(mainflux.Env(envNumOfIntervals, defNumOfIntervals))
 	if err != nil {
 		return config.Config{}, errors.Wrap(errFailedToConfigHeartbeat, err)
 	}
 	ch := config.Heartbeat{
 		Interval:       interval,
-		NumOfIntervals: numInterval,
+		NumOfIntervals: numOfInterval,
 	}
 	termSessionTimeout, err := strconv.Atoi(mainflux.Env(envTermSessionTimeout, defTermSessionTimeout))
 	if err != nil {
@@ -324,4 +329,36 @@ func loadCertificate(cfg config.MQTTConf) (config.MQTTConf, error) {
 	cfg.Cert = cert
 	cfg.CA = caByte
 	return c, nil
+}
+
+func mergeConfigs(dst, src interface{}) interface{} {
+	d := reflect.ValueOf(dst).Elem()
+	s := reflect.ValueOf(src).Elem()
+
+	for i := 0; i < d.NumField(); i++ {
+		dField := d.Field(i)
+		sField := s.Field(i)
+		switch dField.Kind() {
+		case reflect.Struct:
+			dst := dField.Addr().Interface()
+			src := sField.Addr().Interface()
+			m := mergeConfigs(dst, src)
+			val := reflect.ValueOf(m).Elem().Interface()
+			dField.Set(reflect.ValueOf(val))
+		case reflect.Slice:
+		case reflect.Bool:
+			if dField.Interface() == false {
+				dField.Set(reflect.ValueOf(sField.Interface()))
+			}
+		case reflect.Int:
+			if dField.Interface() == 0 {
+				dField.Set(reflect.ValueOf(sField.Interface()))
+			}
+		case reflect.String:
+			if dField.Interface() == "" {
+				dField.Set(reflect.ValueOf(sField.Interface()))
+			}
+		}
+	}
+	return dst
 }
