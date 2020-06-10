@@ -132,6 +132,10 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		svcs:        make(map[string]Heartbeat),
 		terminals:   make(map[string]terminal.Session),
 	}
+	interval := time.Duration(cfg.Agent.Heartbeat.Interval * time.Now().Second())
+	if interval <= 0 {
+		ag.logger.Error(fmt.Sprintf("invalid heartbeat interval %d, heartbeat will not work", interval))
+	}
 
 	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {
 		sub := msg.Subject
@@ -146,7 +150,6 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		// if there is multiple instances of the same service
 		// we will have to add another distinction
 		if _, ok := ag.svcs[svcname]; !ok {
-			interval := time.Duration(cfg.Agent.Heartbeat.Interval * time.Now().Second())
 			svc := NewHeartbeat(svcname, svctype, cfg.Agent.Heartbeat.NumOfIntervals, interval)
 			ag.svcs[svcname] = svc
 			ag.logger.Info(fmt.Sprintf("Services '%s-%s' registered", svcname, svctype))
