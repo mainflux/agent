@@ -134,7 +134,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 	}
 
 	if cfg.Agent.Heartbeat.Interval <= 0 {
-		ag.logger.Error(fmt.Sprintf("invalid heartbeat interval %d, heartbeat will not work", cfg.Agent.Heartbeat.Interval))
+		ag.logger.Error(fmt.Sprintf("invalid heartbeat interval %d", cfg.Agent.Heartbeat.Interval))
 	}
 
 	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {

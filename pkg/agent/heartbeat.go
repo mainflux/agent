@@ -41,13 +41,13 @@ type Heartbeat interface {
 
 // interval - duration of interval
 // if service doesnt send heartbeat during  interval it is marked offline
-func NewHeartbeat(name, svctype string, interval time.Duration) Heartbeat {
+func NewHeartbeat(name, svcType string, interval time.Duration) Heartbeat {
 	ticker := time.NewTicker(interval)
 	s := svc{
 		info: Info{
 			Name:     name,
 			Status:   online,
-			Type:     svctype,
+			Type:     svcType,
 			LastSeen: time.Now(),
 		},
 		ticker: ticker,

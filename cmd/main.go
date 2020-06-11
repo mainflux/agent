@@ -52,8 +52,8 @@ const (
 	defMqttPrivKey                = "thing.key"
 	defConfigFile                 = "config.toml"
 	defNatsURL                    = nats.DefaultURL
-	defInterval                   = "45s"
-	defTermSessionTimeout         = "40s"
+	defHeartbeatInterval          = "10s"
+	defTermSessionTimeout         = "60s"
 
 	envConfigFile                 = "MF_AGENT_CONFIG_FILE"
 	envLogLevel                   = "MF_AGENT_LOG_LEVEL"
@@ -79,7 +79,7 @@ const (
 	envMqttRetain         = "MF_AGENT_MQTT_RETAIN"
 	envMqttCert           = "MF_AGENT_MQTT_CLIENT_CERT"
 	envMqttPrivKey        = "MF_AGENT_MQTT_CLIENT_PK"
-	envInterval           = "MF_AGENT_HEARTBEAT_INTERVAL"
+	envHeartbeatInterval  = "MF_AGENT_HEARTBEAT_INTERVAL"
 	envTermSessionTimeout = "MF_AGENT_TERMINAL_SESSION_TIMEOUT"
 )
 
@@ -172,7 +172,7 @@ func loadEnvConfig() (config.Config, error) {
 		Control: mainflux.Env(envCtrlChan, defCtrlChan),
 		Data:    mainflux.Env(envDataChan, defDataChan),
 	}
-	interval, err := time.ParseDuration(mainflux.Env(envInterval, defInterval))
+	interval, err := time.ParseDuration(mainflux.Env(envHeartbeatInterval, defHeartbeatInterval))
 	if err != nil {
 		return config.Config{}, errors.Wrap(errFailedToConfigHeartbeat, err)
 	}
