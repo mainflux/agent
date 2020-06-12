@@ -28,8 +28,8 @@
   
   # interval - interval in seconds in which heartbeat is expected
   [Agent.heartbeat]
-    interval = 30s
+    interval = "30s"
   
   # session_timeout in sec, when expired terminal session ends
   [Agent.terminal]
-    session_timeout = 30s
+    session_timeout = "30s"
