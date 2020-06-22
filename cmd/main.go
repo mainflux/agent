@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
@@ -20,9 +21,9 @@ import (
 	"github.com/mainflux/agent/pkg/conn"
 	"github.com/mainflux/agent/pkg/edgex"
 	"github.com/mainflux/mainflux"
+	"github.com/mainflux/mainflux/errors"
 	"github.com/mainflux/mainflux/logger"
 	nats "github.com/nats-io/nats.go"
-	"github.com/pkg/errors"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 )
 
@@ -51,6 +52,8 @@ const (
 	defMqttPrivKey                = "thing.key"
 	defConfigFile                 = "config.toml"
 	defNatsURL                    = nats.DefaultURL
+	defHeartbeatInterval          = "10s"
+	defTermSessionTimeout         = "60s"
 
 	envConfigFile                 = "MF_AGENT_CONFIG_FILE"
 	envLogLevel                   = "MF_AGENT_LOG_LEVEL"
@@ -67,37 +70,40 @@ const (
 	envEncryption                 = "MF_AGENT_ENCRYPTION"
 	envNatsURL                    = "MF_AGENT_NATS_URL"
 
-	envMqttUsername   = "MF_AGENT_MQTT_USERNAME"
-	envMqttPassword   = "MF_AGENT_MQTT_PASSWORD"
-	envMqttSkipTLSVer = "MF_AGENT_MQTT_SKIP_TLS"
-	envMqttMTLS       = "MF_AGENT_MQTT_MTLS"
-	envMqttCA         = "MF_AGENT_MQTT_CA"
-	envMqttQoS        = "MF_AGENT_MQTT_QOS"
-	envMqttRetain     = "MF_AGENT_MQTT_RETAIN"
-	envMqttCert       = "MF_AGENT_MQTT_CLIENT_CERT"
-	envMqttPrivKey    = "MF_AGENT_MQTT_CLIENT_PK"
+	envMqttUsername       = "MF_AGENT_MQTT_USERNAME"
+	envMqttPassword       = "MF_AGENT_MQTT_PASSWORD"
+	envMqttSkipTLSVer     = "MF_AGENT_MQTT_SKIP_TLS"
+	envMqttMTLS           = "MF_AGENT_MQTT_MTLS"
+	envMqttCA             = "MF_AGENT_MQTT_CA"
+	envMqttQoS            = "MF_AGENT_MQTT_QOS"
+	envMqttRetain         = "MF_AGENT_MQTT_RETAIN"
+	envMqttCert           = "MF_AGENT_MQTT_CLIENT_CERT"
+	envMqttPrivKey        = "MF_AGENT_MQTT_CLIENT_PK"
+	envHeartbeatInterval  = "MF_AGENT_HEARTBEAT_INTERVAL"
+	envTermSessionTimeout = "MF_AGENT_TERMINAL_SESSION_TIMEOUT"
 )
 
 var (
 	errFailedToSetupMTLS       = errors.New("Failed to set up mtls certs")
 	errFetchingBootstrapFailed = errors.New("Fetching bootstrap failed with error")
 	errFailedToReadConfig      = errors.New("Failed to read config")
+	errFailedToConfigHeartbeat = errors.New("Failed to configure heartbeat")
 )
 
 func main() {
 	cfg, err := loadEnvConfig()
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("Failed to load config: %s", err.Error()))
+		log.Fatalf(fmt.Sprintf("Failed to load config: %s", err))
 	}
 
 	logger, err := logger.New(os.Stdout, cfg.Agent.Log.Level)
 	if err != nil {
-		log.Fatalf(fmt.Sprintf("Failed to create logger: %s", err.Error()))
+		log.Fatalf(fmt.Sprintf("Failed to create logger: %s", err))
 	}
 
 	cfg, err = loadBootConfig(cfg, logger)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Failed to load config: %s", err.Error()))
+		logger.Error(fmt.Sprintf("Failed to load config: %s", err))
 	}
 
 	nc, err := nats.Connect(cfg.Agent.Server.NatsURL)
@@ -116,7 +122,7 @@ func main() {
 
 	svc, err := agent.New(mqttClient, &cfg, edgexClient, nc, logger)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Error in agent service: %s", err.Error()))
+		logger.Error(fmt.Sprintf("Error in agent service: %s", err))
 		os.Exit(1)
 	}
 
@@ -166,6 +172,21 @@ func loadEnvConfig() (config.Config, error) {
 		Control: mainflux.Env(envCtrlChan, defCtrlChan),
 		Data:    mainflux.Env(envDataChan, defDataChan),
 	}
+	interval, err := time.ParseDuration(mainflux.Env(envHeartbeatInterval, defHeartbeatInterval))
+	if err != nil {
+		return config.Config{}, errors.Wrap(errFailedToConfigHeartbeat, err)
+	}
+
+	ch := config.Heartbeat{
+		Interval: interval,
+	}
+	termSessionTimeout, err := time.ParseDuration(mainflux.Env(envTermSessionTimeout, defTermSessionTimeout))
+	if err != nil {
+		return config.Config{}, err
+	}
+	ct := config.Terminal{
+		SessionTimeout: termSessionTimeout,
+	}
 	ec := config.EdgexConf{URL: mainflux.Env(envEdgexURL, defEdgexURL)}
 	lc := config.LogConf{Level: mainflux.Env(envLogLevel, defLogLevel)}
 
@@ -175,10 +196,10 @@ func loadEnvConfig() (config.Config, error) {
 		Password: mainflux.Env(envMqttPassword, defMqttPassword),
 	}
 	file := mainflux.Env(envConfigFile, defConfigFile)
-	c := config.New(sc, cc, ec, lc, mc, file)
-	mc, err := loadCertificate(c.Agent.MQTT)
+	c := config.New(sc, cc, ec, lc, mc, ch, ct, file)
+	mc, err = loadCertificate(c.Agent.MQTT)
 	if err != nil {
-		return c, errors.Wrap(errFailedToSetupMTLS, err.Error())
+		return c, errors.Wrap(errFailedToSetupMTLS, err)
 	}
 	c.Agent.MQTT = mc
 	return c, nil
@@ -196,16 +217,24 @@ func loadBootConfig(c config.Config, logger logger.Logger) (bsc config.Config, e
 	}
 
 	if err := bootstrap.Bootstrap(bsConfig, logger, file); err != nil {
-		return c, errors.Wrap(errFetchingBootstrapFailed, err.Error())
+		return c, errors.Wrap(errFetchingBootstrapFailed, err)
 	}
 
 	if bsc, err = config.Read(file); err != nil {
-		return c, errors.Wrap(errFailedToReadConfig, err.Error())
+		return c, errors.Wrap(errFailedToReadConfig, err)
 	}
 
 	mc, err := loadCertificate(bsc.Agent.MQTT)
 	if err != nil {
-		return bsc, errors.Wrap(errFailedToSetupMTLS, err.Error())
+		return bsc, errors.Wrap(errFailedToSetupMTLS, err)
+	}
+
+	if bsc.Agent.Heartbeat.Interval <= 0 {
+		bsc.Agent.Heartbeat.Interval = c.Agent.Heartbeat.Interval
+	}
+
+	if bsc.Agent.Terminal.SessionTimeout <= 0 {
+		bsc.Agent.Terminal.SessionTimeout = c.Agent.Terminal.SessionTimeout
 	}
 
 	bsc.Agent.MQTT = mc

@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"sort"
 	"strings"
+	"time"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mainflux/agent/pkg/config"
@@ -132,6 +133,10 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		terminals:   make(map[string]terminal.Session),
 	}
 
+	if cfg.Agent.Heartbeat.Interval <= 0 {
+		ag.logger.Error(fmt.Sprintf("invalid heartbeat interval %d", cfg.Agent.Heartbeat.Interval))
+	}
+
 	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {
 		sub := msg.Subject
 		tok := strings.Split(sub, ".")
@@ -145,7 +150,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		// if there is multiple instances of the same service
 		// we will have to add another distinction
 		if _, ok := ag.svcs[svcname]; !ok {
-			svc := NewHeartbeat(svcname, svctype)
+			svc := NewHeartbeat(svcname, svctype, cfg.Agent.Heartbeat.Interval)
 			ag.svcs[svcname] = svc
 			ag.logger.Info(fmt.Sprintf("Services '%s-%s' registered", svcname, svctype))
 		}
@@ -270,7 +275,7 @@ func (a *agent) Terminal(uuid, cmdStr string) error {
 			return err
 		}
 	case open:
-		if err := a.terminalOpen(uuid); err != nil {
+		if err := a.terminalOpen(uuid, a.config.Agent.Terminal.SessionTimeout); err != nil {
 			return err
 		}
 	case close:
@@ -281,15 +286,15 @@ func (a *agent) Terminal(uuid, cmdStr string) error {
 	return nil
 }
 
-func (a *agent) terminalOpen(uuid string) error {
+func (a *agent) terminalOpen(uuid string, timeout time.Duration) error {
 	if _, ok := a.terminals[uuid]; !ok {
-		term, err := terminal.NewSession(uuid, a.Publish, a.logger)
+		term, err := terminal.NewSession(uuid, timeout, a.Publish, a.logger)
 		if err != nil {
 			return errors.Wrap(errors.Wrap(errFailedToCreateTerminalSession, fmt.Errorf(" for %s", uuid)), err)
 		}
 		a.terminals[uuid] = term
 		go func() {
-			for _ = range term.IsDone() {
+			for range term.IsDone() {
 				// Terminal is inactive, should be closed
 				a.logger.Debug((fmt.Sprintf("Closing terminal session %s", uuid)))
 				a.terminalClose(uuid)
@@ -312,7 +317,7 @@ func (a *agent) terminalClose(uuid string) error {
 }
 
 func (a *agent) terminalWrite(uuid, cmd string) error {
-	if err := a.terminalOpen(uuid); err != nil {
+	if err := a.terminalOpen(uuid, a.config.Agent.Terminal.SessionTimeout); err != nil {
 		return err
 	}
 	term := a.terminals[uuid]

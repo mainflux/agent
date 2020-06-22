@@ -85,7 +85,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		cfg.ID, cfg.URL))
 	ic := infraConfig{}
 	if err := json.Unmarshal([]byte(dc.Content), &ic); err != nil {
-		return errors.New(err.Error())
+		return err
 	}
 
 	saveExportConfig(ic.ExportConfig, logger)
@@ -117,8 +117,9 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		Password: dc.MainfluxKey,
 		Username: dc.MainfluxID,
 	}
-
-	c := config.New(sc, cc, ec, lc, mc, file)
+	hc := config.Heartbeat{}
+	tc := config.Terminal{}
+	c := config.New(sc, cc, ec, lc, mc, hc, tc, file)
 
 	return config.Save(c)
 }
@@ -160,13 +161,13 @@ func getConfig(bsID, bsKey, bsSvrURL string, logger log.Logger) (deviceConfig, e
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return deviceConfig{}, errors.New(err.Error())
+		return deviceConfig{}, err
 	}
 
 	req.Header.Add("Authorization", bsKey)
 	resp, err := client.Do(req)
 	if err != nil {
-		return deviceConfig{}, errors.New(err.Error())
+		return deviceConfig{}, err
 	}
 	if resp.StatusCode >= http.StatusBadRequest {
 		return deviceConfig{}, errors.New(http.StatusText(resp.StatusCode))
@@ -174,12 +175,12 @@ func getConfig(bsID, bsKey, bsSvrURL string, logger log.Logger) (deviceConfig, e
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return deviceConfig{}, errors.New(err.Error())
+		return deviceConfig{}, err
 	}
 	defer resp.Body.Close()
 	dc := deviceConfig{}
 	if err := json.Unmarshal(body, &dc); err != nil {
-		return deviceConfig{}, errors.New(err.Error())
+		return deviceConfig{}, err
 	}
 
 	return dc, nil
