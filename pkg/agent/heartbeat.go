@@ -17,11 +17,10 @@ const (
 // Services send heartbeat to nats thus updating last seen.
 // When service doesnt send heartbeat for some time gets marked offline.
 type svc struct {
-	info        Info
-	counter     int
-	numInterval int
-	ticker      *time.Ticker
-	mu          sync.Mutex
+	info     Info
+	interval time.Duration
+	ticker   *time.Ticker
+	mu       sync.Mutex
 }
 
 type Info struct {
@@ -50,7 +49,8 @@ func NewHeartbeat(name, svcType string, interval time.Duration) Heartbeat {
 			Type:     svcType,
 			LastSeen: time.Now(),
 		},
-		ticker: ticker,
+		ticker:   ticker,
+		interval: interval,
 	}
 	s.listen()
 	return &s
@@ -64,7 +64,7 @@ func (s *svc) listen() {
 				// TODO - we can disable ticker when the status gets OFFLINE
 				// and on the next heartbeat enable it again
 				s.mu.Lock()
-				if s.counter == 0 {
+				if time.Now().After(s.info.LastSeen.Add(s.interval)) {
 					s.info.Status = offline
 				}
 				s.mu.Unlock()
@@ -77,7 +77,6 @@ func (s *svc) Update() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.info.LastSeen = time.Now()
-	s.counter = 1
 	s.info.Status = online
 }
 
