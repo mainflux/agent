@@ -33,6 +33,7 @@ type Config struct {
 	Retries       string
 	RetryDelaySec string
 	Encrypt       string
+	SkipTLS       bool
 }
 
 type deviceConfig struct {
@@ -67,7 +68,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 
 	dc := deviceConfig{}
 	for i := 0; i < int(retries); i++ {
-		dc, err = getConfig(cfg.ID, cfg.Key, cfg.URL, logger)
+		dc, err = getConfig(cfg.ID, cfg.Key, cfg.URL, cfg.SkipTLS, logger)
 		if err == nil {
 			break
 		}
@@ -141,7 +142,7 @@ func saveExportConfig(econf export.Config, logger log.Logger) {
 	}
 }
 
-func getConfig(bsID, bsKey, bsSvrURL string, logger log.Logger) (deviceConfig, error) {
+func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (deviceConfig, error) {
 	// Get the SystemCertPool, continue with an empty pool on error
 	rootCAs, err := x509.SystemCertPool()
 	if err != nil {
@@ -152,7 +153,7 @@ func getConfig(bsID, bsKey, bsSvrURL string, logger log.Logger) (deviceConfig, e
 	}
 	// Trust the augmented cert pool in our client
 	config := &tls.Config{
-		InsecureSkipVerify: false,
+		InsecureSkipVerify: skipTLS,
 		RootCAs:            rootCAs,
 	}
 	tr := &http.Transport{TLSClientConfig: config}

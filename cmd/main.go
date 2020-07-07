@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -33,6 +34,7 @@ const (
 	defBootstrapID                = ""
 	defBootstrapKey               = ""
 	defBootstrapRetries           = "5"
+	defBootstrapSkipTLS           = "false"
 	defBootstrapRetryDelaySeconds = "10"
 	defLogLevel                   = "info"
 	defEdgexURL                   = "http://localhost:48090/api/v1/"
@@ -47,7 +49,7 @@ const (
 	defMqttMTLS                   = "false"
 	defMqttCA                     = "ca.crt"
 	defMqttQoS                    = "0"
-	defMqttRetain                 = false
+	defMqttRetain                 = "false"
 	defMqttCert                   = "thing.cert"
 	defMqttPrivKey                = "thing.key"
 	defConfigFile                 = "config.toml"
@@ -64,6 +66,7 @@ const (
 	envBootstrapID                = "MF_AGENT_BOOTSTRAP_ID"
 	envBootstrapKey               = "MF_AGENT_BOOTSTRAP_KEY"
 	envBootstrapRetries           = "MF_AGENT_BOOTSTRAP_RETRIES"
+	envBootstrapSkipTLS           = "MF_AGENT_BOOTSTRAP_SKIP_TLS"
 	envBootstrapRetryDelaySeconds = "MF_AGENT_BOOTSTRAP_RETRY_DELAY_SECONDS"
 	envCtrlChan                   = "MF_AGENT_CONTROL_CHANNEL"
 	envDataChan                   = "MF_AGENT_DATA_CHANNEL"
@@ -190,11 +193,39 @@ func loadEnvConfig() (config.Config, error) {
 	ec := config.EdgexConf{URL: mainflux.Env(envEdgexURL, defEdgexURL)}
 	lc := config.LogConf{Level: mainflux.Env(envLogLevel, defLogLevel)}
 
-	mc := config.MQTTConf{
-		URL:      mainflux.Env(envMqttURL, defMqttURL),
-		Username: mainflux.Env(envMqttUsername, defMqttUsername),
-		Password: mainflux.Env(envMqttPassword, defMqttPassword),
+	mtls, err := strconv.ParseBool(mainflux.Env(envMqttMTLS, defMqttMTLS))
+	if err != nil {
+		mtls = false
 	}
+
+	skipTLSVer, err := strconv.ParseBool(mainflux.Env(defMqttSkipTLSVer, envMqttSkipTLSVer))
+	if err != nil {
+		skipTLSVer = true
+	}
+
+	qos, err := strconv.Atoi(mainflux.Env(envMqttQoS, defMqttQoS))
+	if err != nil {
+		qos = 0
+	}
+
+	retain, err := strconv.ParseBool(mainflux.Env(envMqttRetain, defMqttRetain))
+	if err != nil {
+		retain = false
+	}
+
+	mc := config.MQTTConf{
+		URL:         mainflux.Env(envMqttURL, defMqttURL),
+		Username:    mainflux.Env(envMqttUsername, defMqttUsername),
+		Password:    mainflux.Env(envMqttPassword, defMqttPassword),
+		MTLS:        mtls,
+		CAPath:      mainflux.Env(envMqttCA, defMqttCA),
+		CertPath:    mainflux.Env(envMqttCert, defMqttCert),
+		PrivKeyPath: mainflux.Env(envMqttPrivKey, defMqttPrivKey),
+		SkipTLSVer:  skipTLSVer,
+		QoS:         byte(qos),
+		Retain:      retain,
+	}
+
 	file := mainflux.Env(envConfigFile, defConfigFile)
 	c := config.New(sc, cc, ec, lc, mc, ch, ct, file)
 	mc, err = loadCertificate(c.Agent.MQTT)
@@ -207,6 +238,7 @@ func loadEnvConfig() (config.Config, error) {
 
 func loadBootConfig(c config.Config, logger logger.Logger) (bsc config.Config, err error) {
 	file := mainflux.Env(envConfigFile, defConfigFile)
+	skipTLS, err := strconv.ParseBool(mainflux.Env(envBootstrapSkipTLS, defBootstrapSkipTLS))
 	bsConfig := bootstrap.Config{
 		URL:           mainflux.Env(envBootstrapURL, defBootstrapURL),
 		ID:            mainflux.Env(envBootstrapID, defBootstrapID),
@@ -214,6 +246,7 @@ func loadBootConfig(c config.Config, logger logger.Logger) (bsc config.Config, e
 		Retries:       mainflux.Env(envBootstrapRetries, defBootstrapRetries),
 		RetryDelaySec: mainflux.Env(envBootstrapRetryDelaySeconds, defBootstrapRetryDelaySeconds),
 		Encrypt:       mainflux.Env(envEncryption, defEncryption),
+		SkipTLS:       skipTLS,
 	}
 
 	if err := bootstrap.Bootstrap(bsConfig, logger, file); err != nil {
