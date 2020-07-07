@@ -90,6 +90,7 @@ Environment:
 |	MF_AGENT_BOOTSTRAP_ID                  | Mainflux bootstrap id                                         |                                   |
 |	MF_AGENT_BOOTSTRAP_KEY                 | Mainflux boostrap key                                         |                                   |
 |	MF_AGENT_BOOTSTRAP_RETRIES             | Number of retries for bootstrap procedure                     | 5                                 |
+| MF_AGENT_BOOTSTRAP_SKIP_TLS            | Skip TLS verification for bootstrap                           | true                              |
 |	MF_AGENT_BOOTSTRAP_RETRY_DELAY_SECONDS | Number of seconds between retries                             | 10                                |
 |	MF_AGENT_CONTROL_CHANNEL               | Channel for sending controls, commands                        |                                   |
 |	MF_AGENT_DATA_CHANNEL                  | Channel for data sending                                      |                                   |
@@ -97,7 +98,7 @@ Environment:
 |	MF_AGENT_NATS_URL                      | Nats url                                                      | nats://localhost:4222             |
 |	MF_AGENT_MQTT_USERNAME                 | MQTT username, Mainflux thing id                              |                                   |
 |	MF_AGENT_MQTT_PASSWORD                 | MQTT password, Mainflux thing key                             |                                   |
-|	MF_AGENT_MQTT_SKIP_TLS                 | Skip TLS verification                                         | true                              |
+|	MF_AGENT_MQTT_SKIP_TLS                 | Skip TLS verification for MQTT                                | true                              |
 |	MF_AGENT_MQTT_MTLS                     | Use MTLS for MQTT                                             | false                             |
 |	MF_AGENT_MQTT_CA                       | Location for CA certificate for MTLS                          | ca.crt                            |
 |	MF_AGENT_MQTT_QOS                      | QoS                                                           | 0                                 |
