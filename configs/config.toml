@@ -1,35 +1,34 @@
-[Agent]
 
-  [Agent.channels]
-    control = ""
-    data = ""
+[channels]
+  control = ""
+  data = ""
 
-  [Agent.edgex]
-    url = "http://localhost:48090/api/v1/"
+[edgex]
+  url = "http://localhost:48090/api/v1/"
 
-  [Agent.log]
-    level = "info"
+[log]
+  level = "info"
 
-  [Agent.mqtt]
-    ca_path = "ca.crt"
-    cert_path = "thing.crt"
-    mtls = false
-    password = ""
-    priv_key_path = "thing.key"
-    qos = 0
-    retain = false
-    skip_tls_ver = false
-    url = "localhost:1883"
-    username = ""
+[mqtt]
+  ca_path = "ca.crt"
+  cert_path = "thing.crt"
+  mtls = false
+  password = ""
+  priv_key_path = "thing.key"
+  qos = 0
+  retain = false
+  skip_tls_ver = false
+  url = "localhost:1883"
+  username = ""
 
-  [Agent.server]
-    nats_url = "localhost:4222"
-    port = "9000"
-  
-  # interval - interval in seconds in which heartbeat is expected
-  [Agent.heartbeat]
-    interval = "30s"
-  
-  # session_timeout in sec, when expired terminal session ends
-  [Agent.terminal]
-    session_timeout = "30s"
+[server]
+  nats_url = "localhost:4222"
+  port = "9000"
+
+# interval - interval in seconds in which heartbeat is expected
+[heartbeat]
+  interval = "30s"
+
+# session_timeout in sec, when expired terminal session ends
+[terminal]
+  session_timeout = "30s"
