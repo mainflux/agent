@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"os"
+	"strings"
 
 	"fmt"
 	"io/ioutil"
@@ -16,7 +17,7 @@ import (
 	"time"
 
 	"github.com/mainflux/agent/pkg/agent"
-	"github.com/mainflux/agent/pkg/config"
+
 	export "github.com/mainflux/export/pkg/config"
 	errors "github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
@@ -36,11 +37,19 @@ type Config struct {
 	SkipTLS       bool
 }
 
+type ServicesConfig struct {
+	Agent  agent.Config  `json:"agent"`
+	Export export.Config `json:"export"`
+}
+
 type deviceConfig struct {
 	MainfluxID       string           `json:"mainflux_id"`
 	MainfluxKey      string           `json:"mainflux_key"`
 	MainfluxChannels []things.Channel `json:"mainflux_channels"`
-	Content          string           `json:"content"`
+	ClientKey        string           `json:"client_key"`
+	ClientCert       string           `json:"client_cert"`
+	CaCert           string           `json:"ca_cert"`
+	Content          ServicesConfig   `json:"content"`
 }
 
 type infraConfig struct {
@@ -59,6 +68,11 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		return errors.New(fmt.Sprintf("Invalid BOOTSTRAP_RETRIES value: %s", err))
 	}
 
+	if retries == 0 {
+		logger.Info("No bootstraping, environment variables will be used")
+		return nil
+	}
+
 	retryDelaySec, err := strconv.ParseUint(cfg.RetryDelaySec, 10, 64)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Invalid BOOTSTRAP_RETRY_DELAY_SECONDS value: %s", err))
@@ -67,6 +81,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	logger.Info(fmt.Sprintf("Requesting config for %s from %s", cfg.ID, cfg.URL))
 
 	dc := deviceConfig{}
+
 	for i := 0; i < int(retries); i++ {
 		dc, err = getConfig(cfg.ID, cfg.Key, cfg.URL, cfg.SkipTLS, logger)
 		if err == nil {
@@ -82,14 +97,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		}
 	}
 
-	logger.Info(fmt.Sprintf("Getting config for %s from %s succeeded",
-		cfg.ID, cfg.URL))
-	ic := infraConfig{}
-	if err := json.Unmarshal([]byte(dc.Content), &ic); err != nil {
-		return err
-	}
-
-	saveExportConfig(ic.ExportConfig, logger)
+	saveExportConfig(dc.Content.Export, logger)
 
 	if len(dc.MainfluxChannels) < 2 {
 		return agent.ErrMalformedEntity
@@ -102,27 +110,26 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		dataChan = dc.MainfluxChannels[0].ID
 	}
 
-	sc := config.ServerConf{
-		Port:    ic.HTTPPort,
-		NatsURL: ic.NatsURL,
-	}
-
-	cc := config.ChanConf{
+	sc := dc.Content.Agent.Server
+	cc := agent.ChanConf{
 		Control: ctrlChan,
 		Data:    dataChan,
 	}
-	ec := config.EdgexConf{URL: ic.EdgexURL}
-	lc := config.LogConf{Level: ic.LogLevel}
-	mc := config.MQTTConf{
-		URL:      ic.MqttURL,
-		Password: dc.MainfluxKey,
-		Username: dc.MainfluxID,
-	}
-	hc := config.Heartbeat{}
-	tc := config.Terminal{}
-	c := config.New(sc, cc, ec, lc, mc, hc, tc, file)
+	ec := dc.Content.Agent.Edgex
+	lc := dc.Content.Agent.Log
 
-	return config.Save(c)
+	mc := dc.Content.Agent.MQTT
+	mc.Password = dc.MainfluxKey
+	mc.Username = dc.MainfluxID
+	mc.ClientCert = dc.ClientCert
+	mc.ClientKey = dc.ClientKey
+	mc.CaCert = dc.CaCert
+
+	hc := dc.Content.Agent.Heartbeat
+	tc := dc.Content.Agent.Terminal
+	c := agent.NewConfig(sc, cc, ec, lc, mc, hc, tc, file)
+
+	return agent.SaveConfig(c)
 }
 
 func saveExportConfig(econf export.Config, logger log.Logger) {
@@ -180,9 +187,17 @@ func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (d
 	}
 	defer resp.Body.Close()
 	dc := deviceConfig{}
-	if err := json.Unmarshal(body, &dc); err != nil {
+	b := convertContentStringToJSON(body)
+	fmt.Printf("%v\n", string(b))
+	if err := json.Unmarshal([]byte(b), &dc); err != nil {
 		return deviceConfig{}, err
 	}
-
 	return dc, nil
+}
+
+func convertContentStringToJSON(bin []byte) []byte {
+	b := strings.ReplaceAll(string(bin), "\\", "")
+	b = strings.ReplaceAll(string(b), "\"{", "{")
+	b = strings.ReplaceAll(string(b), "}\"", "}")
+	return []byte(b)
 }

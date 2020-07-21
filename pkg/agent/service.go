@@ -13,10 +13,10 @@ import (
 	"time"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
-	"github.com/mainflux/agent/pkg/config"
 	"github.com/mainflux/agent/pkg/edgex"
 	"github.com/mainflux/agent/pkg/encoder"
 	"github.com/mainflux/agent/pkg/terminal"
+
 	exp "github.com/mainflux/export/pkg/config"
 	"github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
@@ -27,7 +27,7 @@ const (
 	Path     = "./config.toml"
 	Hearbeat = "heartbeat.>"
 	Commands = "commands"
-	Config   = "config"
+	config   = "config"
 
 	view = "view"
 	save = "save"
@@ -91,10 +91,10 @@ type Service interface {
 	Control(string, string) error
 
 	// Update configuration file
-	AddConfig(config.Config) error
+	AddConfig(Config) error
 
 	// Config returns Config struct created from config file
-	Config() config.Config
+	Config() Config
 
 	// Saves config file
 	ServiceConfig(uuid, cmdStr string) error
@@ -113,7 +113,7 @@ var _ Service = (*agent)(nil)
 
 type agent struct {
 	mqttClient  paho.Client
-	config      *config.Config
+	config      *Config
 	edgexClient edgex.Client
 	logger      log.Logger
 	nats        *nats.Conn
@@ -122,7 +122,7 @@ type agent struct {
 }
 
 // New returns agent service implementation.
-func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, logger log.Logger) (Service, error) {
+func New(mc paho.Client, cfg *Config, ec edgex.Client, nc *nats.Conn, logger log.Logger) (Service, error) {
 	ag := &agent{
 		mqttClient:  mc,
 		edgexClient: ec,
@@ -133,8 +133,8 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		terminals:   make(map[string]terminal.Session),
 	}
 
-	if cfg.Agent.Heartbeat.Interval <= 0 {
-		ag.logger.Error(fmt.Sprintf("invalid heartbeat interval %d", cfg.Agent.Heartbeat.Interval))
+	if cfg.Heartbeat.Interval <= 0 {
+		ag.logger.Error(fmt.Sprintf("invalid heartbeat interval %d", cfg.Heartbeat.Interval))
 	}
 
 	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {
@@ -150,7 +150,7 @@ func New(mc paho.Client, cfg *config.Config, ec edgex.Client, nc *nats.Conn, log
 		// if there is multiple instances of the same service
 		// we will have to add another distinction
 		if _, ok := ag.svcs[svcname]; !ok {
-			svc := NewHeartbeat(svcname, svctype, cfg.Agent.Heartbeat.Interval)
+			svc := NewHeartbeat(svcname, svctype, cfg.Heartbeat.Interval)
 			ag.svcs[svcname] = svc
 			ag.logger.Info(fmt.Sprintf("Services '%s-%s' registered", svcname, svctype))
 		}
@@ -275,7 +275,7 @@ func (a *agent) Terminal(uuid, cmdStr string) error {
 			return err
 		}
 	case open:
-		if err := a.terminalOpen(uuid, a.config.Agent.Terminal.SessionTimeout); err != nil {
+		if err := a.terminalOpen(uuid, a.config.Terminal.SessionTimeout); err != nil {
 			return err
 		}
 	case close:
@@ -317,7 +317,7 @@ func (a *agent) terminalClose(uuid string) error {
 }
 
 func (a *agent) terminalWrite(uuid, cmd string) error {
-	if err := a.terminalOpen(uuid, a.config.Agent.Terminal.SessionTimeout); err != nil {
+	if err := a.terminalOpen(uuid, a.config.Terminal.SessionTimeout); err != nil {
 		return err
 	}
 	term := a.terminals[uuid]
@@ -356,16 +356,16 @@ func (a *agent) saveConfig(service, fileName, fileCont string) error {
 		return errNoSuchService
 	}
 
-	err := a.nats.Publish(fmt.Sprintf("%s.%s.%s", Commands, service, Config), []byte(""))
+	err := a.nats.Publish(fmt.Sprintf("%s.%s.%s", Commands, service, config), []byte(""))
 	return errors.New(err.Error())
 }
 
-func (a *agent) AddConfig(c config.Config) error {
-	err := config.Save(c)
+func (a *agent) AddConfig(c Config) error {
+	err := SaveConfig(c)
 	return errors.New(err.Error())
 }
 
-func (a *agent) Config() config.Config {
+func (a *agent) Config() Config {
 	return *a.config
 }
 
@@ -385,7 +385,7 @@ func (a *agent) Services() []Info {
 
 func (a *agent) Publish(t, payload string) error {
 	topic := a.getTopic(t)
-	mqtt := a.config.Agent.MQTT
+	mqtt := a.config.MQTT
 	token := a.mqttClient.Publish(topic, mqtt.QoS, mqtt.Retain, payload)
 	token.Wait()
 	err := token.Error()
@@ -398,11 +398,11 @@ func (a *agent) Publish(t, payload string) error {
 func (a *agent) getTopic(topic string) (t string) {
 	switch topic {
 	case control:
-		t = fmt.Sprintf("channels/%s/messages/res", a.config.Agent.Channels.Control)
+		t = fmt.Sprintf("channels/%s/messages/res", a.config.Channels.Control)
 	case data:
-		t = fmt.Sprintf("channels/%s/messages/res", a.config.Agent.Channels.Data)
+		t = fmt.Sprintf("channels/%s/messages/res", a.config.Channels.Data)
 	default:
-		t = fmt.Sprintf("channels/%s/messages/res/%s", a.config.Agent.Channels.Control, topic)
+		t = fmt.Sprintf("channels/%s/messages/res/%s", a.config.Channels.Control, topic)
 	}
 	return t
 }

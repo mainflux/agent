@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-kit/kit/metrics"
 	"github.com/mainflux/agent/pkg/agent"
-	"github.com/mainflux/agent/pkg/config"
 )
 
 var _ agent.Service = (*metricsMiddleware)(nil)
@@ -48,7 +47,7 @@ func (ms *metricsMiddleware) Control(uuid, cmdStr string) error {
 	return ms.svc.Control(uuid, cmdStr)
 }
 
-func (ms *metricsMiddleware) AddConfig(ec config.Config) error {
+func (ms *metricsMiddleware) AddConfig(ec agent.Config) error {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "add_config").Add(1)
 		ms.latency.With("method", "add_config").Observe(time.Since(begin).Seconds())
@@ -66,7 +65,7 @@ func (ms *metricsMiddleware) ServiceConfig(uuid, cmdStr string) error {
 	return ms.svc.ServiceConfig(uuid, cmdStr)
 }
 
-func (ms *metricsMiddleware) Config() config.Config {
+func (ms *metricsMiddleware) Config() agent.Config {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "config").Add(1)
 		ms.latency.With("method", "config").Observe(time.Since(begin).Seconds())
