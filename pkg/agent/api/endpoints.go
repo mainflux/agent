@@ -64,14 +64,14 @@ func addConfigEndpoint(svc agent.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		sc := agent.ServerConf{Port: req.agent.server.port}
-		cc := agent.ChanConf{
+		sc := agent.ServerConfig{Port: req.agent.server.port}
+		cc := agent.ChanConfig{
 			Control: req.agent.channels.control,
 			Data:    req.agent.channels.data,
 		}
-		ec := agent.EdgexConf{URL: req.agent.edgex.url}
-		lc := agent.LogConf{Level: req.agent.log.level}
-		mc := agent.MQTTConf{
+		ec := agent.EdgexConfig{URL: req.agent.edgex.url}
+		lc := agent.LogConfig{Level: req.agent.log.level}
+		mc := agent.MQTTConfig{
 			URL:      req.agent.mqtt.url,
 			Username: req.agent.mqtt.username,
 			Password: req.agent.mqtt.password,

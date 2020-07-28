@@ -8,7 +8,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"os"
-	"strings"
 
 	"fmt"
 	"io/ioutil"
@@ -42,6 +41,10 @@ type ServicesConfig struct {
 	Export export.Config `json:"export"`
 }
 
+type ConfigContent struct {
+	Content string `json:"content"`
+}
+
 type deviceConfig struct {
 	MainfluxID       string           `json:"mainflux_id"`
 	MainfluxKey      string           `json:"mainflux_key"`
@@ -49,7 +52,7 @@ type deviceConfig struct {
 	ClientKey        string           `json:"client_key"`
 	ClientCert       string           `json:"client_cert"`
 	CaCert           string           `json:"ca_cert"`
-	Content          ServicesConfig   `json:"content"`
+	SvcsConf         ServicesConfig   `json:"-"`
 }
 
 type infraConfig struct {
@@ -97,8 +100,6 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		}
 	}
 
-	saveExportConfig(dc.Content.Export, logger)
-
 	if len(dc.MainfluxChannels) < 2 {
 		return agent.ErrMalformedEntity
 	}
@@ -110,26 +111,58 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		dataChan = dc.MainfluxChannels[0].ID
 	}
 
-	sc := dc.Content.Agent.Server
-	cc := agent.ChanConf{
+	sc := dc.SvcsConf.Agent.Server
+	cc := agent.ChanConfig{
 		Control: ctrlChan,
 		Data:    dataChan,
 	}
-	ec := dc.Content.Agent.Edgex
-	lc := dc.Content.Agent.Log
+	ec := dc.SvcsConf.Agent.Edgex
+	lc := dc.SvcsConf.Agent.Log
 
-	mc := dc.Content.Agent.MQTT
+	mc := dc.SvcsConf.Agent.MQTT
 	mc.Password = dc.MainfluxKey
 	mc.Username = dc.MainfluxID
 	mc.ClientCert = dc.ClientCert
 	mc.ClientKey = dc.ClientKey
 	mc.CaCert = dc.CaCert
 
-	hc := dc.Content.Agent.Heartbeat
-	tc := dc.Content.Agent.Terminal
+	hc := dc.SvcsConf.Agent.Heartbeat
+	tc := dc.SvcsConf.Agent.Terminal
 	c := agent.NewConfig(sc, cc, ec, lc, mc, hc, tc, file)
 
+	dc.SvcsConf.Export = fillExportConfig(dc.SvcsConf.Export, c)
+
+	saveExportConfig(dc.SvcsConf.Export, logger)
+
 	return agent.SaveConfig(c)
+}
+
+// if export config isnt filled use agent configs
+func fillExportConfig(econf export.Config, c agent.Config) export.Config {
+	if econf.MQTT.Username == "" {
+		econf.MQTT.Username = c.MQTT.Username
+	}
+	if econf.MQTT.Password == "" {
+		econf.MQTT.Password = c.MQTT.Password
+	}
+	if econf.MQTT.ClientCert == "" {
+		econf.MQTT.ClientCert = c.MQTT.ClientCert
+	}
+	if econf.MQTT.ClientCertKey == "" {
+		econf.MQTT.ClientCertKey = c.MQTT.ClientKey
+	}
+	if econf.MQTT.ClientCertPath == "" {
+		econf.MQTT.ClientCertPath = c.MQTT.CertPath
+	}
+	if econf.MQTT.ClientPrivKeyPath == "" {
+		econf.MQTT.ClientPrivKeyPath = c.MQTT.PrivKeyPath
+	}
+	for _, route := range econf.Routes {
+		if route.MqttTopic == "" {
+			route.MqttTopic = "channels/" + c.Channels.Data + "/messages"
+		}
+	}
+	return econf
 }
 
 func saveExportConfig(econf export.Config, logger log.Logger) {
@@ -187,17 +220,18 @@ func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (d
 	}
 	defer resp.Body.Close()
 	dc := deviceConfig{}
-	b := convertContentStringToJSON(body)
-	fmt.Printf("%v\n", string(b))
-	if err := json.Unmarshal([]byte(b), &dc); err != nil {
+	h := ConfigContent{}
+	if err := json.Unmarshal([]byte(body), &h); err != nil {
 		return deviceConfig{}, err
 	}
+	fmt.Println(h.Content)
+	sc := ServicesConfig{}
+	if err := json.Unmarshal([]byte(h.Content), &sc); err != nil {
+		return deviceConfig{}, err
+	}
+	if err := json.Unmarshal([]byte(body), &dc); err != nil {
+		return deviceConfig{}, err
+	}
+	dc.SvcsConf = sc
 	return dc, nil
-}
-
-func convertContentStringToJSON(bin []byte) []byte {
-	b := strings.ReplaceAll(string(bin), "\\", "")
-	b = strings.ReplaceAll(string(b), "\"{", "{")
-	b = strings.ReplaceAll(string(b), "}\"", "}")
-	return []byte(b)
 }

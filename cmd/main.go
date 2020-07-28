@@ -166,11 +166,11 @@ func main() {
 }
 
 func loadEnvConfig() (agent.Config, error) {
-	sc := agent.ServerConf{
+	sc := agent.ServerConfig{
 		NatsURL: mainflux.Env(envNatsURL, defNatsURL),
 		Port:    mainflux.Env(envHTTPPort, defHTTPPort),
 	}
-	cc := agent.ChanConf{
+	cc := agent.ChanConfig{
 		Control: mainflux.Env(envCtrlChan, defCtrlChan),
 		Data:    mainflux.Env(envDataChan, defDataChan),
 	}
@@ -179,18 +179,18 @@ func loadEnvConfig() (agent.Config, error) {
 		return agent.Config{}, errors.Wrap(errFailedToConfigHeartbeat, err)
 	}
 
-	ch := agent.HeartbeatConf{
+	ch := agent.HeartbeatConfig{
 		Interval: interval,
 	}
 	termSessionTimeout, err := time.ParseDuration(mainflux.Env(envTermSessionTimeout, defTermSessionTimeout))
 	if err != nil {
 		return agent.Config{}, err
 	}
-	ct := agent.TerminalConf{
+	ct := agent.TerminalConfig{
 		SessionTimeout: termSessionTimeout,
 	}
-	ec := agent.EdgexConf{URL: mainflux.Env(envEdgexURL, defEdgexURL)}
-	lc := agent.LogConf{Level: mainflux.Env(envLogLevel, defLogLevel)}
+	ec := agent.EdgexConfig{URL: mainflux.Env(envEdgexURL, defEdgexURL)}
+	lc := agent.LogConfig{Level: mainflux.Env(envLogLevel, defLogLevel)}
 
 	mtls, err := strconv.ParseBool(mainflux.Env(envMqttMTLS, defMqttMTLS))
 	if err != nil {
@@ -212,7 +212,7 @@ func loadEnvConfig() (agent.Config, error) {
 		retain = false
 	}
 
-	mc := agent.MQTTConf{
+	mc := agent.MQTTConfig{
 		URL:         mainflux.Env(envMqttURL, defMqttURL),
 		Username:    mainflux.Env(envMqttUsername, defMqttUsername),
 		Password:    mainflux.Env(envMqttPassword, defMqttPassword),
@@ -275,7 +275,7 @@ func loadBootConfig(c agent.Config, logger logger.Logger) (bsc agent.Config, err
 	return bsc, nil
 }
 
-func connectToMQTTBroker(conf agent.MQTTConf, logger logger.Logger) (mqtt.Client, error) {
+func connectToMQTTBroker(conf agent.MQTTConfig, logger logger.Logger) (mqtt.Client, error) {
 	name := fmt.Sprintf("agent-%s", conf.Username)
 	conn := func(client mqtt.Client) {
 		logger.Info(fmt.Sprintf("Client %s connected", name))
@@ -325,19 +325,19 @@ func connectToMQTTBroker(conf agent.MQTTConf, logger logger.Logger) (mqtt.Client
 	return client, nil
 }
 
-func loadCertificate(cfg agent.MQTTConf) (c agent.MQTTConf, err error) {
+func loadCertificate(cnfg agent.MQTTConfig) (c agent.MQTTConfig, err error) {
 	var caByte []byte
 	var cc []byte
 	var pk []byte
-	c = cfg
+	c = cnfg
 
 	cert := tls.Certificate{}
-	if !cfg.MTLS {
+	if !c.MTLS {
 		return c, nil
 	}
 	// Load CA cert from file
-	if cfg.CAPath != "" {
-		caFile, err := os.Open(cfg.CAPath)
+	if c.CAPath != "" {
+		caFile, err := os.Open(c.CAPath)
 		defer caFile.Close()
 		if err != nil {
 			return c, err
@@ -348,15 +348,15 @@ func loadCertificate(cfg agent.MQTTConf) (c agent.MQTTConf, err error) {
 		}
 	}
 	// Load CA cert from string if file not present
-	if len(caByte) == 0 && cfg.CaCert != "" {
-		caByte, err = ioutil.ReadAll(strings.NewReader(cfg.CaCert))
+	if len(caByte) == 0 && c.CaCert != "" {
+		caByte, err = ioutil.ReadAll(strings.NewReader(c.CaCert))
 		if err != nil {
 			return c, err
 		}
 	}
 	// Load client certificate from file if present
-	if cfg.CertPath != "" {
-		clientCert, err := os.Open(cfg.CertPath)
+	if c.CertPath != "" {
+		clientCert, err := os.Open(c.CertPath)
 		defer clientCert.Close()
 		if err != nil {
 			return c, err
@@ -367,15 +367,15 @@ func loadCertificate(cfg agent.MQTTConf) (c agent.MQTTConf, err error) {
 		}
 	}
 	// Load client certificate from string if file not present
-	if len(cc) == 0 && cfg.ClientCert != "" {
-		cc, err = ioutil.ReadAll(strings.NewReader(cfg.ClientCert))
+	if len(cc) == 0 && c.ClientCert != "" {
+		cc, err = ioutil.ReadAll(strings.NewReader(c.ClientCert))
 		if err != nil {
 			return c, err
 		}
 	}
 	// Load private key of client certificate from file
-	if cfg.PrivKeyPath != "" {
-		privKey, err := os.Open(cfg.PrivKeyPath)
+	if c.PrivKeyPath != "" {
+		privKey, err := os.Open(c.PrivKeyPath)
 		defer privKey.Close()
 		if err != nil {
 			return c, err
@@ -386,18 +386,18 @@ func loadCertificate(cfg agent.MQTTConf) (c agent.MQTTConf, err error) {
 		}
 	}
 	// Load private key of client certificate from string
-	if len(pk) == 0 && cfg.ClientKey != "" {
-		pk, err = ioutil.ReadAll(strings.NewReader(cfg.ClientKey))
+	if len(pk) == 0 && c.ClientKey != "" {
+		pk, err = ioutil.ReadAll(strings.NewReader(c.ClientKey))
 		if err != nil {
 			return c, err
 		}
 	}
 
-	cert, err = tls.X509KeyPair([]byte(strings.ReplaceAll(cfg.ClientCert, "\n", "")), []byte(strings.ReplaceAll(cfg.ClientKey, "\n", "")))
+	cert, err = tls.X509KeyPair([]byte(c.ClientCert), []byte(c.ClientKey))
 	if err != nil {
 		return c, err
 	}
-	cfg.Cert = cert
-	cfg.CA = caByte
+	c.Cert = cert
+	c.CA = caByte
 	return c, nil
 }

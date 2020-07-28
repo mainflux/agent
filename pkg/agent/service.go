@@ -356,8 +356,7 @@ func (a *agent) saveConfig(service, fileName, fileCont string) error {
 		return errNoSuchService
 	}
 
-	err := a.nats.Publish(fmt.Sprintf("%s.%s.%s", Commands, service, config), []byte(""))
-	return errors.New(err.Error())
+	return a.nats.Publish(fmt.Sprintf("%s.%s.%s", Commands, service, config), []byte(""))
 }
 
 func (a *agent) AddConfig(c Config) error {

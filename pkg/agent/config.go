@@ -14,25 +14,25 @@ import (
 	"github.com/pelletier/go-toml"
 )
 
-type ServerConf struct {
-	Port    string `toml:"port"`
-	NatsURL string `toml:"nats_url"`
+type ServerConfig struct {
+	Port    string `toml:"port" json:"port"`
+	NatsURL string `toml:"nats_url" json:"nats_url"`
 }
 
-type ChanConf struct {
+type ChanConfig struct {
 	Control string `toml:"control"`
 	Data    string `toml:"data"`
 }
 
-type EdgexConf struct {
+type EdgexConfig struct {
 	URL string `toml:"url"`
 }
 
-type LogConf struct {
+type LogConfig struct {
 	Level string `toml:"level"`
 }
 
-type MQTTConf struct {
+type MQTTConfig struct {
 	URL         string          `json:"url" toml:"url"`
 	Username    string          `json:"username" toml:"username" mapstructure:"username"`
 	Password    string          `json:"password" toml:"password" mapstructure:"password"`
@@ -50,26 +50,26 @@ type MQTTConf struct {
 	CaCert      string          `json:"ca_cert" toml:"ca_cert"`
 }
 
-type HeartbeatConf struct {
+type HeartbeatConfig struct {
 	Interval time.Duration `toml:"interval"`
 }
 
-type TerminalConf struct {
+type TerminalConfig struct {
 	SessionTimeout time.Duration `toml:"session_timeout" json:"session_timeout"`
 }
 
 type Config struct {
-	Server    ServerConf    `toml:"server" json:"server"`
-	Terminal  TerminalConf  `toml:"terminal" json:"terminal"`
-	Heartbeat HeartbeatConf `toml:"heartbeat" json:"heartbeat"`
-	Channels  ChanConf      `toml:"channels" json:"channels"`
-	Edgex     EdgexConf     `toml:"edgex" json:"edgex"`
-	Log       LogConf       `toml:"log" json:"log"`
-	MQTT      MQTTConf      `toml:"mqtt" json:"mqtt"`
+	Server    ServerConfig    `toml:"server" json:"server"`
+	Terminal  TerminalConfig  `toml:"terminal" json:"terminal"`
+	Heartbeat HeartbeatConfig `toml:"heartbeat" json:"heartbeat"`
+	Channels  ChanConfig      `toml:"channels" json:"channels"`
+	Edgex     EdgexConfig     `toml:"edgex" json:"edgex"`
+	Log       LogConfig       `toml:"log" json:"log"`
+	MQTT      MQTTConfig      `toml:"mqtt" json:"mqtt"`
 	File      string
 }
 
-func NewConfig(sc ServerConf, cc ChanConf, ec EdgexConf, lc LogConf, mc MQTTConf, hc HeartbeatConf, tc TerminalConf, file string) Config {
+func NewConfig(sc ServerConfig, cc ChanConfig, ec EdgexConfig, lc LogConfig, mc MQTTConfig, hc HeartbeatConfig, tc TerminalConfig, file string) Config {
 	return Config{
 		Server:    sc,
 		Channels:  cc,
@@ -109,7 +109,7 @@ func ReadConfig(file string) (Config, error) {
 }
 
 // UnmarshalJSON parses the duration from JSON
-func (d *HeartbeatConf) UnmarshalJSON(b []byte) error {
+func (d *HeartbeatConfig) UnmarshalJSON(b []byte) error {
 	var v map[string]interface{}
 	if err := json.Unmarshal(b, &v); err != nil {
 		return err
@@ -135,7 +135,7 @@ func (d *HeartbeatConf) UnmarshalJSON(b []byte) error {
 }
 
 // UnmarshalJSON parses the duration from JSON
-func (d *TerminalConf) UnmarshalJSON(b []byte) error {
+func (d *TerminalConfig) UnmarshalJSON(b []byte) error {
 	var v map[string]interface{}
 	if err := json.Unmarshal(b, &v); err != nil {
 		return err

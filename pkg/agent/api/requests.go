@@ -35,7 +35,7 @@ func (req execReq) validate() error {
 }
 
 type addConfigReq struct {
-	agent agentConf
+	agent agentConfig
 	file  string
 }
 
