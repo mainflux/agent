@@ -470,17 +470,17 @@ type MethodInfo struct {
 	IsServerStream bool
 }
 
-// agent.Info contains unary RPC method info, streaming RPC method info and metadata for a service.
-type agent.Info struct {
+// ServiceInfo contains unary RPC method info, streaming RPC method info and metadata for a service.
+type ServiceInfo struct {
 	Methods []MethodInfo
 	// Metadata is the metadata specified in ServiceDesc when registering service.
 	Metadata interface{}
 }
 
-// Getagent.Info returns a map from service names to agent.Info.
+// GetServiceInfo returns a map from service names to ServiceInfo.
 // Service names include the package names, in the form of <package>.<service>.
-func (s *Server) Getagent.Info() map[string]agent.Info {
-	ret := make(map[string]agent.Info)
+func (s *Server) GetServiceInfo() map[string]ServiceInfo {
+	ret := make(map[string]ServiceInfo)
 	for n, srv := range s.m {
 		methods := make([]MethodInfo, 0, len(srv.md)+len(srv.sd))
 		for m := range srv.md {
@@ -498,7 +498,7 @@ func (s *Server) Getagent.Info() map[string]agent.Info {
 			})
 		}
 
-		ret[n] = agent.Info{
+		ret[n] = ServiceInfo{
 			Methods:  methods,
 			Metadata: srv.mdata,
 		}
