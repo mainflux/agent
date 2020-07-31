@@ -17,7 +17,7 @@ import (
 	"github.com/mainflux/agent/pkg/agent"
 	"github.com/mainflux/agent/pkg/agent/api"
 	"github.com/mainflux/agent/pkg/agent/mocks"
-	"github.com/mainflux/agent/pkg/config"
+
 	"github.com/mainflux/mainflux/logger"
 	"github.com/stretchr/testify/assert"
 )
@@ -44,7 +44,7 @@ func newService() agent.Service {
 	opts := paho.NewClientOptions()
 	mqttClient := paho.NewClient(opts)
 	edgexClient := mocks.NewEdgexClient()
-	config := config.Config{}
+	config := agent.Config{}
 	logger, err := logger.New(os.Stdout, "debug")
 	if err != nil {
 		fmt.Println(fmt.Sprintf("Failed to create logger: %s", err.Error()))

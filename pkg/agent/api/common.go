@@ -3,24 +3,24 @@
 
 package api
 
-type serverConf struct {
+type serverConfig struct {
 	port string `json:"port"`
 }
 
-type chanConf struct {
+type chanConfig struct {
 	control string `json:"control"`
 	data    string `json:"data"`
 }
 
-type edgexConf struct {
+type edgexConfig struct {
 	url string `json:"url"`
 }
 
-type logConf struct {
+type logConfig struct {
 	level string `json:"level"`
 }
 
-type mqttConf struct {
+type mqttConfig struct {
 	url         string `json:"url"`
 	username    string `json:"username"`
 	password    string `json:"json"`
@@ -34,10 +34,10 @@ type mqttConf struct {
 }
 
 // Config struct of Mainflux Agent
-type agentConf struct {
-	server   serverConf `json:"server"`
-	channels chanConf   `json:"channels"`
-	edgex    edgexConf  `json:"edgex"`
-	log      logConf    `json:"log"`
-	mqtt     mqttConf   `json:"mqtt"`
+type agentConfig struct {
+	server   serverConfig `json:"server"`
+	channels chanConfig   `json:"channels"`
+	edgex    edgexConfig  `json:"edgex"`
+	log      logConfig    `json:"log"`
+	mqtt     mqttConfig   `json:"mqtt"`
 }

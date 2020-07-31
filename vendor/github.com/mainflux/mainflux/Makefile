@@ -4,7 +4,7 @@
 BUILD_DIR = build
 SERVICES = users things http ws coap lora influxdb-writer influxdb-reader mongodb-writer \
 	mongodb-reader cassandra-writer cassandra-reader postgres-writer postgres-reader cli \
-	bootstrap opcua authn
+	bootstrap opcua authn twins
 DOCKERS = $(addprefix docker_,$(SERVICES))
 DOCKERS_DEV = $(addprefix docker_dev_,$(SERVICES))
 CGO_ENABLED ?= 0
@@ -120,7 +120,6 @@ release:
 	for svc in $(SERVICES); do \
 		docker tag mainflux/$$svc mainflux/$$svc:$(version); \
 	done
-	docker tag mainflux/ui mainflux/ui:$(version)
 	docker tag mainflux/mqtt mainflux/mqtt:$(version)
 	$(call docker_push,$(version))
 

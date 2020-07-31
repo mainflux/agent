@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/mainflux/agent/pkg/agent"
-	"github.com/mainflux/agent/pkg/config"
 )
 
 func pubEndpoint(svc agent.Service) endpoint.Endpoint {
@@ -65,26 +64,26 @@ func addConfigEndpoint(svc agent.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		sc := config.ServerConf{Port: req.agent.server.port}
-		cc := config.ChanConf{
+		sc := agent.ServerConfig{Port: req.agent.server.port}
+		cc := agent.ChanConfig{
 			Control: req.agent.channels.control,
 			Data:    req.agent.channels.data,
 		}
-		ec := config.EdgexConf{URL: req.agent.edgex.url}
-		lc := config.LogConf{Level: req.agent.log.level}
-		mc := config.MQTTConf{
+		ec := agent.EdgexConfig{URL: req.agent.edgex.url}
+		lc := agent.LogConfig{Level: req.agent.log.level}
+		mc := agent.MQTTConfig{
 			URL:      req.agent.mqtt.url,
 			Username: req.agent.mqtt.username,
 			Password: req.agent.mqtt.password,
 		}
-		a := config.AgentConf{
+		c := agent.Config{
 			Server:   sc,
 			Channels: cc,
 			Edgex:    ec,
 			Log:      lc,
 			MQTT:     mc,
 		}
-		c := config.Config{Agent: a}
+
 		if err := svc.AddConfig(c); err != nil {
 			return genericRes{}, nil
 		}

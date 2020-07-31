@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -17,7 +19,6 @@ import (
 	"github.com/mainflux/agent/pkg/agent"
 	"github.com/mainflux/agent/pkg/agent/api"
 	"github.com/mainflux/agent/pkg/bootstrap"
-	"github.com/mainflux/agent/pkg/config"
 	"github.com/mainflux/agent/pkg/conn"
 	"github.com/mainflux/agent/pkg/edgex"
 	"github.com/mainflux/mainflux"
@@ -33,6 +34,7 @@ const (
 	defBootstrapID                = ""
 	defBootstrapKey               = ""
 	defBootstrapRetries           = "5"
+	defBootstrapSkipTLS           = "false"
 	defBootstrapRetryDelaySeconds = "10"
 	defLogLevel                   = "info"
 	defEdgexURL                   = "http://localhost:48090/api/v1/"
@@ -47,14 +49,13 @@ const (
 	defMqttMTLS                   = "false"
 	defMqttCA                     = "ca.crt"
 	defMqttQoS                    = "0"
-	defMqttRetain                 = false
+	defMqttRetain                 = "false"
 	defMqttCert                   = "thing.cert"
 	defMqttPrivKey                = "thing.key"
 	defConfigFile                 = "config.toml"
 	defNatsURL                    = nats.DefaultURL
 	defHeartbeatInterval          = "10s"
 	defTermSessionTimeout         = "60s"
-
 	envConfigFile                 = "MF_AGENT_CONFIG_FILE"
 	envLogLevel                   = "MF_AGENT_LOG_LEVEL"
 	envEdgexURL                   = "MF_AGENT_EDGEX_URL"
@@ -64,6 +65,7 @@ const (
 	envBootstrapID                = "MF_AGENT_BOOTSTRAP_ID"
 	envBootstrapKey               = "MF_AGENT_BOOTSTRAP_KEY"
 	envBootstrapRetries           = "MF_AGENT_BOOTSTRAP_RETRIES"
+	envBootstrapSkipTLS           = "MF_AGENT_BOOTSTRAP_SKIP_TLS"
 	envBootstrapRetryDelaySeconds = "MF_AGENT_BOOTSTRAP_RETRY_DELAY_SECONDS"
 	envCtrlChan                   = "MF_AGENT_CONTROL_CHANNEL"
 	envDataChan                   = "MF_AGENT_DATA_CHANNEL"
@@ -96,7 +98,7 @@ func main() {
 		log.Fatalf(fmt.Sprintf("Failed to load config: %s", err))
 	}
 
-	logger, err := logger.New(os.Stdout, cfg.Agent.Log.Level)
+	logger, err := logger.New(os.Stdout, cfg.Log.Level)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("Failed to create logger: %s", err))
 	}
@@ -106,19 +108,19 @@ func main() {
 		logger.Error(fmt.Sprintf("Failed to load config: %s", err))
 	}
 
-	nc, err := nats.Connect(cfg.Agent.Server.NatsURL)
+	nc, err := nats.Connect(cfg.Server.NatsURL)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Agent.Server.NatsURL))
+		logger.Error(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Server.NatsURL))
 		os.Exit(1)
 	}
 	defer nc.Close()
 
-	mqttClient, err := connectToMQTTBroker(cfg.Agent.MQTT, logger)
+	mqttClient, err := connectToMQTTBroker(cfg.MQTT, logger)
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
-	edgexClient := edgex.NewClient(cfg.Agent.Edgex.URL, logger)
+	edgexClient := edgex.NewClient(cfg.Edgex.URL, logger)
 
 	svc, err := agent.New(mqttClient, &cfg, edgexClient, nc, logger)
 	if err != nil {
@@ -142,14 +144,14 @@ func main() {
 			Help:      "Total duration of requests in microseconds.",
 		}, []string{"method"}),
 	)
-	b := conn.NewBroker(svc, mqttClient, cfg.Agent.Channels.Control, nc, logger)
+	b := conn.NewBroker(svc, mqttClient, cfg.Channels.Control, nc, logger)
 	go b.Subscribe()
 
 	errs := make(chan error, 3)
 
 	go func() {
-		p := fmt.Sprintf(":%s", cfg.Agent.Server.Port)
-		logger.Info(fmt.Sprintf("Agent service started, exposed port %s", cfg.Agent.Server.Port))
+		p := fmt.Sprintf(":%s", cfg.Server.Port)
+		logger.Info(fmt.Sprintf("Agent service started, exposed port %s", cfg.Server.Port))
 		errs <- http.ListenAndServe(p, api.MakeHandler(svc))
 	}()
 
@@ -163,50 +165,81 @@ func main() {
 	logger.Error(fmt.Sprintf("Agent terminated: %s", err))
 }
 
-func loadEnvConfig() (config.Config, error) {
-	sc := config.ServerConf{
+func loadEnvConfig() (agent.Config, error) {
+	sc := agent.ServerConfig{
 		NatsURL: mainflux.Env(envNatsURL, defNatsURL),
 		Port:    mainflux.Env(envHTTPPort, defHTTPPort),
 	}
-	cc := config.ChanConf{
+	cc := agent.ChanConfig{
 		Control: mainflux.Env(envCtrlChan, defCtrlChan),
 		Data:    mainflux.Env(envDataChan, defDataChan),
 	}
 	interval, err := time.ParseDuration(mainflux.Env(envHeartbeatInterval, defHeartbeatInterval))
 	if err != nil {
-		return config.Config{}, errors.Wrap(errFailedToConfigHeartbeat, err)
+		return agent.Config{}, errors.Wrap(errFailedToConfigHeartbeat, err)
 	}
 
-	ch := config.Heartbeat{
+	ch := agent.HeartbeatConfig{
 		Interval: interval,
 	}
 	termSessionTimeout, err := time.ParseDuration(mainflux.Env(envTermSessionTimeout, defTermSessionTimeout))
 	if err != nil {
-		return config.Config{}, err
+		return agent.Config{}, err
 	}
-	ct := config.Terminal{
+	ct := agent.TerminalConfig{
 		SessionTimeout: termSessionTimeout,
 	}
-	ec := config.EdgexConf{URL: mainflux.Env(envEdgexURL, defEdgexURL)}
-	lc := config.LogConf{Level: mainflux.Env(envLogLevel, defLogLevel)}
+	ec := agent.EdgexConfig{URL: mainflux.Env(envEdgexURL, defEdgexURL)}
+	lc := agent.LogConfig{Level: mainflux.Env(envLogLevel, defLogLevel)}
 
-	mc := config.MQTTConf{
-		URL:      mainflux.Env(envMqttURL, defMqttURL),
-		Username: mainflux.Env(envMqttUsername, defMqttUsername),
-		Password: mainflux.Env(envMqttPassword, defMqttPassword),
+	mtls, err := strconv.ParseBool(mainflux.Env(envMqttMTLS, defMqttMTLS))
+	if err != nil {
+		mtls = false
 	}
+
+	skipTLSVer, err := strconv.ParseBool(mainflux.Env(defMqttSkipTLSVer, envMqttSkipTLSVer))
+	if err != nil {
+		skipTLSVer = true
+	}
+
+	qos, err := strconv.Atoi(mainflux.Env(envMqttQoS, defMqttQoS))
+	if err != nil {
+		qos = 0
+	}
+
+	retain, err := strconv.ParseBool(mainflux.Env(envMqttRetain, defMqttRetain))
+	if err != nil {
+		retain = false
+	}
+
+	mc := agent.MQTTConfig{
+		URL:         mainflux.Env(envMqttURL, defMqttURL),
+		Username:    mainflux.Env(envMqttUsername, defMqttUsername),
+		Password:    mainflux.Env(envMqttPassword, defMqttPassword),
+		MTLS:        mtls,
+		CAPath:      mainflux.Env(envMqttCA, defMqttCA),
+		CertPath:    mainflux.Env(envMqttCert, defMqttCert),
+		PrivKeyPath: mainflux.Env(envMqttPrivKey, defMqttPrivKey),
+		SkipTLSVer:  skipTLSVer,
+		QoS:         byte(qos),
+		Retain:      retain,
+	}
+
 	file := mainflux.Env(envConfigFile, defConfigFile)
-	c := config.New(sc, cc, ec, lc, mc, ch, ct, file)
-	mc, err = loadCertificate(c.Agent.MQTT)
+	c := agent.NewConfig(sc, cc, ec, lc, mc, ch, ct, file)
+	mc, err = loadCertificate(c.MQTT)
 	if err != nil {
 		return c, errors.Wrap(errFailedToSetupMTLS, err)
 	}
-	c.Agent.MQTT = mc
+
+	c.MQTT = mc
+	agent.SaveConfig(c)
 	return c, nil
 }
 
-func loadBootConfig(c config.Config, logger logger.Logger) (bsc config.Config, err error) {
+func loadBootConfig(c agent.Config, logger logger.Logger) (bsc agent.Config, err error) {
 	file := mainflux.Env(envConfigFile, defConfigFile)
+	skipTLS, err := strconv.ParseBool(mainflux.Env(envBootstrapSkipTLS, defBootstrapSkipTLS))
 	bsConfig := bootstrap.Config{
 		URL:           mainflux.Env(envBootstrapURL, defBootstrapURL),
 		ID:            mainflux.Env(envBootstrapID, defBootstrapID),
@@ -214,34 +247,35 @@ func loadBootConfig(c config.Config, logger logger.Logger) (bsc config.Config, e
 		Retries:       mainflux.Env(envBootstrapRetries, defBootstrapRetries),
 		RetryDelaySec: mainflux.Env(envBootstrapRetryDelaySeconds, defBootstrapRetryDelaySeconds),
 		Encrypt:       mainflux.Env(envEncryption, defEncryption),
+		SkipTLS:       skipTLS,
 	}
 
 	if err := bootstrap.Bootstrap(bsConfig, logger, file); err != nil {
 		return c, errors.Wrap(errFetchingBootstrapFailed, err)
 	}
 
-	if bsc, err = config.Read(file); err != nil {
+	if bsc, err = agent.ReadConfig(file); err != nil {
 		return c, errors.Wrap(errFailedToReadConfig, err)
 	}
 
-	mc, err := loadCertificate(bsc.Agent.MQTT)
+	mc, err := loadCertificate(bsc.MQTT)
 	if err != nil {
 		return bsc, errors.Wrap(errFailedToSetupMTLS, err)
 	}
 
-	if bsc.Agent.Heartbeat.Interval <= 0 {
-		bsc.Agent.Heartbeat.Interval = c.Agent.Heartbeat.Interval
+	if bsc.Heartbeat.Interval <= 0 {
+		bsc.Heartbeat.Interval = c.Heartbeat.Interval
 	}
 
-	if bsc.Agent.Terminal.SessionTimeout <= 0 {
-		bsc.Agent.Terminal.SessionTimeout = c.Agent.Terminal.SessionTimeout
+	if bsc.Terminal.SessionTimeout <= 0 {
+		bsc.Terminal.SessionTimeout = c.Terminal.SessionTimeout
 	}
 
-	bsc.Agent.MQTT = mc
+	bsc.MQTT = mc
 	return bsc, nil
 }
 
-func connectToMQTTBroker(conf config.MQTTConf, logger logger.Logger) (mqtt.Client, error) {
+func connectToMQTTBroker(conf agent.MQTTConfig, logger logger.Logger) (mqtt.Client, error) {
 	name := fmt.Sprintf("agent-%s", conf.Username)
 	conn := func(client mqtt.Client) {
 		logger.Info(fmt.Sprintf("Client %s connected", name))
@@ -291,39 +325,79 @@ func connectToMQTTBroker(conf config.MQTTConf, logger logger.Logger) (mqtt.Clien
 	return client, nil
 }
 
-func loadCertificate(cfg config.MQTTConf) (config.MQTTConf, error) {
-	c := cfg
-	caByte := []byte{}
+func loadCertificate(cnfg agent.MQTTConfig) (c agent.MQTTConfig, err error) {
+	var caByte []byte
+	var cc []byte
+	var pk []byte
+	c = cnfg
+
 	cert := tls.Certificate{}
-	if !cfg.MTLS {
+	if !c.MTLS {
 		return c, nil
 	}
-	caFile, err := os.Open(cfg.CAPath)
-	defer caFile.Close()
+	// Load CA cert from file
+	if c.CAPath != "" {
+		caFile, err := os.Open(c.CAPath)
+		defer caFile.Close()
+		if err != nil {
+			return c, err
+		}
+		caByte, err = ioutil.ReadAll(caFile)
+		if err != nil {
+			return c, err
+		}
+	}
+	// Load CA cert from string if file not present
+	if len(caByte) == 0 && c.CaCert != "" {
+		caByte, err = ioutil.ReadAll(strings.NewReader(c.CaCert))
+		if err != nil {
+			return c, err
+		}
+	}
+	// Load client certificate from file if present
+	if c.CertPath != "" {
+		clientCert, err := os.Open(c.CertPath)
+		defer clientCert.Close()
+		if err != nil {
+			return c, err
+		}
+		cc, err = ioutil.ReadAll(clientCert)
+		if err != nil {
+			return c, err
+		}
+	}
+	// Load client certificate from string if file not present
+	if len(cc) == 0 && c.ClientCert != "" {
+		cc, err = ioutil.ReadAll(strings.NewReader(c.ClientCert))
+		if err != nil {
+			return c, err
+		}
+	}
+	// Load private key of client certificate from file
+	if c.PrivKeyPath != "" {
+		privKey, err := os.Open(c.PrivKeyPath)
+		defer privKey.Close()
+		if err != nil {
+			return c, err
+		}
+		pk, err = ioutil.ReadAll((privKey))
+		if err != nil {
+			return c, err
+		}
+	}
+	// Load private key of client certificate from string
+	if len(pk) == 0 && c.ClientKey != "" {
+		pk, err = ioutil.ReadAll(strings.NewReader(c.ClientKey))
+		if err != nil {
+			return c, err
+		}
+	}
+
+	cert, err = tls.X509KeyPair([]byte(c.ClientCert), []byte(c.ClientKey))
 	if err != nil {
 		return c, err
 	}
-	caByte, err = ioutil.ReadAll(caFile)
-	if err != nil {
-		return c, err
-	}
-	clientCert, err := os.Open(cfg.CertPath)
-	defer clientCert.Close()
-	if err != nil {
-		return c, err
-	}
-	cc, _ := ioutil.ReadAll(clientCert)
-	privKey, err := os.Open(cfg.PrivKeyPath)
-	defer clientCert.Close()
-	if err != nil {
-		return c, err
-	}
-	pk, _ := ioutil.ReadAll((privKey))
-	cert, err = tls.X509KeyPair([]byte(cc), []byte(pk))
-	if err != nil {
-		return c, err
-	}
-	cfg.Cert = cert
-	cfg.CA = caByte
+	c.Cert = cert
+	c.CA = caByte
 	return c, nil
 }
