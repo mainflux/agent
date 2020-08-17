@@ -5,7 +5,8 @@ package things
 
 import (
 	"context"
-	"errors"
+
+	"github.com/mainflux/mainflux/errors"
 
 	"github.com/mainflux/mainflux"
 )
@@ -26,81 +27,87 @@ var (
 	ErrConflict = errors.New("entity already exists")
 
 	// ErrScanMetadata indicates problem with metadata in db
-	ErrScanMetadata = errors.New("Failed to scan metadata")
+	ErrScanMetadata = errors.New("failed to scan metadata")
+
+	// ErrCreateThings indicates error in creating Thing
+	ErrCreateThings = errors.New("create thing failed")
+
+	// ErrCreateChannels indicates error in creating Channel
+	ErrCreateChannels = errors.New("create channel failed")
 )
 
 // Service specifies an API that must be fullfiled by the domain service
 // implementation, and all of its decorators (e.g. logging & metrics).
 type Service interface {
 	// CreateThings adds a list of things to the user identified by the provided key.
-	CreateThings(context.Context, string, ...Thing) ([]Thing, error)
+	CreateThings(ctx context.Context, token string, things ...Thing) ([]Thing, error)
 
 	// UpdateThing updates the thing identified by the provided ID, that
 	// belongs to the user identified by the provided key.
-	UpdateThing(context.Context, string, Thing) error
+	UpdateThing(ctx context.Context, token string, thing Thing) error
 
 	// UpdateKey updates key value of the existing thing. A non-nil error is
 	// returned to indicate operation failure.
-	UpdateKey(context.Context, string, string, string) error
+	UpdateKey(ctx context.Context, token, id, key string) error
 
 	// ViewThing retrieves data about the thing identified with the provided
 	// ID, that belongs to the user identified by the provided key.
-	ViewThing(context.Context, string, string) (Thing, error)
+	ViewThing(ctx context.Context, token, id string) (Thing, error)
 
 	// ListThings retrieves data about subset of things that belongs to the
 	// user identified by the provided key.
-	ListThings(context.Context, string, uint64, uint64, string, Metadata) (ThingsPage, error)
+	ListThings(ctx context.Context, token string, offset, limit uint64, name string, metadata Metadata) (Page, error)
 
 	// ListThingsByChannel retrieves data about subset of things that are
 	// connected to specified channel and belong to the user identified by
 	// the provided key.
-	ListThingsByChannel(context.Context, string, string, uint64, uint64) (ThingsPage, error)
+	ListThingsByChannel(ctx context.Context, token, channel string, offset, limit uint64) (Page, error)
 
 	// RemoveThing removes the thing identified with the provided ID, that
 	// belongs to the user identified by the provided key.
-	RemoveThing(context.Context, string, string) error
+	RemoveThing(ctx context.Context, token, id string) error
 
 	// CreateChannels adds a list of channels to the user identified by the provided key.
-	CreateChannels(context.Context, string, ...Channel) ([]Channel, error)
+	CreateChannels(ctx context.Context, token string, channels ...Channel) ([]Channel, error)
 
 	// UpdateChannel updates the channel identified by the provided ID, that
 	// belongs to the user identified by the provided key.
-	UpdateChannel(context.Context, string, Channel) error
+	UpdateChannel(ctx context.Context, token string, channel Channel) error
 
 	// ViewChannel retrieves data about the channel identified by the provided
 	// ID, that belongs to the user identified by the provided key.
-	ViewChannel(context.Context, string, string) (Channel, error)
+	ViewChannel(ctx context.Context, token, id string) (Channel, error)
 
 	// ListChannels retrieves data about subset of channels that belongs to the
 	// user identified by the provided key.
-	ListChannels(context.Context, string, uint64, uint64, string, Metadata) (ChannelsPage, error)
+	ListChannels(ctx context.Context, token string, offset, limit uint64, name string, m Metadata) (ChannelsPage, error)
 
 	// ListChannelsByThing retrieves data about subset of channels that have
 	// specified thing connected to them and belong to the user identified by
 	// the provided key.
-	ListChannelsByThing(context.Context, string, string, uint64, uint64) (ChannelsPage, error)
+	ListChannelsByThing(ctx context.Context, token, thing string, offset, limit uint64) (ChannelsPage, error)
 
 	// RemoveChannel removes the thing identified by the provided ID, that
 	// belongs to the user identified by the provided key.
-	RemoveChannel(context.Context, string, string) error
+	RemoveChannel(ctx context.Context, token, id string) error
 
 	// Connect adds things to the channel's list of connected things.
-	Connect(context.Context, string, []string, []string) error
+	Connect(ctx context.Context, token string, chIDs, thIDs []string) error
 
 	// Disconnect removes thing from the channel's list of connected
 	// things.
-	Disconnect(context.Context, string, string, string) error
+	Disconnect(ctx context.Context, token, chanID, thingID string) error
 
 	// CanAccessByKey determines whether the channel can be accessed using the
 	// provided key and returns thing's id if access is allowed.
-	CanAccessByKey(context.Context, string, string) (string, error)
+	CanAccessByKey(ctx context.Context, chanID, key string) (string, error)
 
 	// CanAccessByID determines whether the channel can be accessed by
 	// the given thing and returns error if it cannot.
-	CanAccessByID(context.Context, string, string) error
+	CanAccessByID(ctx context.Context, chanID, thingID string) error
 
 	// Identify returns thing ID for given thing key.
-	Identify(context.Context, string) (string, error)
+	Identify(ctx context.Context, key string) (string, error)
 }
 
 // PageMetadata contains page metadata that helps navigation.
@@ -143,7 +150,7 @@ func (ts *thingsService) CreateThings(ctx context.Context, token string, things 
 	for i := range things {
 		things[i].ID, err = ts.idp.ID()
 		if err != nil {
-			return []Thing{}, err
+			return []Thing{}, errors.Wrap(ErrCreateThings, err)
 		}
 
 		things[i].Owner = res.GetValue()
@@ -151,7 +158,7 @@ func (ts *thingsService) CreateThings(ctx context.Context, token string, things 
 		if things[i].Key == "" {
 			things[i].Key, err = ts.idp.ID()
 			if err != nil {
-				return []Thing{}, err
+				return []Thing{}, errors.Wrap(ErrCreateThings, err)
 			}
 		}
 	}
@@ -191,19 +198,21 @@ func (ts *thingsService) ViewThing(ctx context.Context, token, id string) (Thing
 	return ts.things.RetrieveByID(ctx, res.GetValue(), id)
 }
 
-func (ts *thingsService) ListThings(ctx context.Context, token string, offset, limit uint64, name string, metadata Metadata) (ThingsPage, error) {
+func (ts *thingsService) ListThings(ctx context.Context, token string, offset, limit uint64, name string, metadata Metadata) (Page, error) {
 	res, err := ts.auth.Identify(ctx, &mainflux.Token{Value: token})
 	if err != nil {
-		return ThingsPage{}, ErrUnauthorizedAccess
+		return Page{}, errors.Wrap(ErrUnauthorizedAccess, err)
 	}
 
+	// tp, err := ts.things.RetrieveAll(ctx, res.GetValue(), offset, limit, name, metadata)
+	// return tp, errors.Wrap(ErrUnauthorizedAccess, err)
 	return ts.things.RetrieveAll(ctx, res.GetValue(), offset, limit, name, metadata)
 }
 
-func (ts *thingsService) ListThingsByChannel(ctx context.Context, token, channel string, offset, limit uint64) (ThingsPage, error) {
+func (ts *thingsService) ListThingsByChannel(ctx context.Context, token, channel string, offset, limit uint64) (Page, error) {
 	res, err := ts.auth.Identify(ctx, &mainflux.Token{Value: token})
 	if err != nil {
-		return ThingsPage{}, ErrUnauthorizedAccess
+		return Page{}, errors.Wrap(ErrUnauthorizedAccess, err)
 	}
 
 	return ts.things.RetrieveByChannel(ctx, res.GetValue(), channel, offset, limit)
@@ -212,7 +221,7 @@ func (ts *thingsService) ListThingsByChannel(ctx context.Context, token, channel
 func (ts *thingsService) RemoveThing(ctx context.Context, token, id string) error {
 	res, err := ts.auth.Identify(ctx, &mainflux.Token{Value: token})
 	if err != nil {
-		return ErrUnauthorizedAccess
+		return errors.Wrap(ErrUnauthorizedAccess, err)
 	}
 
 	ts.thingCache.Remove(ctx, id)
@@ -228,7 +237,7 @@ func (ts *thingsService) CreateChannels(ctx context.Context, token string, chann
 	for i := range channels {
 		channels[i].ID, err = ts.idp.ID()
 		if err != nil {
-			return []Channel{}, err
+			return []Channel{}, errors.Wrap(ErrCreateChannels, err)
 		}
 
 		channels[i].Owner = res.GetValue()

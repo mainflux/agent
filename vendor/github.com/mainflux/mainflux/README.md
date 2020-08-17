@@ -53,7 +53,7 @@ Developing Mainflux will also require:
 Once the prerequisites are installed, execute the following commands from the project's root:
 
 ```bash
-docker-compose -f docker/docker-compose.yml -f docker/aedes.yml up
+docker-compose -f docker/docker-compose.yml up
 ```
 
 This will bring up the Mainflux docker services and interconnect them. This command can also be executed using the project's included Makefile:
@@ -125,6 +125,8 @@ please head to company's [careers page][careers] or shoot us an e-mail at <caree
 ## License
 
 [Apache-2.0](LICENSE)
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fmainflux%2Fmainflux.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fmainflux%2Fmainflux?ref=badge_large)
 
 [banner]: https://github.com/mainflux/docs/blob/master/docs/img/gopherBanner.jpg
 [ci-badge]: https://semaphoreci.com/api/v1/mainflux/mainflux/branches/master/badge.svg
