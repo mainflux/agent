@@ -97,7 +97,7 @@ func ReadFile(file string) (Config, error) {
 }
 
 // ReadBytes - read config from a bytes
-func ReadBytes(data []byte) (Config, errors.Error) {
+func ReadBytes(data []byte) (Config, error) {
 	c := Config{}
 	e := toml.Unmarshal(data, &c)
 	if e == nil {

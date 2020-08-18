@@ -3,7 +3,9 @@
 
 package mainflux
 
-import "os"
+import (
+	"os"
+)
 
 // Env reads specified environment variable. If no value has been found,
 // fallback is returned.
