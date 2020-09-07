@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/mainflux/agent/pkg/agent"
-	"github.com/mainflux/agent/pkg/config"
 	log "github.com/mainflux/mainflux/logger"
 )
 
@@ -63,7 +62,7 @@ func (lm loggingMiddleware) Control(uuid, cmd string) (err error) {
 	return lm.svc.Control(uuid, cmd)
 }
 
-func (lm loggingMiddleware) AddConfig(c config.Config) (err error) {
+func (lm loggingMiddleware) AddConfig(c agent.Config) (err error) {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method add_config took %s to complete", time.Since(begin))
 		if err != nil {
@@ -76,7 +75,7 @@ func (lm loggingMiddleware) AddConfig(c config.Config) (err error) {
 	return lm.svc.AddConfig(c)
 }
 
-func (lm loggingMiddleware) Config() config.Config {
+func (lm loggingMiddleware) Config() agent.Config {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method config took %s to complete", time.Since(begin))
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))

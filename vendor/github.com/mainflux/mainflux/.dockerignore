@@ -2,8 +2,5 @@
 .github
 build
 docker
-docs
-k8s
-load-test
 metrics
 scripts

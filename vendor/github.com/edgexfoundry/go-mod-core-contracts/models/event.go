@@ -16,7 +16,8 @@ package models
 
 import (
 	"encoding/json"
-	"github.com/ugorji/go/codec"
+
+	"github.com/fxamacker/cbor/v2"
 )
 
 // Event represents a single measurable event read from a device
@@ -32,16 +33,12 @@ type Event struct {
 }
 
 func encodeAsCBOR(e Event) ([]byte, error) {
-	var handle codec.CborHandle
-	var byteBuffer = make([]byte, 0, 64)
-	enc := codec.NewEncoderBytes(&byteBuffer, &handle)
-
-	err := enc.Encode(e)
+	bytes, err := cbor.Marshal(e)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	return byteBuffer, nil
+	return bytes, nil
 }
 
 // UnmarshalJSON implements the Unmarshaler interface for the Event type

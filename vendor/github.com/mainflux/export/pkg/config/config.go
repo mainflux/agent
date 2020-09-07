@@ -25,19 +25,20 @@ var (
 )
 
 type MQTT struct {
-	Host        string          `json:"host" toml:"host" mapstructure:"host"`
-	Username    string          `json:"username" toml:"username" mapstructure:"username"`
-	Password    string          `json:"password" toml:"password" mapstructure:"password"`
-	MTLS        bool            `json:"mtls" toml:"mtls" mapstructure:"mtls"`
-	SkipTLSVer  bool            `json:"skip_tls_ver" toml:"skip_tls_ver" mapstructure:"skip_tls_ver"`
-	Retain      bool            `json:"retain" toml:"retain" mapstructure:"retain"`
-	QoS         int             `json:"qos" toml:"qos" mapstructure:"qos"`
-	Channel     string          `json:"channel" toml:"channel" mapstructure:"channel"`
-	CAPath      string          `json:"ca_path" toml:"ca_path" mapstructure:"ca_path"`
-	CertPath    string          `json:"cert_path" toml:"cert_path" mapstructure:"cert_path"`
-	PrivKeyPath string          `json:"priv_key_path" toml:"priv_key_path" mapstructure:"priv_key_path"`
-	CA          []byte          `json:"-" toml:"-"`
-	Cert        tls.Certificate `json:"-" toml:"-"`
+	Host              string          `json:"host" toml:"host" mapstructure:"host"`
+	Username          string          `json:"username" toml:"username" mapstructure:"username"`
+	Password          string          `json:"password" toml:"password" mapstructure:"password"`
+	MTLS              bool            `json:"mtls" toml:"mtls" mapstructure:"mtls"`
+	SkipTLSVer        bool            `json:"skip_tls_ver" toml:"skip_tls_ver" mapstructure:"skip_tls_ver"`
+	Retain            bool            `json:"retain" toml:"retain" mapstructure:"retain"`
+	QoS               int             `json:"qos" toml:"qos" mapstructure:"qos"`
+	CAPath            string          `json:"ca_path" toml:"ca_path" mapstructure:"ca_path"`
+	ClientCertPath    string          `json:"client_cert_path" toml:"client_cert_path" mapstructure:"client_cert_path"`
+	ClientPrivKeyPath string          `json:"client_priv_key_path" toml:"client_priv_key_path" mapstructure:"client_priv_key_path"`
+	ClientCert        string          `json:"client_cert" toml:"client_cert" mapstructure:"client_cert"`
+	ClientCertKey     string          `json:"client_cert_key" toml:"client_cert_key" mapstructure:"client_cert_key"`
+	CA                []byte          `json:"-" toml:"-"`
+	TLSCert           tls.Certificate `json:"-" toml:"-"`
 }
 
 type Server struct {
@@ -65,7 +66,7 @@ type Route struct {
 }
 
 // Save - store config in a file
-func Save(c Config) errors.Error {
+func Save(c Config) error {
 	b, err := toml.Marshal(c)
 	if err != nil {
 		return errors.Wrap(errReadConfigFile, err)
@@ -82,7 +83,7 @@ func Save(c Config) errors.Error {
 }
 
 // ReadFile - retrieve config from a file
-func ReadFile(file string) (Config, errors.Error) {
+func ReadFile(file string) (Config, error) {
 	c := Config{}
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -96,7 +97,7 @@ func ReadFile(file string) (Config, errors.Error) {
 }
 
 // ReadBytes - read config from a bytes
-func ReadBytes(data []byte) (Config, errors.Error) {
+func ReadBytes(data []byte) (Config, error) {
 	c := Config{}
 	e := toml.Unmarshal(data, &c)
 	if e == nil {

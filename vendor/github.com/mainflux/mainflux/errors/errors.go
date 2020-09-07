@@ -3,8 +3,6 @@
 
 package errors
 
-import "fmt"
-
 // Error specifies an API that must be fullfiled by error type
 type Error interface {
 
@@ -27,14 +25,13 @@ type customError struct {
 }
 
 func (ce *customError) Error() string {
-	if ce != nil {
-		if ce.err != nil {
-			return fmt.Sprintf("%s: %s", ce.msg, ce.err.Error())
-		}
-
+	if ce == nil {
+		return ""
+	}
+	if ce.err == nil {
 		return ce.msg
 	}
-	return ""
+	return ce.msg + " : " + ce.err.Error()
 }
 
 func (ce *customError) Msg() string {
@@ -45,30 +42,34 @@ func (ce *customError) Err() Error {
 	return ce.err
 }
 
-// Contains inspects if Error's message is same as error
-// in argument. If not it continues further unwrapping
-// layers of Error until it founds it or unwrap all layers
-func Contains(ce Error, e error) bool {
-	if ce == nil || e == nil {
-		return ce == nil
+// Contains inspects if e2 error is contained in any layer of e1 error
+func Contains(e1 error, e2 error) bool {
+	if e1 == nil || e2 == nil {
+		return e2 == e1
 	}
-	if ce.Msg() == e.Error() {
-		return true
+	ce, ok := e1.(Error)
+	if ok {
+		if ce.Msg() == e2.Error() {
+			return true
+		}
+		return Contains(ce.Err(), e2)
 	}
-	if ce.Err() == nil {
-		return false
-	}
-
-	return Contains(ce.Err(), e)
+	return e1.Error() == e2.Error()
 }
 
 // Wrap returns an Error that wrap err with wrapper
-func Wrap(wrapper Error, err error) Error {
+func Wrap(wrapper error, err error) error {
 	if wrapper == nil || err == nil {
-		return nil
+		return wrapper
+	}
+	if w, ok := wrapper.(Error); ok {
+		return &customError{
+			msg: w.Msg(),
+			err: cast(err),
+		}
 	}
 	return &customError{
-		msg: wrapper.Msg(),
+		msg: wrapper.Error(),
 		err: cast(err),
 	}
 }
