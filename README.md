@@ -39,7 +39,15 @@ Start Agent with:
 ```bash
 MF_AGENT_BOOTSTRAP_ID=<bootstrap_id> \
 MF_AGENT_BOOTSTRAP_KEY=<bootstrap_key> \
-MF_AGENT_BOOTSTRAP_URL=https://mainflux.com/bs/things/bootstrap \
+MF_AGENT_BOOTSTRAP_URL=https://mainflux.com/things/bootstrap \
+build/mainflux-agent
+```
+or,if [Mainflux UI](https://github.com/mainflux/ui) is used,
+
+```bash
+MF_AGENT_BOOTSTRAP_ID=<bootstrap_id> \
+MF_AGENT_BOOTSTRAP_KEY=<bootstrap_key> \
+MF_AGENT_BOOTSTRAP_URL=https://mainflux.com/bootstrap/things/bootstrap \
 build/mainflux-agent
 ```
 
