@@ -157,9 +157,9 @@ func fillExportConfig(econf export.Config, c agent.Config) export.Config {
 	if econf.MQTT.ClientPrivKeyPath == "" {
 		econf.MQTT.ClientPrivKeyPath = c.MQTT.PrivKeyPath
 	}
-	for _, route := range econf.Routes {
+	for i, route := range econf.Routes {
 		if route.MqttTopic == "" {
-			route.MqttTopic = "channels/" + c.Channels.Data + "/messages"
+			econf.Routes[i].MqttTopic = "channels/" + c.Channels.Data + "/messages"
 		}
 	}
 	return econf
