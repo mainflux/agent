@@ -1,17 +1,3 @@
-Skip to content
-Search or jump to…
-Pull requests
-Issues
-Marketplace
-Explore
- 
-@mteodor 
-mteodor
-/
-agent
-Public
-forked from mainflux/agent
-Code
 name: Automated release
 on: 
   release:
