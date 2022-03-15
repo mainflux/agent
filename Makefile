@@ -1,7 +1,7 @@
 # Copyright (c) Mainflux
 # SPDX-License-Identifier: Apache-2.0
 
-BUILD_DIR = build
+BUILD_DIR ?= build
 SERVICES = agent
 DOCKERS = $(addprefix docker_,$(SERVICES))
 DOCKERS_DEV = $(addprefix docker_dev_,$(SERVICES))

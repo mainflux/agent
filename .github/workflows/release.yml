@@ -1,0 +1,46 @@
+Skip to content
+Search or jump to…
+Pull requests
+Issues
+Marketplace
+Explore
+ 
+@mteodor 
+mteodor
+/
+agent
+Public
+forked from mainflux/agent
+Code
+name: Automated release
+on: 
+  release:
+    types: [published]
+    matrix:
+        # build and publish in parallel: linux/386, linux/amd64, windows/386, windows/amd64, darwin/386, darwin/amd64
+        goos: [linux, windows, darwin]
+        goarch: ["386", amd64, arm64, arm]
+        exclude:
+          - goarch: "386"
+            goos: darwin
+          - goarch: arm64
+            goos: windows
+          - goarch: arm
+            goos: windows
+jobs:
+  release-linux-windows:
+    name: release linux-windows
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: compile and release
+      uses: wangyoucao577/go-release-action@v1.25
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        goos: ${{ matrix.goos }}
+        goarch: ${{ matrix.goarch }}
+        goversion: "https://dl.google.com/go/go1.15.15.linux-amd64.tar.gz"
+      env:
+        BUILD_DIR: "."
+
+
