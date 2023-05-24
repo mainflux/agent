@@ -50,7 +50,12 @@ func newService() agent.Service {
 		fmt.Println(fmt.Sprintf("Failed to create logger: %s", err.Error()))
 	}
 
-	return agent.New(mqttClient, &config, edgexClient, logger)
+	agentSvc, err := agent.New(mqttClient, &config, edgexClient, nil, logger)
+	if err != nil {
+		return nil
+	}
+
+	return agentSvc
 }
 
 func newServer(svc agent.Service) *httptest.Server {
