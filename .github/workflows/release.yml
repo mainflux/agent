@@ -1,0 +1,33 @@
+name: Automated release
+on:
+  release:
+    types: [published]
+
+jobs:
+  release-linux-windows:
+    name: release linux-windows
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # build and publish in parallel: linux/386, linux/amd64, linux/arm64, windows/386, windows/amd64, darwin/amd64, darwin/arm64
+        goos: [linux, windows, darwin]
+        goarch: ["386", amd64, arm64]
+        exclude:
+          - goarch: "386"
+            goos: darwin
+          - goarch: arm64
+            goos: windows
+    steps:
+    - uses: actions/checkout@v2
+    - name: compile and release
+      uses: wangyoucao577/go-release-action@v1.25
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        goos: ${{ matrix.goos }}
+        goarch: ${{ matrix.goarch }}
+        asset_name: mainflux-agent-${{ github.event.release.tag_name }}-${{ matrix.goos }}-${{ matrix.goarch }}
+        goversion: "https://dl.google.com/go/go1.15.15.linux-amd64.tar.gz"
+        binary_name: "mainflux-agent"
+        build_command: "make"
+      env:
+        BUILD_DIR: "."
