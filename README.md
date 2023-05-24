@@ -28,8 +28,8 @@ make
 Get Nats server and start it, by default it starts on port `4222`
 
 ```bash
-go get github.com/nats-io/gnatsd
-gnatsd
+GO111MODULE=on go install github.com/nats-io/nats-server/v2@latest
+nats-server
 ```
 
 Create gateway configuration with [Provision][provision] service or through [Mainflux UI][mfxui].  
