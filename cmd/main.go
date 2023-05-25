@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	defHTTPPort                   = "9000"
-	defBootstrapURL               = "http://localhost:8202/things/bootstrap"
+	defHTTPPort                   = "9999"
+	defBootstrapURL               = "http://localhost:9013/things/bootstrap"
 	defBootstrapID                = ""
 	defBootstrapKey               = ""
 	defBootstrapRetries           = "5"

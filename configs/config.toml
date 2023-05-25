@@ -23,7 +23,7 @@
 
 [server]
   nats_url = "localhost:4222"
-  port = "9000"
+  port = "9999"
 
 # interval - interval in seconds in which heartbeat is expected
 [heartbeat]
