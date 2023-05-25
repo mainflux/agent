@@ -72,7 +72,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	}
 
 	if retries == 0 {
-		logger.Info("No bootstraping, environment variables will be used")
+		logger.Info("No bootstrapping, environment variables will be used")
 		return nil
 	}
 
@@ -205,7 +205,7 @@ func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (d
 		return deviceConfig{}, err
 	}
 
-	req.Header.Add("Authorization", bsKey)
+	req.Header.Add("Authorization", "Thing "+bsKey)
 	resp, err := client.Do(req)
 	if err != nil {
 		return deviceConfig{}, err

@@ -39,7 +39,7 @@ Start Agent with:
 ```bash
 MF_AGENT_BOOTSTRAP_ID=<bootstrap_id> \
 MF_AGENT_BOOTSTRAP_KEY=<bootstrap_key> \
-MF_AGENT_BOOTSTRAP_URL=https://mainflux.com/things/bootstrap \
+MF_AGENT_BOOTSTRAP_URL=http://localhost:9013/things/bootstrap \
 build/mainflux-agent
 ```
 or,if [Mainflux UI](https://github.com/mainflux/ui) is used,
@@ -47,7 +47,7 @@ or,if [Mainflux UI](https://github.com/mainflux/ui) is used,
 ```bash
 MF_AGENT_BOOTSTRAP_ID=<bootstrap_id> \
 MF_AGENT_BOOTSTRAP_KEY=<bootstrap_key> \
-MF_AGENT_BOOTSTRAP_URL=https://mainflux.com/bootstrap/things/bootstrap \
+MF_AGENT_BOOTSTRAP_URL=http://localhost:9013/bootstrap/things/bootstrap \
 build/mainflux-agent
 ```
 
@@ -82,7 +82,7 @@ Example configuration:
 
   [Agent.server]
     nats_url = "localhost:4222"
-    port = "9000"
+    port = "9999"
 
 ```
 
@@ -93,10 +93,10 @@ Environment:
 | MF_AGENT_LOG_LEVEL                     | Log level                                                     | info                                   |
 | MF_AGENT_EDGEX_URL                     | Edgex base url                                                | http://localhost:48090/api/v1/         |
 | MF_AGENT_MQTT_URL                      | MQTT broker url                                               | localhost:1883                         |
-| MF_AGENT_HTTP_PORT                     | Agent http port                                               | 9000                                   |
-| MF_AGENT_BOOTSTRAP_URL                 | Mainflux bootstrap url                                        | http://localhost:8202/things/bootstrap |
+| MF_AGENT_HTTP_PORT                     | Agent http port                                               | 9999                                   |
+| MF_AGENT_BOOTSTRAP_URL                 | Mainflux bootstrap url                                        | http://localhost:9013/things/bootstrap |
 | MF_AGENT_BOOTSTRAP_ID                  | Mainflux bootstrap id                                         |                                        |
-| MF_AGENT_BOOTSTRAP_KEY                 | Mainflux boostrap key                                         |                                        |
+| MF_AGENT_BOOTSTRAP_KEY                 | Mainflux bootstrap key                                         |                                        |
 | MF_AGENT_BOOTSTRAP_RETRIES             | Number of retries for bootstrap procedure                     | 5                                      |
 | MF_AGENT_BOOTSTRAP_SKIP_TLS            | Skip TLS verification for bootstrap                           | true                                   |
 | MF_AGENT_BOOTSTRAP_RETRY_DELAY_SECONDS | Number of seconds between retries                             | 10                                     |
@@ -144,7 +144,7 @@ Upon next heartbeat service will be marked `online` again.
 To check services that are currently registered to agent you can:
 
 ```bash
-curl -s -S X GET http://localhost:9000/services
+curl -s -S X GET http://localhost:9999/services
 ```
 ```json
 [
