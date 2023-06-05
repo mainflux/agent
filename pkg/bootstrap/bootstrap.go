@@ -18,8 +18,8 @@ import (
 	"github.com/mainflux/agent/pkg/agent"
 
 	export "github.com/mainflux/export/pkg/config"
-	errors "github.com/mainflux/mainflux/errors"
 	log "github.com/mainflux/mainflux/logger"
+	errors "github.com/mainflux/mainflux/pkg/errors"
 	"github.com/mainflux/mainflux/things"
 )
 

@@ -5,9 +5,22 @@ package things
 
 import (
 	"context"
+
+	"github.com/mainflux/mainflux/pkg/errors"
 )
 
-// Metadata to be used for mainflux thing or channel for customized
+var (
+	// ErrConnect indicates error in adding connection
+	ErrConnect = errors.New("add connection failed")
+
+	// ErrDisconnect indicates error in removing connection
+	ErrDisconnect = errors.New("remove connection failed")
+
+	// ErrEntityConnected indicates error while checking connection in database
+	ErrEntityConnected = errors.New("check thing-channel connection in database error")
+)
+
+// Metadata to be used for Mainflux thing or channel for customized
 // describing of particular thing or channel.
 type Metadata map[string]interface{}
 
@@ -50,12 +63,15 @@ type ThingRepository interface {
 	// RetrieveByKey returns thing ID for given thing key.
 	RetrieveByKey(ctx context.Context, key string) (string, error)
 
-	// RetrieveAll retrieves the subset of things owned by the specified user.
-	RetrieveAll(ctx context.Context, owner string, offset, limit uint64, name string, m Metadata) (Page, error)
+	// RetrieveAll retrieves the subset of things owned by the specified user
+	RetrieveAll(ctx context.Context, owner string, pm PageMetadata) (Page, error)
+
+	// RetrieveByIDs retrieves the subset of things specified by given thing ids.
+	RetrieveByIDs(ctx context.Context, thingIDs []string, pm PageMetadata) (Page, error)
 
 	// RetrieveByChannel retrieves the subset of things owned by the specified
-	// user and connected to specified channel.
-	RetrieveByChannel(ctx context.Context, owner, channel string, offset, limit uint64) (Page, error)
+	// user and connected or not connected to specified channel.
+	RetrieveByChannel(ctx context.Context, owner, chID string, pm PageMetadata) (Page, error)
 
 	// Remove removes the thing having the provided identifier, that is owned
 	// by the specified user.
