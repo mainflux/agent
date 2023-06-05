@@ -1,34 +1,36 @@
+File = "config.toml"
 
 [channels]
-  control = ""
-  data = ""
+  control = "05ff7d0b-62be-433a-9eff-cd963b4c6b5d"
+  data = "b4be2125-a8fb-4da0-8d96-383605edb190"
 
 [edgex]
   url = "http://localhost:48090/api/v1/"
 
-[log]
-  level = "info"
-
-[mqtt]
-  ca_path = "ca.crt"
-  cert_path = "thing.crt"
-  mtls = false
-  password = ""
-  priv_key_path = "thing.key"
-  qos = 0
-  retain = false
-  skip_tls_ver = false
-  url = "localhost:1883"
-  username = ""
-
-[server]
-  nats_url = "localhost:4222"
-  port = "9999"
-
-# interval - interval in seconds in which heartbeat is expected
 [heartbeat]
   interval = "30s"
 
-# session_timeout in sec, when expired terminal session ends
+[log]
+  level = "debug"
+
+[mqtt]
+  ca_cert = "PEM CA cert"
+  ca_path = ""
+  cert_path = ""
+  client_cert = "PEM cert"
+  client_key = "PEM client cert key"
+  mtls = false
+  password = "7c655598-38bf-46de-abba-f1b377461a44"
+  priv_key_path = ""
+  qos = 0
+  retain = false
+  skip_tls_ver = true
+  url = "tcp://mqtt-adapter:1883"
+  username = "bff01a80-a16d-4828-abe2-30e8f3f27b83"
+
+[server]
+  nats_url = "broker:4222"
+  port = "9000"
+
 [terminal]
   session_timeout = "30s"
