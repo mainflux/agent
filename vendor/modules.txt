@@ -41,7 +41,7 @@ github.com/go-logfmt/logfmt
 # github.com/go-zoo/bone v1.3.0
 ## explicit; go 1.9
 github.com/go-zoo/bone
-# github.com/golang/protobuf v1.5.2
+# github.com/golang/protobuf v1.5.3
 ## explicit; go 1.9
 github.com/golang/protobuf/jsonpb
 github.com/golang/protobuf/proto
@@ -53,17 +53,18 @@ github.com/golang/protobuf/ptypes/timestamp
 # github.com/google/uuid v1.1.2
 ## explicit
 github.com/google/uuid
-# github.com/gorilla/websocket v1.4.2
+# github.com/gorilla/websocket v1.5.0
 ## explicit; go 1.12
 github.com/gorilla/websocket
-# github.com/mainflux/export v0.1.1-0.20200731210834-b31c20c1cc64
-## explicit; go 1.14
+# github.com/mainflux/export v0.1.0 => /home/sammy/Documents/export
+## explicit; go 1.20
 github.com/mainflux/export/pkg/config
-# github.com/mainflux/mainflux v0.11.0
-## explicit; go 1.11
+# github.com/mainflux/mainflux v0.0.0-20220415135135-92d8fb99bf82
+## explicit; go 1.17
 github.com/mainflux/mainflux
-github.com/mainflux/mainflux/errors
 github.com/mainflux/mainflux/logger
+github.com/mainflux/mainflux/pkg/errors
+github.com/mainflux/mainflux/pkg/ulid
 github.com/mainflux/mainflux/things
 # github.com/mainflux/senml v1.5.0
 ## explicit; go 1.13
@@ -82,6 +83,9 @@ github.com/nats-io/nkeys
 # github.com/nats-io/nuid v1.0.1
 ## explicit
 github.com/nats-io/nuid
+# github.com/oklog/ulid/v2 v2.0.2
+## explicit
+github.com/oklog/ulid/v2
 # github.com/pelletier/go-toml v1.9.5
 ## explicit; go 1.12
 github.com/pelletier/go-toml
@@ -109,13 +113,16 @@ github.com/prometheus/procfs/internal/util
 # github.com/stretchr/testify v1.8.1
 ## explicit; go 1.13
 github.com/stretchr/testify/assert
+# github.com/subosito/gotenv v1.2.0
+## explicit
+github.com/subosito/gotenv
 # github.com/x448/float16 v0.8.4
 ## explicit; go 1.11
 github.com/x448/float16
 # golang.org/x/crypto v0.5.0
 ## explicit; go 1.17
 golang.org/x/crypto/ed25519
-# golang.org/x/net v0.7.0
+# golang.org/x/net v0.10.0
 ## explicit; go 1.17
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2
@@ -125,15 +132,15 @@ golang.org/x/net/internal/socks
 golang.org/x/net/internal/timeseries
 golang.org/x/net/proxy
 golang.org/x/net/trace
-# golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
+# golang.org/x/sync v0.1.0
 ## explicit
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.5.0
+# golang.org/x/sys v0.8.0
 ## explicit; go 1.17
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# golang.org/x/text v0.7.0
+# golang.org/x/text v0.9.0
 ## explicit; go 1.17
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
@@ -233,3 +240,4 @@ gopkg.in/yaml.v3
 # robpike.io/filter v0.0.0-20150108201509-2984852a2183
 ## explicit
 robpike.io/filter
+# github.com/mainflux/export => /home/sammy/Documents/export

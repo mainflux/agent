@@ -12,8 +12,8 @@ import (
 	"github.com/creack/pty"
 
 	"github.com/mainflux/agent/pkg/encoder"
-	"github.com/mainflux/mainflux/errors"
 	"github.com/mainflux/mainflux/logger"
+	"github.com/mainflux/mainflux/pkg/errors"
 )
 
 const (

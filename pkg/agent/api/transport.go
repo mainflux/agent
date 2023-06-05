@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-zoo/bone"
 	"github.com/mainflux/agent/pkg/agent"
-	"github.com/mainflux/mainflux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"net/http"
@@ -51,7 +50,6 @@ func MakeHandler(svc agent.Service) http.Handler {
 		encodeResponse,
 	))
 
-	r.GetFunc("/version", mainflux.Version("agent"))
 	r.Handle("/metrics", promhttp.Handler())
 
 	return r

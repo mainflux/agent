@@ -10,7 +10,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/mainflux/mainflux/errors"
+	"github.com/mainflux/mainflux/pkg/errors"
 	"github.com/pelletier/go-toml"
 )
 

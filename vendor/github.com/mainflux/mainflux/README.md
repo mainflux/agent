@@ -10,27 +10,25 @@
 
 Mainflux is modern, scalable, secure, open-source, and patent-free IoT cloud platform written in Go.
 
-It accepts user and thing connections over various network protocols (i.e. HTTP,
+It accepts user and thing (sensor, actuator, application) connections over various network protocols (i.e. HTTP,
 MQTT, WebSocket, CoAP), thus making a seamless bridge between them. It is used as the IoT middleware
 for building complex IoT solutions.
 
 For more details, check out the [official documentation][docs].
-
-Mainflux is member of the [Linux Foundation][lf] and an active contributor
-to the [EdgeX Foundry][edgex] project. It has been made with :heart: by [Mainflux Labs][company],
-which maintains the project and offers professional services around it.
 
 ## Features
 
 - Multi-protocol connectivity and bridging (HTTP, MQTT, WebSocket and CoAP)
 - Device management and provisioning (Zero Touch provisioning)
 - Mutual TLS Authentication (mTLS) using X.509 Certificates
-- Fine-grained access control
+- Fine-grained access control (policies, ABAC/RBAC)
 - Message persistence (Cassandra, InfluxDB, MongoDB and PostgresSQL)
 - Platform logging and instrumentation support (Grafana, Prometheus and OpenTracing)
 - Event sourcing
 - Container-based deployment using [Docker][docker] and [Kubernetes][kubernetes]
 - [LoRaWAN][lora] network integration
+- [OPC UA](opcua) integration
+- Edge [Agent](agent) and [Export](export) services for remote IoT gateway management and edge computing
 - SDK
 - CLI
 - Small memory footprint and fast execution
@@ -40,8 +38,8 @@ which maintains the project and offers professional services around it.
 
 The following are needed to run Mainflux:
 
-- [Docker](https://docs.docker.com/install/) (version 18.09)
-- [Docker compose](https://docs.docker.com/compose/install/) (version 1.24.1)
+- [Docker](https://docs.docker.com/install/) (version 20.10)
+- [Docker compose](https://docs.docker.com/compose/install/) (version 1.29)
 
 Developing Mainflux will also require:
 
@@ -62,9 +60,25 @@ This will bring up the Mainflux docker services and interconnect them. This comm
 make run
 ```
 
+If you want to run services from specific release checkout code from github and make sure that
+`MF_RELEASE_TAG` in [.env](.env) is being set to match the release version
+
+```bash
+git checkout tags/<release_number> -b <release_number>
+# e.g. `git checkout tags/0.13.0 -b 0.13.0`
+```
+
+Check that `.env` file contains:
+
+```bash
+MF_RELEASE_TAG=<release_number>
+```
+
+>`docker-compose` should be used for development and testing deployments. For production we suggest using [Kubernetes](https://docs.mainflux.io/kubernetes).
+
 ## Usage
 
-The quickest way to start using Mainflux is via the CLI. The latest version can be downloaded from the [official releases page][rel]. 
+The quickest way to start using Mainflux is via the CLI. The latest version can be downloaded from the [official releases page][rel].
 
 It can also be built and used from the project's root directory:
 
@@ -73,15 +87,13 @@ make cli
 ./build/mainflux-cli version
 ```
 
-Additional details on using the CLI can be found in the [CLI documentation](https://mainflux.readthedocs.io/en/latest/cli/).
+Additional details on using the CLI can be found in the [CLI documentation](https://docs.mainflux.io/cli).
 
 ## Documentation
 
-Official documentation is hosted at [Mainflux Read The Docs page][docs]. Documentation is auto-generated, checkout the instructions on [official docs repository](https://github.com/mainflux/docs):
+Official documentation is hosted at [Mainflux official docs page][docs]. Documentation is auto-generated, checkout the instructions on [official docs repository](https://github.com/mainflux/docs):
 
 If you spot an error or a need for corrections, please let us know - or even better: send us a PR.
-
-Additional practical information, news and tutorials can be found on the [Mainflux blog][blog].
 
 ## Authors
 
@@ -101,6 +113,12 @@ The Mainflux team would like to give special thanks to [@mijicd][dejan] for his 
 on designing and implementing a highly improved and optimized version of the platform,
 and [@malidukica][dusanm] for his effort on implementing the initial user interface.
 
+## Professional Support
+
+There are many companies offering professional support for the Mainflux system.
+
+If you need this kind of support, best is to reach out to [@drasko][drasko] directly, and he will point you out to the best-matching support team.
+
 ## Contributing
 
 Thank you for your interest in Mainflux and the desire to contribute!
@@ -111,10 +129,9 @@ Thank you for your interest in Mainflux and the desire to contribute!
 
 ### We're Hiring
 
-If you are interested in working professionally on Mainflux,
-please head to company's [careers page][careers] or shoot us an e-mail at <careers@mainflux.com>.
+You like Mainflux and you would like to make it your day job? We're always looking for talented engineers interested in open-source, IoT and distributed systems. If you recognize yourself, reach out to [@drasko][drasko] - he will contact you back.
 
->The best way to grab our attention is by sending PRs :sunglasses:.
+>The best way to grab our attention is, of course, by sending PRs :sunglasses:.
 
 ## Community
 
@@ -131,7 +148,7 @@ please head to company's [careers page][careers] or shoot us an e-mail at <caree
 [banner]: https://github.com/mainflux/docs/blob/master/docs/img/gopherBanner.jpg
 [ci-badge]: https://semaphoreci.com/api/v1/mainflux/mainflux/branches/master/badge.svg
 [ci-url]: https://semaphoreci.com/mainflux/mainflux
-[docs]: http://mainflux.readthedocs.io
+[docs]: https://docs.mainflux.io
 [docker]: https://www.docker.com
 [forum]: https://groups.google.com/forum/#!forum/mainflux
 [gitter]: https://gitter.im/mainflux/mainflux?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
@@ -143,6 +160,9 @@ please head to company's [careers page][careers] or shoot us an e-mail at <caree
 [license]: https://img.shields.io/badge/license-Apache%20v2.0-blue.svg
 [twitter]: https://twitter.com/mainflux
 [lora]: https://lora-alliance.org/
+[opcua]: https://opcfoundation.org/about/opc-technologies/opc-ua/
+[agent]: https://github.com/mainflux/agent
+[export]: https://github.com/mainflux/export
 [kubernetes]: https://kubernetes.io/
 [rel]: https://github.com/mainflux/mainflux/releases
 [careers]: https://www.mainflux.com/careers.html
