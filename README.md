@@ -1,6 +1,8 @@
 # Mainflux IoT Agent
 
 ![](https://github.com/mainflux/agent/workflows/Go/badge.svg)
+![ci][ci]
+![release][release]
 [![go report card][grc-badge]][grc-url]
 [![license][license]](LICENSE)
 [![chat][gitter-badge]][gitter]
@@ -228,3 +230,5 @@ RmlsZSA9ICIuLi9jb25maWdzL2NvbmZpZy50b21sIgoKW2V4cF0KICBsb2dfbGV2ZWwgPSAiZGVidWci
 [export]: https://github.com/mainflux/export
 [provision]: https://github.com/mainflux/mainflux/tree/master/provision
 [mfxui]: https://github.com/mainflux/ui
+[ci]: https://github.com/mainflux/agent/actions/workflows/ci.yml/badge.svg
+[release]: https://github.com/mainflux/agent/actions/workflows/release.yml/badge.svg
