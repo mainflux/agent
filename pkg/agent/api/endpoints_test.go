@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -47,11 +48,12 @@ func newService() agent.Service {
 	config := agent.Config{}
 	logger, err := logger.New(os.Stdout, "debug")
 	if err != nil {
-		fmt.Println(fmt.Sprintf("Failed to create logger: %s", err.Error()))
+		log.Println(fmt.Sprintf("Failed to create logger: %s", err.Error()))
 	}
 
 	agentSvc, err := agent.New(mqttClient, &config, edgexClient, nil, logger)
 	if err != nil {
+		logger.Error(err.Error())
 		return nil
 	}
 
