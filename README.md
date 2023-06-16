@@ -30,7 +30,7 @@ make
 Get Nats server and start it, by default it starts on port `4222`
 
 ```bash
-GO111MODULE=on go install github.com/nats-io/nats-server/v2@latest
+go install github.com/nats-io/nats-server/v2@latest
 nats-server
 ```
 
