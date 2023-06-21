@@ -59,8 +59,9 @@ type TerminalConfig struct {
 }
 
 type ModBusConfig struct {
-	Regs []uint16 `json:"registers"`
-	Host string   `json:"host"`
+	Regs             []uint16      `json:"registers"`
+	Host             string        `json:"host"`
+	PollingFrequency time.Duration `json:"polling_frequency"`
 }
 
 type Config struct {

@@ -135,6 +135,7 @@ func main() {
 				logger.Error(fmt.Sprintf("failed to publish with error: %v", err.Error()))
 			}
 		}
+		time.Sleep(cfg.ModBusConfig.PollingFrequency)
 	}
 
 }
