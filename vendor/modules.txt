@@ -41,6 +41,12 @@ github.com/go-logfmt/logfmt
 # github.com/go-zoo/bone v1.3.0
 ## explicit; go 1.9
 github.com/go-zoo/bone
+# github.com/goburrow/modbus v0.1.0
+## explicit
+github.com/goburrow/modbus
+# github.com/goburrow/serial v0.1.0
+## explicit
+github.com/goburrow/serial
 # github.com/golang/protobuf v1.5.3
 ## explicit; go 1.9
 github.com/golang/protobuf/jsonpb

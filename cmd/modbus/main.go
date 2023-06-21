@@ -6,26 +6,20 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
-	"os/signal"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
+	"github.com/goburrow/modbus"
 	"github.com/mainflux/agent/pkg/agent"
-	"github.com/mainflux/agent/pkg/agent/api"
 	"github.com/mainflux/agent/pkg/bootstrap"
-	"github.com/mainflux/agent/pkg/conn"
 	"github.com/mainflux/agent/pkg/edgex"
 	"github.com/mainflux/mainflux"
 	"github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/mainflux/pkg/errors"
-	nats "github.com/nats-io/nats.go"
-	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"github.com/nats-io/nats.go"
 )
 
 const (
@@ -118,51 +112,31 @@ func main() {
 	mqttClient, err := connectToMQTTBroker(cfg.MQTT, logger)
 	if err != nil {
 		logger.Error(err.Error())
-		os.Exit(1)
+		return
 	}
 	edgexClient := edgex.NewClient(cfg.Edgex.URL, logger)
 
 	svc, err := agent.New(mqttClient, &cfg, edgexClient, nc, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error in agent service: %s", err))
-		os.Exit(1)
+		return
 	}
 
-	svc = api.LoggingMiddleware(svc, logger)
-	svc = api.MetricsMiddleware(
-		svc,
-		kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
-			Namespace: "agent",
-			Subsystem: "api",
-			Name:      "request_count",
-			Help:      "Number of requests received.",
-		}, []string{"method"}),
-		kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
-			Namespace: "agent",
-			Subsystem: "api",
-			Name:      "request_latency_microseconds",
-			Help:      "Total duration of requests in microseconds.",
-		}, []string{"method"}),
-	)
-	b := conn.NewBroker(svc, mqttClient, cfg.Channels.Control, nc, logger)
-	go b.Subscribe()
+	for {
+		for _, reg := range cfg.ModBusConfig.Regs {
+			logger.Info(fmt.Sprintf("reading modbus sensor on register: %d", reg))
+			data, err := readSensor(reg, cfg.ModBusConfig.Host)
+			if err != nil {
+				logger.Error(err.Error())
+				continue
+			}
+			logger.Info("publishing sensor data")
+			if err := svc.Publish("data", string(data)); err != nil {
+				logger.Error(fmt.Sprintf("failed to publish with error: %v", err.Error()))
+			}
+		}
+	}
 
-	errs := make(chan error, 3)
-
-	go func() {
-		p := fmt.Sprintf(":%s", cfg.Server.Port)
-		logger.Info(fmt.Sprintf("Agent service started, exposed port %s", cfg.Server.Port))
-		errs <- http.ListenAndServe(p, api.MakeHandler(svc))
-	}()
-
-	go func() {
-		c := make(chan os.Signal)
-		signal.Notify(c, syscall.SIGINT)
-		errs <- fmt.Errorf("%s", <-c)
-	}()
-
-	err = <-errs
-	logger.Error(fmt.Sprintf("Agent terminated: %s", err))
 }
 
 func loadEnvConfig() (agent.Config, error) {
@@ -275,56 +249,6 @@ func loadBootConfig(c agent.Config, logger logger.Logger) (bsc agent.Config, err
 	return bsc, nil
 }
 
-func connectToMQTTBroker(conf agent.MQTTConfig, logger logger.Logger) (mqtt.Client, error) {
-	name := fmt.Sprintf("agent-%s", conf.Username)
-	conn := func(client mqtt.Client) {
-		logger.Info(fmt.Sprintf("Client %s connected", name))
-	}
-
-	lost := func(client mqtt.Client, err error) {
-		logger.Info(fmt.Sprintf("Client %s disconnected", name))
-	}
-
-	opts := mqtt.NewClientOptions().
-		AddBroker(conf.URL).
-		SetClientID(name).
-		SetCleanSession(true).
-		SetAutoReconnect(true).
-		SetOnConnectHandler(conn).
-		SetConnectionLostHandler(lost)
-
-	if conf.Username != "" && conf.Password != "" {
-		opts.SetUsername(conf.Username)
-		opts.SetPassword(conf.Password)
-	}
-
-	if conf.MTLS {
-		cfg := &tls.Config{
-			InsecureSkipVerify: conf.SkipTLSVer,
-		}
-
-		if conf.CA != nil {
-			cfg.RootCAs = x509.NewCertPool()
-			cfg.RootCAs.AppendCertsFromPEM(conf.CA)
-		}
-		if conf.Cert.Certificate != nil {
-			cfg.Certificates = []tls.Certificate{conf.Cert}
-		}
-
-		cfg.BuildNameToCertificate()
-		opts.SetTLSConfig(cfg)
-		opts.SetProtocolVersion(4)
-	}
-	client := mqtt.NewClient(opts)
-	token := client.Connect()
-	token.Wait()
-
-	if token.Error() != nil {
-		return nil, token.Error()
-	}
-	return client, nil
-}
-
 func loadCertificate(cnfg agent.MQTTConfig) (c agent.MQTTConfig, err error) {
 	var caByte []byte
 	var cc []byte
@@ -400,4 +324,59 @@ func loadCertificate(cnfg agent.MQTTConfig) (c agent.MQTTConfig, err error) {
 	c.Cert = cert
 	c.CA = caByte
 	return c, nil
+}
+
+func readSensor(register uint16, host string) ([]byte, error) {
+	client := modbus.TCPClient(host)
+	return client.ReadInputRegisters(register, 1)
+}
+
+func connectToMQTTBroker(conf agent.MQTTConfig, logger logger.Logger) (mqtt.Client, error) {
+	name := fmt.Sprintf("agent-%s", conf.Username)
+	conn := func(client mqtt.Client) {
+		logger.Info(fmt.Sprintf("Client %s connected", name))
+	}
+
+	lost := func(client mqtt.Client, err error) {
+		logger.Info(fmt.Sprintf("Client %s disconnected", name))
+	}
+
+	opts := mqtt.NewClientOptions().
+		AddBroker(conf.URL).
+		SetClientID(name).
+		SetCleanSession(true).
+		SetAutoReconnect(true).
+		SetOnConnectHandler(conn).
+		SetConnectionLostHandler(lost)
+
+	if conf.Username != "" && conf.Password != "" {
+		opts.SetUsername(conf.Username)
+		opts.SetPassword(conf.Password)
+	}
+
+	if conf.MTLS {
+		cfg := &tls.Config{
+			InsecureSkipVerify: conf.SkipTLSVer,
+		}
+
+		if conf.CA != nil {
+			cfg.RootCAs = x509.NewCertPool()
+			cfg.RootCAs.AppendCertsFromPEM(conf.CA)
+		}
+		if conf.Cert.Certificate != nil {
+			cfg.Certificates = []tls.Certificate{conf.Cert}
+		}
+
+		cfg.BuildNameToCertificate()
+		opts.SetTLSConfig(cfg)
+		opts.SetProtocolVersion(4)
+	}
+	client := mqtt.NewClient(opts)
+	token := client.Connect()
+	token.Wait()
+
+	if token.Error() != nil {
+		return nil, token.Error()
+	}
+	return client, nil
 }

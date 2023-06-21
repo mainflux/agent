@@ -18,6 +18,8 @@ require (
 	robpike.io/filter v0.0.0-20150108201509-2984852a2183
 )
 
+require github.com/goburrow/serial v0.1.0 // indirect
+
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
@@ -25,6 +27,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
+	github.com/goburrow/modbus v0.1.0
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
