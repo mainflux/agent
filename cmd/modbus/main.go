@@ -92,6 +92,8 @@ func main() {
 		log.Fatalf(fmt.Sprintf("Failed to load config: %s", err))
 	}
 
+	fmt.Println("cfg1", cfg)
+
 	logger, err := logger.New(os.Stdout, cfg.Log.Level)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("Failed to create logger: %s", err))
@@ -101,6 +103,7 @@ func main() {
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to load config: %s", err))
 	}
+	fmt.Println("cfg2", cfg)
 
 	nc, err := nats.Connect(cfg.Server.NatsURL)
 	if err != nil {
@@ -121,6 +124,10 @@ func main() {
 		logger.Error(fmt.Sprintf("Error in agent service: %s", err))
 		return
 	}
+
+	fmt.Println("mod cfg", cfg.ModBusConfig.Host)
+
+	fmt.Println("register length: ", len(cfg.ModBusConfig.Regs))
 
 	for {
 		for _, reg := range cfg.ModBusConfig.Regs {

@@ -59,9 +59,9 @@ type TerminalConfig struct {
 }
 
 type ModBusConfig struct {
-	Regs             []uint16      `json:"registers"`
-	Host             string        `json:"host"`
-	PollingFrequency time.Duration `json:"polling_frequency"`
+	Regs             []uint16      `toml:"registers" json:"registers"`
+	Host             string        `toml:"host" json:"host"`
+	PollingFrequency time.Duration `toml:"polling_frequency" json:"polling_frequency"`
 }
 
 type Config struct {
@@ -72,7 +72,7 @@ type Config struct {
 	Edgex        EdgexConfig     `toml:"edgex" json:"edgex"`
 	Log          LogConfig       `toml:"log" json:"log"`
 	MQTT         MQTTConfig      `toml:"mqtt" json:"mqtt"`
-	ModBusConfig ModBusConfig    `toml:"-" json:"modbus"`
+	ModBusConfig ModBusConfig    `toml:"modbus" json:"modbus"`
 	File         string
 }
 
@@ -133,11 +133,13 @@ func (c *ModBusConfig) UnmarshalJSON(b []byte) error {
 		return errors.New("missing modbusconfig registers")
 	}
 	for _, r := range regs {
-		rr, ok := r.(float64)
-		if !ok {
-			return errors.New("missing modbusconfig registers")
+		switch val := r.(type) {
+		case float64:
+			uintVal := uint16(val)
+			c.Regs = append(c.Regs, uintVal)
+		default:
+			return errors.New("Unsupported type")
 		}
-		c.Regs = append(c.Regs, uint16(rr))
 	}
 	switch value := interval.(type) {
 	case float64:

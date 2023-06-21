@@ -13,6 +13,11 @@ File = "config.toml"
 [log]
   level = "debug"
 
+[modbus]
+  host = "localhost:8407"
+  polling_frequency = "10s"
+  registers = [1, 2, 3]
+
 [mqtt]
   ca_cert = ""
   ca_path = ""
