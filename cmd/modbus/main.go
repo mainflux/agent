@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	defHTTPPort                   = "9999"
+	defHTTPPort                   = "9998"
 	defBootstrapURL               = "http://localhost:9013/things/bootstrap"
 	defBootstrapID                = ""
 	defBootstrapKey               = ""
@@ -127,17 +127,16 @@ func main() {
 			logger.Info(fmt.Sprintf("reading modbus sensor on register: %d", reg))
 			data, err := readSensor(reg, cfg.ModBusConfig.Host)
 			if err != nil {
-				logger.Error(err.Error())
+				logger.Error(fmt.Sprintf("failed to read sensor with error: %v", err.Error()))
 				continue
 			}
 			logger.Info("publishing sensor data")
 			if err := svc.Publish("data", string(data)); err != nil {
 				logger.Error(fmt.Sprintf("failed to publish with error: %v", err.Error()))
 			}
+			time.Sleep(cfg.ModBusConfig.PollingFrequency)
 		}
-		time.Sleep(cfg.ModBusConfig.PollingFrequency)
 	}
-
 }
 
 func loadEnvConfig() (agent.Config, error) {
@@ -333,7 +332,7 @@ func readSensor(register uint16, host string) ([]byte, error) {
 }
 
 func connectToMQTTBroker(conf agent.MQTTConfig, logger logger.Logger) (mqtt.Client, error) {
-	name := fmt.Sprintf("agent-%s", conf.Username)
+	name := fmt.Sprintf("agent-%s22", conf.Username)
 	conn := func(client mqtt.Client) {
 		logger.Info(fmt.Sprintf("Client %s connected", name))
 	}

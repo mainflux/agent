@@ -34,8 +34,6 @@ services:
       MF_AGENT_BOOTSTRAP_ID: ${MF_AGENT_BOOTSTRAP_ID}
       MF_AGENT_BOOTSTRAP_KEY: ${MF_AGENT_BOOTSTRAP_KEY}
       MF_AGENT_BOOTSTRAP_URL: ${MF_AGENT_BOOTSTRAP_URL}
-    ports:
-      - ${MF_AGENT_PORT}:${MF_AGENT_PORT}
     networks:
       - docker_mainflux-base-net
     volumes:

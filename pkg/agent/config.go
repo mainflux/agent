@@ -115,6 +115,46 @@ func ReadConfig(file string) (Config, error) {
 	return c, nil
 }
 
+func (c *ModBusConfig) UnmarshalJSON(b []byte) error {
+	var v map[string]interface{}
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	interval, ok := v["polling_frequency"]
+	if !ok {
+		return errors.New("missing modbusconfig polling frequency")
+	}
+	c.Host, ok = v["host"].(string)
+	if !ok {
+		return errors.New("missing modbusconfig host")
+	}
+	regs, ok := v["registers"].([]interface{})
+	if !ok {
+		return errors.New("missing modbusconfig registers")
+	}
+	for _, r := range regs {
+		rr, ok := r.(float64)
+		if !ok {
+			return errors.New("missing modbusconfig registers")
+		}
+		c.Regs = append(c.Regs, uint16(rr))
+	}
+	switch value := interval.(type) {
+	case float64:
+		c.PollingFrequency = time.Duration(value)
+		return nil
+	case string:
+		var err error
+		c.PollingFrequency, err = time.ParseDuration(value)
+		if err != nil {
+			return err
+		}
+		return nil
+	default:
+		return errors.New("invalid duration")
+	}
+}
+
 // UnmarshalJSON parses the duration from JSON
 func (d *HeartbeatConfig) UnmarshalJSON(b []byte) error {
 	var v map[string]interface{}
