@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"github.com/mainflux/agent/pkg/agent"
 	"github.com/mainflux/agent/pkg/bootstrap"
 	"github.com/mainflux/agent/pkg/edgex"
+	"github.com/mainflux/agent/pkg/encoder"
 	"github.com/mainflux/mainflux"
 	"github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/mainflux/pkg/errors"
@@ -92,8 +94,6 @@ func main() {
 		log.Fatalf(fmt.Sprintf("Failed to load config: %s", err))
 	}
 
-	fmt.Println("cfg1", cfg)
-
 	logger, err := logger.New(os.Stdout, cfg.Log.Level)
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("Failed to create logger: %s", err))
@@ -103,7 +103,6 @@ func main() {
 	if err != nil {
 		logger.Error(fmt.Sprintf("Failed to load config: %s", err))
 	}
-	fmt.Println("cfg2", cfg)
 
 	nc, err := nats.Connect(cfg.Server.NatsURL)
 	if err != nil {
@@ -113,6 +112,7 @@ func main() {
 	defer nc.Close()
 
 	mqttClient, err := connectToMQTTBroker(cfg.MQTT, logger)
+
 	if err != nil {
 		logger.Error(err.Error())
 		return
@@ -125,14 +125,10 @@ func main() {
 		return
 	}
 
-	fmt.Println("mod cfg", cfg.ModBusConfig.Host)
-
-	fmt.Println("register length: ", len(cfg.ModBusConfig.Regs))
-
 	for {
 		for _, reg := range cfg.ModBusConfig.Regs {
 			logger.Info(fmt.Sprintf("reading modbus sensor on register: %d", reg))
-			data, err := readSensor(reg, cfg.ModBusConfig.Host)
+			data, err := readSensor(reg, cfg.ModBusConfig.Host, true)
 			if err != nil {
 				logger.Error(fmt.Sprintf("failed to read sensor with error: %v", err.Error()))
 				continue
@@ -333,7 +329,10 @@ func loadCertificate(cnfg agent.MQTTConfig) (c agent.MQTTConfig, err error) {
 	return c, nil
 }
 
-func readSensor(register uint16, host string) ([]byte, error) {
+func readSensor(register uint16, host string, simulate bool) ([]byte, error) {
+	if simulate {
+		return encoder.EncodeSenML("1", "sensor", string(rand.Intn(100)))
+	}
 	client := modbus.TCPClient(host)
 	return client.ReadInputRegisters(register, 1)
 }
