@@ -205,7 +205,7 @@ func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (d
 		return deviceConfig{}, err
 	}
 
-	req.Header.Add("Authorization", "Thing "+bsKey)
+	req.Header.Add("Authorization", fmt.Sprintf("Thing %s", bsKey))
 	resp, err := client.Do(req)
 	if err != nil {
 		return deviceConfig{}, err

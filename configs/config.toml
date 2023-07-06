@@ -1,36 +1,36 @@
 File = "config.toml"
 
 [channels]
-  control = "05ff7d0b-62be-433a-9eff-cd963b4c6b5d"
-  data = "b4be2125-a8fb-4da0-8d96-383605edb190"
+  control = ""
+  data = ""
 
 [edgex]
   url = "http://localhost:48090/api/v1/"
 
 [heartbeat]
-  interval = "30s"
+  interval = "10s"
 
 [log]
-  level = "debug"
+  level = "info"
 
 [mqtt]
-  ca_cert = "PEM CA cert"
-  ca_path = ""
-  cert_path = ""
-  client_cert = "PEM cert"
-  client_key = "PEM client cert key"
+  ca_cert = ""
+  ca_path = "ca.crt"
+  cert_path = "thing.cert"
+  client_cert = ""
+  client_key = ""
   mtls = false
-  password = "7c655598-38bf-46de-abba-f1b377461a44"
-  priv_key_path = ""
+  password = ""
+  priv_key_path = "thing.key"
   qos = 0
   retain = false
   skip_tls_ver = true
-  url = "tcp://mqtt-adapter:1883"
-  username = "bff01a80-a16d-4828-abe2-30e8f3f27b83"
+  url = "localhost:1883"
+  username = ""
 
 [server]
-  nats_url = "broker:4222"
-  port = "9000"
+  nats_url = "nats://127.0.0.1:4222"
+  port = "9999"
 
 [terminal]
-  session_timeout = "30s"
+  session_timeout = "1m0s"
