@@ -24,6 +24,6 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
-          args: --no-config --disable-all --enable gosimple --enable govet --enable unused --enable deadcode --timeout 3m
+          args: --no-config --disable-all --enable gosimple --enable errcheck --enable govet --enable unused --enable goconst --enable godot --enable unused --enable deadcode --timeout 3m
       - name: Run tests
         run: go test -mod=vendor -v --race -covermode=atomic -coverprofile cover.out ./...
