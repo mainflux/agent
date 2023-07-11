@@ -1,16 +1,15 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -26,6 +25,7 @@ import (
 	"github.com/mainflux/mainflux/pkg/errors"
 	nats "github.com/nats-io/nats.go"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -118,14 +118,14 @@ func main() {
 	mqttClient, err := connectToMQTTBroker(cfg.MQTT, logger)
 	if err != nil {
 		logger.Error(err.Error())
-		os.Exit(1)
+		return
 	}
 	edgexClient := edgex.NewClient(cfg.Edgex.URL, logger)
 
 	svc, err := agent.New(mqttClient, &cfg, edgexClient, nc, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error in agent service: %s", err))
-		os.Exit(1)
+		return
 	}
 
 	svc = api.LoggingMiddleware(svc, logger)
@@ -145,24 +145,26 @@ func main() {
 		}, []string{"method"}),
 	)
 	b := conn.NewBroker(svc, mqttClient, cfg.Channels.Control, nc, logger)
-	go b.Subscribe()
+	ctx, cancel := context.WithCancel(context.Background())
+	g, ctx := errgroup.WithContext(ctx)
 
-	errs := make(chan error, 3)
+	g.Go(func() error {
+		return b.Subscribe()
+	})
 
-	go func() {
+	g.Go(func() error {
 		p := fmt.Sprintf(":%s", cfg.Server.Port)
 		logger.Info(fmt.Sprintf("Agent service started, exposed port %s", cfg.Server.Port))
-		errs <- http.ListenAndServe(p, api.MakeHandler(svc))
-	}()
+		return http.ListenAndServe(p, api.MakeHandler(svc))
+	})
 
-	go func() {
-		c := make(chan os.Signal)
-		signal.Notify(c, syscall.SIGINT)
-		errs <- fmt.Errorf("%s", <-c)
-	}()
+	g.Go(func() error {
+		return StopSignalHandler(ctx, cancel, logger, "agent")
+	})
 
-	err = <-errs
-	logger.Error(fmt.Sprintf("Agent terminated: %s", err))
+	if err := g.Wait(); err != nil {
+		logger.Error(fmt.Sprintf("Agent terminated: %v", err))
+	}
 }
 
 func loadEnvConfig() (agent.Config, error) {
@@ -233,13 +235,18 @@ func loadEnvConfig() (agent.Config, error) {
 	}
 
 	c.MQTT = mc
-	agent.SaveConfig(c)
+	if err = agent.SaveConfig(c); err != nil {
+		return c, err
+	}
 	return c, nil
 }
 
-func loadBootConfig(c agent.Config, logger logger.Logger) (bsc agent.Config, err error) {
+func loadBootConfig(c agent.Config, logger logger.Logger) (agent.Config, error) {
 	file := mainflux.Env(envConfigFile, defConfigFile)
 	skipTLS, err := strconv.ParseBool(mainflux.Env(envBootstrapSkipTLS, defBootstrapSkipTLS))
+	if err != nil {
+		return agent.Config{}, err
+	}
 	bsConfig := bootstrap.Config{
 		URL:           mainflux.Env(envBootstrapURL, defBootstrapURL),
 		ID:            mainflux.Env(envBootstrapID, defBootstrapID),
@@ -254,7 +261,8 @@ func loadBootConfig(c agent.Config, logger logger.Logger) (bsc agent.Config, err
 		return c, errors.Wrap(errFetchingBootstrapFailed, err)
 	}
 
-	if bsc, err = agent.ReadConfig(file); err != nil {
+	bsc, err := agent.ReadConfig(file)
+	if err != nil {
 		return c, errors.Wrap(errFailedToReadConfig, err)
 	}
 
@@ -311,7 +319,6 @@ func connectToMQTTBroker(conf agent.MQTTConfig, logger logger.Logger) (mqtt.Clie
 			cfg.Certificates = []tls.Certificate{conf.Cert}
 		}
 
-		cfg.BuildNameToCertificate()
 		opts.SetTLSConfig(cfg)
 		opts.SetProtocolVersion(4)
 	}
@@ -325,79 +332,73 @@ func connectToMQTTBroker(conf agent.MQTTConfig, logger logger.Logger) (mqtt.Clie
 	return client, nil
 }
 
-func loadCertificate(cnfg agent.MQTTConfig) (c agent.MQTTConfig, err error) {
-	var caByte []byte
-	var cc []byte
-	var pk []byte
-	c = cnfg
+func loadCertificate(cnfg agent.MQTTConfig) (agent.MQTTConfig, error) {
+	c := cnfg
 
-	cert := tls.Certificate{}
 	if !c.MTLS {
 		return c, nil
 	}
+
+	var caByte []byte
+	var cc []byte
+	var pk []byte
+	var err error
+
 	// Load CA cert from file
 	if c.CAPath != "" {
-		caFile, err := os.Open(c.CAPath)
-		defer caFile.Close()
+		caByte, err = os.ReadFile(c.CAPath)
 		if err != nil {
 			return c, err
 		}
-		caByte, err = ioutil.ReadAll(caFile)
-		if err != nil {
-			return c, err
-		}
-	}
-	// Load CA cert from string if file not present
-	if len(caByte) == 0 && c.CaCert != "" {
-		caByte, err = ioutil.ReadAll(strings.NewReader(c.CaCert))
-		if err != nil {
-			return c, err
-		}
-	}
-	// Load client certificate from file if present
-	if c.CertPath != "" {
-		clientCert, err := os.Open(c.CertPath)
-		defer clientCert.Close()
-		if err != nil {
-			return c, err
-		}
-		cc, err = ioutil.ReadAll(clientCert)
-		if err != nil {
-			return c, err
-		}
-	}
-	// Load client certificate from string if file not present
-	if len(cc) == 0 && c.ClientCert != "" {
-		cc, err = ioutil.ReadAll(strings.NewReader(c.ClientCert))
-		if err != nil {
-			return c, err
-		}
-	}
-	// Load private key of client certificate from file
-	if c.PrivKeyPath != "" {
-		privKey, err := os.Open(c.PrivKeyPath)
-		defer privKey.Close()
-		if err != nil {
-			return c, err
-		}
-		pk, err = ioutil.ReadAll((privKey))
-		if err != nil {
-			return c, err
-		}
-	}
-	// Load private key of client certificate from string
-	if len(pk) == 0 && c.ClientKey != "" {
-		pk, err = ioutil.ReadAll(strings.NewReader(c.ClientKey))
-		if err != nil {
-			return c, err
-		}
+		c.CA = caByte
 	}
 
-	cert, err = tls.X509KeyPair([]byte(c.ClientCert), []byte(c.ClientKey))
-	if err != nil {
-		return c, err
+	// Load CA cert from string if file not present
+	if len(c.CA) == 0 && c.CaCert != "" {
+		c.CA = []byte(c.CaCert)
 	}
-	c.Cert = cert
-	c.CA = caByte
+
+	// Load client certificate from file if present
+	if c.CertPath != "" {
+		cc, err := os.ReadFile(c.CertPath)
+		if err != nil {
+			return c, err
+		}
+		pk, err := os.ReadFile(c.PrivKeyPath)
+		if err != nil {
+			return c, err
+		}
+		cert, err := tls.X509KeyPair(cc, pk)
+		if err != nil {
+			return c, err
+		}
+		c.Cert = cert
+	}
+
+	// Load client certificate from string if file not present
+	if c.Cert.Certificate == nil && c.ClientCert != "" {
+		cc = []byte(c.ClientCert)
+		pk = []byte(c.ClientKey)
+		cert, err := tls.X509KeyPair(cc, pk)
+		if err != nil {
+			return c, err
+		}
+		c.Cert = cert
+	}
+
 	return c, nil
+}
+
+func StopSignalHandler(ctx context.Context, cancel context.CancelFunc, logger logger.Logger, svcName string) error {
+	var err error
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGABRT)
+	select {
+	case sig := <-c:
+		defer cancel()
+		logger.Info(fmt.Sprintf("%s service shutdown by signal: %s", svcName, sig))
+		return err
+	case <-ctx.Done():
+		return nil
+	}
 }

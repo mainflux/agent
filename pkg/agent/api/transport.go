@@ -91,12 +91,3 @@ func decodeAddConfigRequest(_ context.Context, r *http.Request) (interface{}, er
 func encodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
 	return json.NewEncoder(w).Encode(response)
 }
-
-func readStringQuery(r *http.Request, key string) (string, error) {
-	vals := bone.GetQuery(r, key)
-	if len(vals) != 1 {
-		return "", agent.ErrInvalidQueryParams
-	}
-
-	return vals[0], nil
-}

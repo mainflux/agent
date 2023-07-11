@@ -4,40 +4,34 @@
 package api
 
 type serverConfig struct {
-	port string `json:"port"`
+	Port string `json:"port"`
 }
 
 type chanConfig struct {
-	control string `json:"control"`
-	data    string `json:"data"`
+	Control string `json:"control"`
+	Data    string `json:"data"`
 }
 
 type edgexConfig struct {
-	url string `json:"url"`
+	Url string `json:"url"`
 }
 
 type logConfig struct {
-	level string `json:"level"`
+	Level string `json:"level"`
 }
 
 type mqttConfig struct {
-	url         string `json:"url"`
-	username    string `json:"username"`
-	password    string `json:"json"`
-	mtls        bool   `json:"mtls"`
-	skipTLSVer  bool   `json:"skip_tls_ver"`
-	retain      bool   `json:"retain"`
-	QoS         byte   `json:"qos"`
-	caPath      string `json:"ca_path"`
-	certPath    string `json:"cert_path"`
-	privKeyPath string `json:"priv_key_path"`
+	Url      string `json:"url"`
+	Username string `json:"username"`
+	Password string `json:"json"`
+	QoS      byte   `json:"qos"`
 }
 
 // Config struct of Mainflux Agent
 type agentConfig struct {
-	server   serverConfig `json:"server"`
-	channels chanConfig   `json:"channels"`
-	edgex    edgexConfig  `json:"edgex"`
-	log      logConfig    `json:"log"`
-	mqtt     mqttConfig   `json:"mqtt"`
+	Server   serverConfig `json:"server"`
+	Channels chanConfig   `json:"channels"`
+	Edgex    edgexConfig  `json:"edgex"`
+	Log      logConfig    `json:"log"`
+	Mqtt     mqttConfig   `json:"mqtt"`
 }

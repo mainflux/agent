@@ -6,7 +6,7 @@ package edgex
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -62,7 +62,7 @@ func (ec *edgexClient) PushOperation(cmdArr []string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -71,7 +71,7 @@ func (ec *edgexClient) PushOperation(cmdArr []string) (string, error) {
 
 // FetchConfig - fetches config from EdgeX components
 func (ec *edgexClient) FetchConfig(cmdArr []string) (string, error) {
-	cmdStr := strings.Replace(strings.Join(cmdArr, ","), " ", "", -1)
+	cmdStr := strings.ReplaceAll(strings.Join(cmdArr, ","), " ", "")
 	url := ec.url + "config/" + cmdStr
 
 	resp, err := http.Get(url)
@@ -80,7 +80,7 @@ func (ec *edgexClient) FetchConfig(cmdArr []string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -89,7 +89,7 @@ func (ec *edgexClient) FetchConfig(cmdArr []string) (string, error) {
 
 // FetchMetrics - fetches metrics from EdgeX components
 func (ec *edgexClient) FetchMetrics(cmdArr []string) (string, error) {
-	cmdStr := strings.Replace(strings.Join(cmdArr, ","), " ", "", -1)
+	cmdStr := strings.ReplaceAll(strings.Join(cmdArr, ","), " ", "")
 	url := ec.url + "metrics/" + cmdStr
 
 	resp, err := http.Get(url)
@@ -99,7 +99,7 @@ func (ec *edgexClient) FetchMetrics(cmdArr []string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -116,7 +116,7 @@ func (ec *edgexClient) Ping() (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}

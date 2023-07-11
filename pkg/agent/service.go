@@ -72,10 +72,7 @@ var (
 	// errFailedExecute
 	errFailedExecute = errors.New("failed to execute command")
 
-	// errFailedCreateService
-	errFailedCreateService = errors.New("failed to create agent service")
-
-	//errFailedToCreateTerminalSession
+	// errFailedToCreateTerminalSession
 	errFailedToCreateTerminalSession = errors.New("failed to create terminal session")
 
 	// errNoSuchTerminalSession terminal session doesnt exist error on closing
@@ -167,7 +164,7 @@ func New(mc paho.Client, cfg *Config, ec edgex.Client, nc *nats.Conn, logger log
 }
 
 func (a *agent) Execute(uuid, cmd string) (string, error) {
-	cmdArr := strings.Split(strings.Replace(cmd, " ", "", -1), ",")
+	cmdArr := strings.Split(strings.ReplaceAll(cmd, " ", ""), ",")
 	if len(cmdArr) < 2 {
 		return "", errInvalidCommand
 	}
@@ -190,7 +187,7 @@ func (a *agent) Execute(uuid, cmd string) (string, error) {
 }
 
 func (a *agent) Control(uuid, cmdStr string) error {
-	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
+	cmdArgs := strings.Split(strings.ReplaceAll(cmdStr, " ", ""), ",")
 	if len(cmdArgs) < 2 {
 		return errInvalidCommand
 	}
@@ -228,7 +225,7 @@ func (a *agent) Control(uuid, cmdStr string) error {
 //	b, _ := toml.Marshal(cfg)
 //	config_file_content := base64.StdEncoding.EncodeToString(b)
 func (a *agent) ServiceConfig(uuid, cmdStr string) error {
-	cmdArgs := strings.Split(strings.Replace(cmdStr, " ", "", -1), ",")
+	cmdArgs := strings.Split(strings.ReplaceAll(cmdStr, " ", ""), ",")
 	if len(cmdArgs) < 1 {
 		return errInvalidCommand
 	}

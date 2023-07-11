@@ -7,10 +7,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"io"
 	"os"
 
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -55,15 +55,6 @@ type deviceConfig struct {
 	SvcsConf         ServicesConfig   `json:"-"`
 }
 
-type infraConfig struct {
-	LogLevel     string        `json:"log_level"`
-	HTTPPort     string        `json:"http_port"`
-	MqttURL      string        `json:"mqtt_url"`
-	EdgexURL     string        `json:"edgex_url"`
-	NatsURL      string        `json:"nats_url"`
-	ExportConfig export.Config `json:"export_config"`
-}
-
 // Bootstrap - Retrieve device config
 func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	retries, err := strconv.ParseUint(cfg.Retries, 10, 64)
@@ -95,7 +86,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		time.Sleep(time.Duration(retryDelaySec) * time.Second)
 		if i == int(retries)-1 {
 			logger.Warn("Retries exhausted")
-			logger.Info(fmt.Sprintf("Continuing with local config"))
+			logger.Info("Continuing with local config")
 			return nil
 		}
 	}
@@ -214,7 +205,7 @@ func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (d
 		return deviceConfig{}, errors.New(http.StatusText(resp.StatusCode))
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return deviceConfig{}, err
 	}

@@ -7,7 +7,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/mainflux/mainflux/pkg/errors"
@@ -88,7 +88,7 @@ func SaveConfig(c Config) error {
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error reading config file: %s", err))
 	}
-	if err := ioutil.WriteFile(c.File, b, 0644); err != nil {
+	if err := os.WriteFile(c.File, b, 0644); err != nil {
 		return errors.New(fmt.Sprintf("Error writing toml: %s", err))
 	}
 	return nil
@@ -96,7 +96,7 @@ func SaveConfig(c Config) error {
 
 // Read - retrieve config from a file
 func ReadConfig(file string) (Config, error) {
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	c := Config{}
 	if err != nil {
 		return c, errors.New(fmt.Sprintf("Error reading config file: %s", err))

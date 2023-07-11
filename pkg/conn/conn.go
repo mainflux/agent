@@ -81,7 +81,9 @@ func (b *broker) Subscribe() error {
 // handleNatsMsg triggered when new message is received on MQTT broker
 func (b *broker) handleNatsMsg(mc mqtt.Client, msg mqtt.Message) {
 	if topic := extractNatsTopic(msg.Topic()); topic != "" {
-		b.nats.Publish(topic, msg.Payload())
+		if err := b.nats.Publish(topic, msg.Payload()); err != nil {
+			b.logger.Warn(fmt.Sprintf("error publishing message with error: %v", err))
+		}
 	}
 }
 

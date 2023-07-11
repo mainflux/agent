@@ -24,12 +24,10 @@ import (
 )
 
 type testRequest struct {
-	client      *http.Client
-	method      string
-	url         string
-	contentType string
-	token       string
-	body        io.Reader
+	client *http.Client
+	method string
+	url    string
+	body   io.Reader
 }
 
 func (tr testRequest) make() (*http.Response, error) {
@@ -48,7 +46,7 @@ func newService() agent.Service {
 	config := agent.Config{}
 	logger, err := logger.New(os.Stdout, "debug")
 	if err != nil {
-		log.Println(fmt.Sprintf("Failed to create logger: %s", err.Error()))
+		log.Printf("Failed to create logger: %s\n", err.Error())
 	}
 
 	agentSvc, err := agent.New(mqttClient, &config, edgexClient, nil, logger)
