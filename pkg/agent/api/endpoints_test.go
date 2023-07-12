@@ -12,11 +12,13 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mainflux/agent/pkg/agent"
 	"github.com/mainflux/agent/pkg/agent/api"
 	"github.com/mainflux/agent/pkg/agent/mocks"
+	"github.com/nats-io/nats.go"
 
 	"github.com/mainflux/mainflux/logger"
 	"github.com/stretchr/testify/assert"
@@ -39,16 +41,32 @@ func (tr testRequest) make() (*http.Response, error) {
 }
 
 func newService() (agent.Service, error) {
-	opts := paho.NewClientOptions()
+	opts := paho.NewClientOptions().
+		SetUsername(username).
+		AddBroker(mqttAddress).
+		SetClientID("testing")
+
 	mqttClient := paho.NewClient(opts)
+	token := mqttClient.Connect()
+	if token.Error() != nil {
+		return nil, token.Error()
+	}
+
 	edgexClient := mocks.NewEdgexClient()
 	config := agent.Config{}
+	config.Heartbeat.Interval = time.Second
+
 	logger, err := logger.New(os.Stdout, "debug")
 	if err != nil {
 		return nil, err
 	}
 
-	agentSvc, err := agent.New(mqttClient, &config, edgexClient, nil, logger)
+	nc, err := nats.Connect(natsAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	agentSvc, err := agent.New(mqttClient, &config, edgexClient, nc, logger)
 	if err != nil {
 		return nil, err
 	}
