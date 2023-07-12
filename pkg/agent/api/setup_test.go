@@ -17,10 +17,8 @@ import (
 
 const (
 	username      = "mainflux-mqtt"
-	qos           = 2
 	broker        = "eclipse-mosquitto"
 	brokerVersion = "1.6.13"
-	brokerTimeout = 30 * time.Second
 	poolMaxWait   = 120 * time.Second
 )
 
