@@ -82,7 +82,7 @@ func NewConfig(sc ServerConfig, cc ChanConfig, ec EdgexConfig, lc LogConfig, mc 
 	}
 }
 
-// Save - store config in a file
+// Save - store config in a file.
 func SaveConfig(c Config) error {
 	b, err := toml.Marshal(c)
 	if err != nil {
@@ -94,7 +94,7 @@ func SaveConfig(c Config) error {
 	return nil
 }
 
-// Read - retrieve config from a file
+// Read - retrieve config from a file.
 func ReadConfig(file string) (Config, error) {
 	data, err := os.ReadFile(file)
 	c := Config{}
@@ -108,7 +108,7 @@ func ReadConfig(file string) (Config, error) {
 	return c, nil
 }
 
-// UnmarshalJSON parses the duration from JSON
+// UnmarshalJSON parses the duration from JSON.
 func (d *HeartbeatConfig) UnmarshalJSON(b []byte) error {
 	var v map[string]interface{}
 	if err := json.Unmarshal(b, &v); err != nil {
@@ -134,7 +134,7 @@ func (d *HeartbeatConfig) UnmarshalJSON(b []byte) error {
 	}
 }
 
-// UnmarshalJSON parses the duration from JSON
+// UnmarshalJSON parses the duration from JSON.
 func (d *TerminalConfig) UnmarshalJSON(b []byte) error {
 	var v map[string]interface{}
 	if err := json.Unmarshal(b, &v); err != nil {

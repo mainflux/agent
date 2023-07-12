@@ -25,7 +25,7 @@ import (
 
 const exportConfigFile = "/configs/export/config.toml"
 
-// Config represents the parameters for boostraping
+// Config represents the parameters for bootstrapping.
 type Config struct {
 	URL           string
 	ID            string
@@ -55,7 +55,7 @@ type deviceConfig struct {
 	SvcsConf         ServicesConfig   `json:"-"`
 }
 
-// Bootstrap - Retrieve device config
+// Bootstrap - Retrieve device config.
 func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	retries, err := strconv.ParseUint(cfg.Retries, 10, 64)
 	if err != nil {
@@ -128,7 +128,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	return agent.SaveConfig(c)
 }
 
-// if export config isnt filled use agent configs
+// if export config isnt filled use agent configs.
 func fillExportConfig(econf export.Config, c agent.Config) export.Config {
 	if econf.MQTT.Username == "" {
 		econf.MQTT.Username = c.MQTT.Username
@@ -174,7 +174,7 @@ func saveExportConfig(econf export.Config, logger log.Logger) {
 }
 
 func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (deviceConfig, error) {
-	// Get the SystemCertPool, continue with an empty pool on error
+	// Get the SystemCertPool, continue with an empty pool on error.
 	rootCAs, err := x509.SystemCertPool()
 	if err != nil {
 		logger.Error(err.Error())
@@ -182,7 +182,7 @@ func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (d
 	if rootCAs == nil {
 		rootCAs = x509.NewCertPool()
 	}
-	// Trust the augmented cert pool in our client
+	// Trust the augmented cert pool in our client.
 	config := &tls.Config{
 		InsecureSkipVerify: skipTLS,
 		RootCAs:            rootCAs,

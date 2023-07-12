@@ -44,7 +44,6 @@ const (
 	defEncryption                 = "false"
 	defMqttUsername               = ""
 	defMqttPassword               = ""
-	defMqttChannel                = ""
 	defMqttSkipTLSVer             = "true"
 	defMqttMTLS                   = "false"
 	defMqttCA                     = "ca.crt"

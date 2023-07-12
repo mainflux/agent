@@ -27,7 +27,7 @@ type mqttConfig struct {
 	QoS      byte   `json:"qos"`
 }
 
-// Config struct of Mainflux Agent
+// Config struct of Mainflux Agent.
 type agentConfig struct {
 	Server   serverConfig `json:"server"`
 	Channels chanConfig   `json:"channels"`

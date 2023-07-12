@@ -36,7 +36,7 @@ type Heartbeat interface {
 }
 
 // interval - duration of interval
-// if service doesnt send heartbeat during  interval it is marked offline
+// if service doesnt send heartbeat during  interval it is marked offline.
 func NewHeartbeat(name, svcType string, interval time.Duration) Heartbeat {
 	ticker := time.NewTicker(interval)
 	s := svc{
@@ -57,7 +57,7 @@ func (s *svc) listen() {
 	go func() {
 		for range s.ticker.C {
 			// TODO - we can disable ticker when the status gets OFFLINE
-			// and on the next heartbeat enable it again
+			// and on the next heartbeat enable it again.
 			s.mu.Lock()
 			if time.Now().After(s.info.LastSeen.Add(s.interval)) {
 				s.info.Status = offline

@@ -42,67 +42,67 @@ const (
 )
 
 var (
-	// errInvalidCommand indicates malformed command
+	// errInvalidCommand indicates malformed command.
 	errInvalidCommand = errors.New("invalid command")
 
-	// ErrMalformedEntity indicates malformed entity specification
+	// ErrMalformedEntity indicates malformed entity specification.
 	ErrMalformedEntity = errors.New("malformed entity specification")
 
-	// ErrInvalidQueryParams indicates malformed URL
+	// ErrInvalidQueryParams indicates malformed URL.
 	ErrInvalidQueryParams = errors.New("invalid query params")
 
-	// errUnknownCommand indicates that command is not found
+	// errUnknownCommand indicates that command is not found.
 	errUnknownCommand = errors.New("Unknown command")
 
-	// errNatsSubscribing indicates problem with sub to topic for heartbeat
+	// errNatsSubscribing indicates problem with sub to topic for heartbeat.
 	errNatsSubscribing = errors.New("failed to subscribe to heartbeat topic")
 
-	// errNoSuchService indicates service not supported
+	// errNoSuchService indicates service not supported.
 	errNoSuchService = errors.New("no such service")
 
-	// errFailedEncode indicates error in encoding
+	// errFailedEncode indicates error in encoding.
 	errFailedEncode = errors.New("failed to encode")
 
-	// errFailedToPublish
+	// errFailedToPublish.
 	errFailedToPublish = errors.New("failed to publish")
 
-	// errEdgexFailed
+	// errEdgexFailed.
 	errEdgexFailed = errors.New("failed to execute edgex operation")
 
-	// errFailedExecute
+	// errFailedExecute.
 	errFailedExecute = errors.New("failed to execute command")
 
-	// errFailedToCreateTerminalSession
+	// errFailedToCreateTerminalSession.
 	errFailedToCreateTerminalSession = errors.New("failed to create terminal session")
 
-	// errNoSuchTerminalSession terminal session doesnt exist error on closing
+	// errNoSuchTerminalSession terminal session doesnt exist error on closing.
 	errNoSuchTerminalSession = errors.New("no such terminal session")
 )
 
 // Service specifies API for publishing messages and subscribing to topics.
 type Service interface {
-	// Execute command
+	// Execute command.
 	Execute(string, string) (string, error)
 
-	// Control command
+	// Control command.
 	Control(string, string) error
 
-	// Update configuration file
+	// Update configuration file.
 	AddConfig(Config) error
 
-	// Config returns Config struct created from config file
+	// Config returns Config struct created from config file.
 	Config() Config
 
-	// Saves config file
+	// Saves config file.
 	ServiceConfig(uuid, cmdStr string) error
 
-	// Services returns service list
+	// Services returns service list.
 	Services() []Info
 
-	// Terminal used for terminal control of gateway
+	// Terminal used for terminal control of gateway.
 	Terminal(string, string) error
 
-	// Publish message
+	// Publish message.
 	Publish(string, string) error
 }
 
@@ -145,7 +145,7 @@ func New(mc paho.Client, cfg *Config, ec edgex.Client, nc *nats.Conn, logger log
 		svctype := tok[2]
 		// Service name is extracted from the subtopic
 		// if there is multiple instances of the same service
-		// we will have to add another distinction
+		// we will have to add another distinction.
 		if _, ok := ag.svcs[svcname]; !ok {
 			svc := NewHeartbeat(svcname, svctype, cfg.Heartbeat.Interval)
 			ag.svcs[svcname] = svc
@@ -223,7 +223,7 @@ func (a *agent) Control(uuid, cmdStr string) error {
 // Example of creation:
 //
 //	b, _ := toml.Marshal(cfg)
-//	config_file_content := base64.StdEncoding.EncodeToString(b)
+//	config_file_content := base64.StdEncoding.EncodeToString(b).
 func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 	cmdArgs := strings.Split(strings.ReplaceAll(cmdStr, " ", ""), ",")
 	if len(cmdArgs) < 1 {
@@ -293,7 +293,7 @@ func (a *agent) terminalOpen(uuid string, timeout time.Duration) error {
 		a.terminals[uuid] = term
 		go func() {
 			for range term.IsDone() {
-				// Terminal is inactive, should be closed
+				// Terminal is inactive, should be closed.
 				a.logger.Debug((fmt.Sprintf("Closing terminal session %s", uuid)))
 				a.terminalClose(uuid)
 				delete(a.terminals, uuid)
