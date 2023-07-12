@@ -5,7 +5,6 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/go-kit/kit/endpoint"
@@ -24,7 +23,6 @@ func pubEndpoint(svc agent.Service) endpoint.Endpoint {
 		payload := req.Payload
 
 		if err := svc.Publish(topic, payload); err != nil {
-			fmt.Println("end err", err)
 			return genericRes{}, err
 		}
 
