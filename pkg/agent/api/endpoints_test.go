@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -39,23 +38,22 @@ func (tr testRequest) make() (*http.Response, error) {
 	return tr.client.Do(req)
 }
 
-func newService() agent.Service {
+func newService() (agent.Service, error) {
 	opts := paho.NewClientOptions()
 	mqttClient := paho.NewClient(opts)
 	edgexClient := mocks.NewEdgexClient()
 	config := agent.Config{}
 	logger, err := logger.New(os.Stdout, "debug")
 	if err != nil {
-		log.Printf("Failed to create logger: %s\n", err.Error())
+		return nil, err
 	}
 
 	agentSvc, err := agent.New(mqttClient, &config, edgexClient, nil, logger)
 	if err != nil {
-		logger.Error(err.Error())
-		return nil
+		return nil, err
 	}
 
-	return agentSvc
+	return agentSvc, nil
 }
 
 func newServer(svc agent.Service) *httptest.Server {
@@ -69,7 +67,11 @@ func toJSON(data interface{}) string {
 }
 
 func TestPublish(t *testing.T) {
-	svc := newService()
+	svc, err := newService()
+	if err != nil {
+		t.Errorf("failed to create service: %v", err)
+		return
+	}
 	ts := newServer(svc)
 	defer ts.Close()
 	client := ts.Client()

@@ -23,7 +23,7 @@ func pubEndpoint(svc agent.Service) endpoint.Endpoint {
 		payload := req.Payload
 
 		if err := svc.Publish(topic, payload); err != nil {
-			return genericRes{}, nil
+			return genericRes{}, err
 		}
 
 		return genericRes{
