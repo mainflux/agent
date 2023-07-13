@@ -2,6 +2,9 @@ FROM golang:1.20-alpine AS builder
 ARG SVC
 ARG GOARCH
 ARG GOARM
+ARG VERSION
+ARG COMMIT
+ARG TIME
 
 WORKDIR /go/src/github.com/mainflux/agent
 COPY . .
