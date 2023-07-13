@@ -18,9 +18,9 @@ import (
 	"github.com/mainflux/agent/pkg/agent"
 
 	export "github.com/mainflux/export/pkg/config"
+	"github.com/mainflux/mainflux/bootstrap"
 	log "github.com/mainflux/mainflux/logger"
 	errors "github.com/mainflux/mainflux/pkg/errors"
-	"github.com/mainflux/mainflux/things"
 )
 
 const exportConfigFile = "/configs/export/config.toml"
@@ -46,13 +46,13 @@ type ConfigContent struct {
 }
 
 type deviceConfig struct {
-	MainfluxID       string           `json:"mainflux_id"`
-	MainfluxKey      string           `json:"mainflux_key"`
-	MainfluxChannels []things.Channel `json:"mainflux_channels"`
-	ClientKey        string           `json:"client_key"`
-	ClientCert       string           `json:"client_cert"`
-	CaCert           string           `json:"ca_cert"`
-	SvcsConf         ServicesConfig   `json:"-"`
+	MainfluxID       string              `json:"mainflux_id"`
+	MainfluxKey      string              `json:"mainflux_key"`
+	MainfluxChannels []bootstrap.Channel `json:"mainflux_channels"`
+	ClientKey        string              `json:"client_key"`
+	ClientCert       string              `json:"client_cert"`
+	CaCert           string              `json:"ca_cert"`
+	SvcsConf         ServicesConfig      `json:"-"`
 }
 
 // Bootstrap - Retrieve device config.

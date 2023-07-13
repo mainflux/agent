@@ -52,7 +52,7 @@ func MakeHandler(svc agent.Service) http.Handler {
 	))
 
 	r.Handle("/metrics", promhttp.Handler())
-	r.GetFunc("/health", mainflux.Health("agent"))
+	r.GetFunc("/health", mainflux.Health("agent", ""))
 
 	return r
 }
