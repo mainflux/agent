@@ -23,7 +23,7 @@ For more details, check out the [official documentation][docs].
 - Mutual TLS Authentication (mTLS) using X.509 Certificates
 - Fine-grained access control (policies, ABAC/RBAC)
 - Message persistence (Cassandra, InfluxDB, MongoDB and PostgresSQL)
-- Platform logging and instrumentation support (Grafana, Prometheus and OpenTracing)
+- Platform logging and instrumentation support (Prometheus and OpenTelemetry)
 - Event sourcing
 - Container-based deployment using [Docker][docker] and [Kubernetes][kubernetes]
 - [LoRaWAN][lora] network integration
@@ -43,7 +43,7 @@ The following are needed to run Mainflux:
 
 Developing Mainflux will also require:
 
-- [Go](https://golang.org/doc/install) (version 1.13.3)
+- [Go](https://golang.org/doc/install) (version 1.19.2)
 - [Protobuf](https://github.com/protocolbuffers/protobuf#protocol-compiler-installation) (version 3.6.1)
 
 ## Install
