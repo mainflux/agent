@@ -1,5 +1,6 @@
 # Copyright (c) Mainflux
 # SPDX-License-Identifier: Apache-2.0
+# Do not use docker if using remote terminal
 
 version: "3.7"
 
