@@ -147,18 +147,22 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	g, ctx := errgroup.WithContext(ctx)
 
+	srv := &http.Server{
+		Addr:    fmt.Sprintf(":%s", cfg.Server.Port),
+		Handler: api.MakeHandler(svc),
+	}
+
 	g.Go(func() error {
 		return b.Subscribe()
 	})
 
 	g.Go(func() error {
-		p := fmt.Sprintf(":%s", cfg.Server.Port)
 		logger.Info(fmt.Sprintf("Agent service started, exposed port %s", cfg.Server.Port))
-		return http.ListenAndServe(p, api.MakeHandler(svc))
+		return srv.ListenAndServe()
 	})
 
 	g.Go(func() error {
-		return StopSignalHandler(ctx, cancel, logger, "agent")
+		return StopSignalHandler(ctx, cancel, logger, "agent", srv)
 	})
 
 	if err := g.Wait(); err != nil {
@@ -388,15 +392,18 @@ func loadCertificate(cnfg agent.MQTTConfig) (agent.MQTTConfig, error) {
 	return c, nil
 }
 
-func StopSignalHandler(ctx context.Context, cancel context.CancelFunc, logger logger.Logger, svcName string) error {
-	var err error
+func StopSignalHandler(ctx context.Context, cancel context.CancelFunc, logger logger.Logger, svcName string, server *http.Server) error {
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGABRT)
 	select {
 	case sig := <-c:
 		defer cancel()
-		logger.Info(fmt.Sprintf("%s service shutdown by signal: %s", svcName, sig))
-		return err
+		shutdownCtx, shutdownCancel := context.WithTimeout(ctx, 5*time.Second)
+		defer shutdownCancel()
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			return fmt.Errorf("Failed to shutdown %s server: %v", svcName, err)
+		}
+		return fmt.Errorf("%s service shutdown by signal: %s", svcName, sig)
 	case <-ctx.Done():
 		return nil
 	}
