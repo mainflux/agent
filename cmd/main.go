@@ -107,9 +107,9 @@ func main() {
 		logger.Error(fmt.Sprintf("Failed to load config: %s", err))
 	}
 
-	nc, err := nats.Connect(cfg.Server.NatsURL)
+	nc, err := nats.Connect(cfg.Server.BrokerURL)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Server.NatsURL))
+		logger.Error(fmt.Sprintf("Failed to connect to Broker: %s %s", err, cfg.Server.BrokerURL))
 		os.Exit(1)
 	}
 	defer nc.Close()
@@ -172,8 +172,8 @@ func main() {
 
 func loadEnvConfig() (agent.Config, error) {
 	sc := agent.ServerConfig{
-		NatsURL: mainflux.Env(envNatsURL, defNatsURL),
-		Port:    mainflux.Env(envHTTPPort, defHTTPPort),
+		BrokerURL: mainflux.Env(envNatsURL, defNatsURL),
+		Port:      mainflux.Env(envHTTPPort, defHTTPPort),
 	}
 	cc := agent.ChanConfig{
 		Control: mainflux.Env(envCtrlChan, defCtrlChan),

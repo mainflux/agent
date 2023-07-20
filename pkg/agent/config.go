@@ -15,8 +15,8 @@ import (
 )
 
 type ServerConfig struct {
-	Port    string `toml:"port" json:"port"`
-	NatsURL string `toml:"nats_url" json:"nats_url"`
+	Port      string `toml:"port" json:"port"`
+	BrokerURL string `toml:"broker_url" json:"broker_url"`
 }
 
 type ChanConfig struct {
