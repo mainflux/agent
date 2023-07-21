@@ -169,7 +169,7 @@ github.com/lestrrat-go/option
 # github.com/mainflux/export v0.1.1-0.20230724124847-67d0bc7f38cb
 ## explicit; go 1.20
 github.com/mainflux/export/pkg/config
-# github.com/mainflux/mainflux v0.0.0-20230713105239-52131eba669c
+# github.com/mainflux/mainflux v0.0.0-20230713105239-52131eba669c => github.com/sammyoina/mainflux v0.0.0-20230721115901-4556e641e834
 ## explicit; go 1.20
 github.com/mainflux/mainflux
 github.com/mainflux/mainflux/bootstrap
@@ -178,6 +178,9 @@ github.com/mainflux/mainflux/logger
 github.com/mainflux/mainflux/pkg/clients
 github.com/mainflux/mainflux/pkg/errors
 github.com/mainflux/mainflux/pkg/messaging
+github.com/mainflux/mainflux/pkg/messaging/brokers
+github.com/mainflux/mainflux/pkg/messaging/nats
+github.com/mainflux/mainflux/pkg/messaging/rabbitmq
 github.com/mainflux/mainflux/pkg/sdk/go
 github.com/mainflux/mainflux/pkg/transformers
 github.com/mainflux/mainflux/pkg/transformers/senml
@@ -270,6 +273,9 @@ github.com/prometheus/common/model
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
+# github.com/rabbitmq/amqp091-go v1.8.1
+## explicit; go 1.16
+github.com/rabbitmq/amqp091-go
 # github.com/segmentio/asm v1.2.0
 ## explicit; go 1.18
 github.com/segmentio/asm/base64
@@ -456,3 +462,4 @@ gopkg.in/yaml.v3
 # robpike.io/filter v0.0.0-20150108201509-2984852a2183
 ## explicit
 robpike.io/filter
+# github.com/mainflux/mainflux => github.com/sammyoina/mainflux v0.0.0-20230721115901-4556e641e834

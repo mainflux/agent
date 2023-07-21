@@ -4,6 +4,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -84,7 +85,7 @@ func (lm loggingMiddleware) Config() agent.Config {
 	return lm.svc.Config()
 }
 
-func (lm loggingMiddleware) ServiceConfig(uuid, cmdStr string) (err error) {
+func (lm loggingMiddleware) ServiceConfig(ctx context.Context, uuid, cmdStr string) (err error) {
 	defer func(begin time.Time) {
 		message := fmt.Sprintf("Method service_config took %s to complete", time.Since(begin))
 		if err != nil {
@@ -94,7 +95,7 @@ func (lm loggingMiddleware) ServiceConfig(uuid, cmdStr string) (err error) {
 		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
 	}(time.Now())
 
-	return lm.svc.ServiceConfig(uuid, cmdStr)
+	return lm.svc.ServiceConfig(ctx, uuid, cmdStr)
 }
 
 func (lm loggingMiddleware) Services() []agent.Info {
