@@ -120,8 +120,6 @@ github.com/lestrrat-go/option v1.0.1/go.mod h1:5ZHFbivi4xwXxhxY9XHDe2FHo6/Z7WWmt
 github.com/lib/pq v0.0.0-20180327071824-d34b9ff171c2 h1:hRGSmZu7j271trc9sneMrpOW7GN5ngLm8YUZIPzf394=
 github.com/mainflux/export v0.1.1-0.20230724124847-67d0bc7f38cb h1:+Zz1+/lX3bmt2AWyJHG2yVsJ7vqa0Q2XIYagG1dHj5c=
 github.com/mainflux/export v0.1.1-0.20230724124847-67d0bc7f38cb/go.mod h1:speJE1lnq2emg5o4DqEoOe6nOgFRd0AEYSBBV2bCGKg=
-github.com/mainflux/mainflux v0.0.0-20230713105239-52131eba669c h1:W6b2x4ngTpEC40RqHHktciQd8dKbDZbqKnAz26jliNI=
-github.com/mainflux/mainflux v0.0.0-20230713105239-52131eba669c/go.mod h1:FoeJ13mrfikrsFDW6bOb3C44D5gZ5m9Jt249G1sLKq0=
 github.com/mainflux/senml v1.5.0 h1:GAd1y1eMohfa6sVYcr2iQfVfkkh9l/q7B1TWF5L68xs=
 github.com/mainflux/senml v1.5.0/go.mod h1:SMX76mM5yenjLVjZOM27+njCGkP+AA64O46nRQiBRlE=
 github.com/matttproud/golang_protobuf_extensions v1.0.4 h1:mmDVorXM7PCGKw94cs5zkfA9PSy5pEvNWRP0ET0TIVo=
