@@ -40,6 +40,8 @@ const (
 	data    = "data"
 
 	export = "export"
+
+	pubSubID = "agent"
 )
 
 var (
@@ -171,7 +173,7 @@ func New(ctx context.Context, mc paho.Client, cfg *Config, ec edgex.Client, brok
 		ag.logger.Error(fmt.Sprintf("invalid heartbeat interval %d", cfg.Heartbeat.Interval))
 	}
 
-	err := ag.broker.Subscribe(ctx, "", Hearbeat, ag.handle(ctx, ag.broker, logger, cfg.Heartbeat))
+	err := ag.broker.Subscribe(ctx, pubSubID, Hearbeat, ag.handle(ctx, ag.broker, logger, cfg.Heartbeat))
 
 	if err != nil {
 		return ag, errors.Wrap(errNatsSubscribing, err)
