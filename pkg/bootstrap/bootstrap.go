@@ -7,10 +7,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"io"
 	"os"
 
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -18,14 +18,14 @@ import (
 	"github.com/mainflux/agent/pkg/agent"
 
 	export "github.com/mainflux/export/pkg/config"
-	errors "github.com/mainflux/mainflux/errors"
+	"github.com/mainflux/mainflux/bootstrap"
 	log "github.com/mainflux/mainflux/logger"
-	"github.com/mainflux/mainflux/things"
+	errors "github.com/mainflux/mainflux/pkg/errors"
 )
 
 const exportConfigFile = "/configs/export/config.toml"
 
-// Config represents the parameters for boostraping
+// Config represents the parameters for bootstrapping.
 type Config struct {
 	URL           string
 	ID            string
@@ -46,25 +46,16 @@ type ConfigContent struct {
 }
 
 type deviceConfig struct {
-	MainfluxID       string           `json:"mainflux_id"`
-	MainfluxKey      string           `json:"mainflux_key"`
-	MainfluxChannels []things.Channel `json:"mainflux_channels"`
-	ClientKey        string           `json:"client_key"`
-	ClientCert       string           `json:"client_cert"`
-	CaCert           string           `json:"ca_cert"`
-	SvcsConf         ServicesConfig   `json:"-"`
+	MainfluxID       string              `json:"mainflux_id"`
+	MainfluxKey      string              `json:"mainflux_key"`
+	MainfluxChannels []bootstrap.Channel `json:"mainflux_channels"`
+	ClientKey        string              `json:"client_key"`
+	ClientCert       string              `json:"client_cert"`
+	CaCert           string              `json:"ca_cert"`
+	SvcsConf         ServicesConfig      `json:"-"`
 }
 
-type infraConfig struct {
-	LogLevel     string        `json:"log_level"`
-	HTTPPort     string        `json:"http_port"`
-	MqttURL      string        `json:"mqtt_url"`
-	EdgexURL     string        `json:"edgex_url"`
-	NatsURL      string        `json:"nats_url"`
-	ExportConfig export.Config `json:"export_config"`
-}
-
-// Bootstrap - Retrieve device config
+// Bootstrap - Retrieve device config.
 func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	retries, err := strconv.ParseUint(cfg.Retries, 10, 64)
 	if err != nil {
@@ -72,7 +63,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	}
 
 	if retries == 0 {
-		logger.Info("No bootstraping, environment variables will be used")
+		logger.Info("No bootstrapping, environment variables will be used")
 		return nil
 	}
 
@@ -95,7 +86,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		time.Sleep(time.Duration(retryDelaySec) * time.Second)
 		if i == int(retries)-1 {
 			logger.Warn("Retries exhausted")
-			logger.Info(fmt.Sprintf("Continuing with local config"))
+			logger.Info("Continuing with local config")
 			return nil
 		}
 	}
@@ -137,7 +128,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	return agent.SaveConfig(c)
 }
 
-// if export config isnt filled use agent configs
+// if export config isnt filled use agent configs.
 func fillExportConfig(econf export.Config, c agent.Config) export.Config {
 	if econf.MQTT.Username == "" {
 		econf.MQTT.Username = c.MQTT.Username
@@ -183,7 +174,7 @@ func saveExportConfig(econf export.Config, logger log.Logger) {
 }
 
 func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (deviceConfig, error) {
-	// Get the SystemCertPool, continue with an empty pool on error
+	// Get the SystemCertPool, continue with an empty pool on error.
 	rootCAs, err := x509.SystemCertPool()
 	if err != nil {
 		logger.Error(err.Error())
@@ -191,7 +182,7 @@ func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (d
 	if rootCAs == nil {
 		rootCAs = x509.NewCertPool()
 	}
-	// Trust the augmented cert pool in our client
+	// Trust the augmented cert pool in our client.
 	config := &tls.Config{
 		InsecureSkipVerify: skipTLS,
 		RootCAs:            rootCAs,
@@ -205,7 +196,7 @@ func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (d
 		return deviceConfig{}, err
 	}
 
-	req.Header.Add("Authorization", bsKey)
+	req.Header.Add("Authorization", fmt.Sprintf("Thing %s", bsKey))
 	resp, err := client.Do(req)
 	if err != nil {
 		return deviceConfig{}, err
@@ -214,7 +205,7 @@ func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (d
 		return deviceConfig{}, errors.New(http.StatusText(resp.StatusCode))
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return deviceConfig{}, err
 	}

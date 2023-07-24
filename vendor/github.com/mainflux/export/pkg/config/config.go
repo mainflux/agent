@@ -8,9 +8,9 @@ package config
 import (
 	"crypto/tls"
 	"encoding/json"
-	"io/ioutil"
+	"os"
 
-	"github.com/mainflux/mainflux/errors"
+	"github.com/mainflux/mainflux/pkg/errors"
 	"github.com/pelletier/go-toml"
 )
 
@@ -65,7 +65,7 @@ type Route struct {
 	Workers   int    `json:"workers" toml:"workers" mapstructure:"workers"`
 }
 
-// Save - store config in a file
+// Save - store config in a file.
 func Save(c Config) error {
 	b, err := toml.Marshal(c)
 	if err != nil {
@@ -75,17 +75,17 @@ func Save(c Config) error {
 	if c.File != "" {
 		file = c.File
 	}
-	if err := ioutil.WriteFile(file, b, 0644); err != nil {
+	if err := os.WriteFile(file, b, 0644); err != nil {
 		return errors.Wrap(errWritingConfigFile, err)
 	}
 
 	return nil
 }
 
-// ReadFile - retrieve config from a file
+// ReadFile - retrieve config from a file.
 func ReadFile(file string) (Config, error) {
 	c := Config{}
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return c, errors.Wrap(errReadConfigFile, err)
 	}
@@ -96,7 +96,7 @@ func ReadFile(file string) (Config, error) {
 	return c, nil
 }
 
-// ReadBytes - read config from a bytes
+// ReadBytes - read config from a bytes.
 func ReadBytes(data []byte) (Config, error) {
 	c := Config{}
 	e := toml.Unmarshal(data, &c)

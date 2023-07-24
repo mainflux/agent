@@ -1,0 +1,36 @@
+File = "config.toml"
+
+[channels]
+  control = "ccac0540-6f71-4a3e-af84-28f7bdccfab5"
+  data = "b356be74-9b89-4f33-bb73-c6e17fe3ed77"
+
+[edgex]
+  url = "http://localhost:48090/api/v1/"
+
+[heartbeat]
+  interval = "30s"
+
+[log]
+  level = "debug"
+
+[mqtt]
+  ca_cert = "wee"
+  ca_path = ""
+  cert_path = ""
+  client_cert = "rt"
+  client_key = "we"
+  mtls = false
+  password = "0f6bc453-4e5f-40f6-bc94-de8238b60c19"
+  priv_key_path = ""
+  qos = 0
+  retain = false
+  skip_tls_ver = true
+  url = "tcp://localhost:1883"
+  username = "77d74527-7457-4dc2-9b36-01f01ce62726"
+
+[server]
+  nats_url = "localhost:4222"
+  port = "9999"
+
+[terminal]
+  session_timeout = "30s"

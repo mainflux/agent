@@ -8,9 +8,6 @@ import (
 const (
 	online  = "online"
 	offline = "offline"
-
-	service = "service"
-	device  = "device"
 )
 
 // svc keeps info on service live status.
@@ -39,7 +36,7 @@ type Heartbeat interface {
 }
 
 // interval - duration of interval
-// if service doesnt send heartbeat during  interval it is marked offline
+// if service doesnt send heartbeat during  interval it is marked offline.
 func NewHeartbeat(name, svcType string, interval time.Duration) Heartbeat {
 	ticker := time.NewTicker(interval)
 	s := svc{
@@ -58,17 +55,14 @@ func NewHeartbeat(name, svcType string, interval time.Duration) Heartbeat {
 
 func (s *svc) listen() {
 	go func() {
-		for {
-			select {
-			case <-s.ticker.C:
-				// TODO - we can disable ticker when the status gets OFFLINE
-				// and on the next heartbeat enable it again
-				s.mu.Lock()
-				if time.Now().After(s.info.LastSeen.Add(s.interval)) {
-					s.info.Status = offline
-				}
-				s.mu.Unlock()
+		for range s.ticker.C {
+			// TODO - we can disable ticker when the status gets OFFLINE
+			// and on the next heartbeat enable it again.
+			s.mu.Lock()
+			if time.Now().After(s.info.LastSeen.Add(s.interval)) {
+				s.info.Status = offline
 			}
+			s.mu.Unlock()
 		}
 	}()
 }

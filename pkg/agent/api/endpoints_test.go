@@ -12,23 +12,23 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/mainflux/agent/pkg/agent"
 	"github.com/mainflux/agent/pkg/agent/api"
 	"github.com/mainflux/agent/pkg/agent/mocks"
+	"github.com/nats-io/nats.go"
 
 	"github.com/mainflux/mainflux/logger"
 	"github.com/stretchr/testify/assert"
 )
 
 type testRequest struct {
-	client      *http.Client
-	method      string
-	url         string
-	contentType string
-	token       string
-	body        io.Reader
+	client *http.Client
+	method string
+	url    string
+	body   io.Reader
 }
 
 func (tr testRequest) make() (*http.Response, error) {
@@ -40,17 +40,38 @@ func (tr testRequest) make() (*http.Response, error) {
 	return tr.client.Do(req)
 }
 
-func newService() agent.Service {
-	opts := paho.NewClientOptions()
+func newService() (agent.Service, error) {
+	opts := paho.NewClientOptions().
+		SetUsername(username).
+		AddBroker(mqttAddress).
+		SetClientID("testing")
+
 	mqttClient := paho.NewClient(opts)
-	edgexClient := mocks.NewEdgexClient()
-	config := agent.Config{}
-	logger, err := logger.New(os.Stdout, "debug")
-	if err != nil {
-		fmt.Println(fmt.Sprintf("Failed to create logger: %s", err.Error()))
+	token := mqttClient.Connect()
+	if token.Error() != nil {
+		return nil, token.Error()
 	}
 
-	return agent.New(mqttClient, &config, edgexClient, logger)
+	edgexClient := mocks.NewEdgexClient()
+	config := agent.Config{}
+	config.Heartbeat.Interval = time.Second
+
+	logger, err := logger.New(os.Stdout, "debug")
+	if err != nil {
+		return nil, err
+	}
+
+	nc, err := nats.Connect(natsAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	agentSvc, err := agent.New(mqttClient, &config, edgexClient, nc, logger)
+	if err != nil {
+		return nil, err
+	}
+
+	return agentSvc, nil
 }
 
 func newServer(svc agent.Service) *httptest.Server {
@@ -64,7 +85,11 @@ func toJSON(data interface{}) string {
 }
 
 func TestPublish(t *testing.T) {
-	svc := newService()
+	svc, err := newService()
+	if err != nil {
+		t.Errorf("failed to create service: %v", err)
+		return
+	}
 	ts := newServer(svc)
 	defer ts.Close()
 	client := ts.Client()

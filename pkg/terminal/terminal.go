@@ -12,8 +12,8 @@ import (
 	"github.com/creack/pty"
 
 	"github.com/mainflux/agent/pkg/encoder"
-	"github.com/mainflux/mainflux/errors"
 	"github.com/mainflux/mainflux/logger"
+	"github.com/mainflux/mainflux/pkg/errors"
 )
 
 const (
@@ -21,14 +21,9 @@ const (
 	second   = time.Duration(1 * time.Second)
 )
 
-var (
-	errTerminalSessionStart = errors.New("failed to start terminal session")
-)
-
 type term struct {
 	uuid         string
 	ptmx         *os.File
-	writer       io.Writer
 	done         chan bool
 	topic        string
 	timeout      time.Duration
@@ -95,7 +90,7 @@ func (t *term) resetCounter(timeout time.Duration) {
 func (t *term) decrementCounter() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.timeout = t.timeout - second
+	t.timeout -= second
 	if t.timeout == 0 {
 		t.done <- true
 		t.timer.Stop()

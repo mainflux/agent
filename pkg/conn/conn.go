@@ -60,7 +60,7 @@ func NewBroker(svc agent.Service, client mqtt.Client, chann string, nats *nats.C
 
 }
 
-// Subscribe subscribes to the MQTT message broker
+// Subscribe subscribes to the MQTT message broker.
 func (b *broker) Subscribe() error {
 	topic := fmt.Sprintf("channels/%s/messages/%s", b.channel, reqTopic)
 	s := b.client.Subscribe(topic, 0, b.handleMsg)
@@ -78,10 +78,12 @@ func (b *broker) Subscribe() error {
 	return nil
 }
 
-// handleNatsMsg triggered when new message is received on MQTT broker
+// handleNatsMsg triggered when new message is received on MQTT broker.
 func (b *broker) handleNatsMsg(mc mqtt.Client, msg mqtt.Message) {
 	if topic := extractNatsTopic(msg.Topic()); topic != "" {
-		b.nats.Publish(topic, msg.Payload())
+		if err := b.nats.Publish(topic, msg.Payload()); err != nil {
+			b.logger.Warn(fmt.Sprintf("error publishing message with error: %v", err))
+		}
 	}
 }
 
@@ -99,7 +101,7 @@ func extractNatsTopic(topic string) string {
 	return fmt.Sprintf("%s.%s", commands, natsTopic)
 }
 
-// handleMsg triggered when new message is received on MQTT broker
+// handleMsg triggered when new message is received on MQTT broker.
 func (b *broker) handleMsg(mc mqtt.Client, msg mqtt.Message) {
 	sm, err := senml.Decode(msg.Payload(), senml.JSON)
 	if err != nil {

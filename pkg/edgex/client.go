@@ -6,7 +6,7 @@ package edgex
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 
@@ -17,16 +17,16 @@ import (
 
 type Client interface {
 
-	// PushOperation - pushes operation to EdgeX components
+	// PushOperation - pushes operation to EdgeX components.
 	PushOperation([]string) (string, error)
 
-	// FetchConfig - fetches config from EdgeX components
+	// FetchConfig - fetches config from EdgeX components.
 	FetchConfig([]string) (string, error)
 
-	// FetchMetrics - fetches metrics from EdgeX components
+	// FetchMetrics - fetches metrics from EdgeX components.
 	FetchMetrics(cmdArr []string) (string, error)
 
-	// Ping - ping EdgeX SMA
+	// Ping - ping EdgeX SMA.
 	Ping() (string, error)
 }
 
@@ -35,7 +35,7 @@ type edgexClient struct {
 	logger log.Logger
 }
 
-// NewClient - Creates ne EdgeX client
+// NewClient - Creates ne EdgeX client.
 func NewClient(edgexURL string, logger log.Logger) Client {
 	return &edgexClient{
 		url:    edgexURL,
@@ -43,7 +43,7 @@ func NewClient(edgexURL string, logger log.Logger) Client {
 	}
 }
 
-// PushOperation - pushes operation to EdgeX components
+// PushOperation - pushes operation to EdgeX components.
 func (ec *edgexClient) PushOperation(cmdArr []string) (string, error) {
 	url := ec.url + "operation"
 
@@ -62,16 +62,16 @@ func (ec *edgexClient) PushOperation(cmdArr []string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
 	return string(body), nil
 }
 
-// FetchConfig - fetches config from EdgeX components
+// FetchConfig - fetches config from EdgeX components.
 func (ec *edgexClient) FetchConfig(cmdArr []string) (string, error) {
-	cmdStr := strings.Replace(strings.Join(cmdArr, ","), " ", "", -1)
+	cmdStr := strings.ReplaceAll(strings.Join(cmdArr, ","), " ", "")
 	url := ec.url + "config/" + cmdStr
 
 	resp, err := http.Get(url)
@@ -80,16 +80,16 @@ func (ec *edgexClient) FetchConfig(cmdArr []string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
 	return string(body), nil
 }
 
-// FetchMetrics - fetches metrics from EdgeX components
+// FetchMetrics - fetches metrics from EdgeX components.
 func (ec *edgexClient) FetchMetrics(cmdArr []string) (string, error) {
-	cmdStr := strings.Replace(strings.Join(cmdArr, ","), " ", "", -1)
+	cmdStr := strings.ReplaceAll(strings.Join(cmdArr, ","), " ", "")
 	url := ec.url + "metrics/" + cmdStr
 
 	resp, err := http.Get(url)
@@ -99,14 +99,14 @@ func (ec *edgexClient) FetchMetrics(cmdArr []string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
 	return string(body), nil
 }
 
-// Ping - ping EdgeX SMA
+// Ping - ping EdgeX SMA.
 func (ec *edgexClient) Ping() (string, error) {
 	url := ec.url + "ping"
 
@@ -116,7 +116,7 @@ func (ec *edgexClient) Ping() (string, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
