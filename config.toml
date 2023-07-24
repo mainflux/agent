@@ -29,7 +29,7 @@ File = "config.toml"
   username = "77d74527-7457-4dc2-9b36-01f01ce62726"
 
 [server]
-  nats_url = "localhost:4222"
+  broker_url = ""
   port = "9999"
 
 [terminal]
