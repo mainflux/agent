@@ -8,7 +8,7 @@ require (
 	github.com/edgexfoundry/go-mod-core-contracts v0.1.70
 	github.com/go-kit/kit v0.12.0
 	github.com/go-zoo/bone v1.3.0
-	github.com/mainflux/export v0.1.0
+	github.com/mainflux/export v0.1.1-0.20230724124847-67d0bc7f38cb
 	github.com/mainflux/mainflux v0.0.0-20230713105239-52131eba669c
 	github.com/mainflux/senml v1.5.0
 	github.com/nats-io/nats.go v1.27.1
@@ -87,5 +87,3 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/mainflux/export => /home/sammy/Documents/export
