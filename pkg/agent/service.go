@@ -123,7 +123,7 @@ type agent struct {
 
 func (ag *agent) handle(ctx context.Context, pub messaging.Publisher, logger log.Logger, cfg HeartbeatConfig) handleFunc {
 	return func(msg *messaging.Message) error {
-		sub := msg.Subject
+		sub := msg.Channel
 		tok := strings.Split(sub, ".")
 		if len(tok) < 3 {
 			ag.logger.Error(fmt.Sprintf("Failed: Subject has incorrect length %s", sub))

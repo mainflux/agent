@@ -29,7 +29,7 @@ File = "config.toml"
   username = "77d74527-7457-4dc2-9b36-01f01ce62726"
 
 [server]
-  broker_url = ""
+  broker_url = "amqp://mainflux:mainflux@localhost:5672/"
   port = "9999"
 
 [terminal]

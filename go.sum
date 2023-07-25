@@ -120,6 +120,8 @@ github.com/lestrrat-go/option v1.0.1/go.mod h1:5ZHFbivi4xwXxhxY9XHDe2FHo6/Z7WWmt
 github.com/lib/pq v0.0.0-20180327071824-d34b9ff171c2 h1:hRGSmZu7j271trc9sneMrpOW7GN5ngLm8YUZIPzf394=
 github.com/mainflux/export v0.1.1-0.20230724124847-67d0bc7f38cb h1:+Zz1+/lX3bmt2AWyJHG2yVsJ7vqa0Q2XIYagG1dHj5c=
 github.com/mainflux/export v0.1.1-0.20230724124847-67d0bc7f38cb/go.mod h1:speJE1lnq2emg5o4DqEoOe6nOgFRd0AEYSBBV2bCGKg=
+github.com/mainflux/mainflux v0.0.0-20230713105239-52131eba669c h1:W6b2x4ngTpEC40RqHHktciQd8dKbDZbqKnAz26jliNI=
+github.com/mainflux/mainflux v0.0.0-20230713105239-52131eba669c/go.mod h1:FoeJ13mrfikrsFDW6bOb3C44D5gZ5m9Jt249G1sLKq0=
 github.com/mainflux/senml v1.5.0 h1:GAd1y1eMohfa6sVYcr2iQfVfkkh9l/q7B1TWF5L68xs=
 github.com/mainflux/senml v1.5.0/go.mod h1:SMX76mM5yenjLVjZOM27+njCGkP+AA64O46nRQiBRlE=
 github.com/matttproud/golang_protobuf_extensions v1.0.4 h1:mmDVorXM7PCGKw94cs5zkfA9PSy5pEvNWRP0ET0TIVo=
@@ -164,8 +166,6 @@ github.com/rabbitmq/amqp091-go v1.8.1 h1:RejT1SBUim5doqcL6s7iN6SBmsQqyTgXb1xMlH0
 github.com/rabbitmq/amqp091-go v1.8.1/go.mod h1:+jPrT9iY2eLjRaMSRHUhc3z14E/l85kv/f+6luSD3pc=
 github.com/rogpeppe/go-internal v1.10.0 h1:TMyTOH3F/DB16zRVcYyreMH6GnZZrwQVAoYjRBZyWFQ=
 github.com/ryanuber/go-glob v1.0.0 h1:iQh3xXAumdQ+4Ufa5b25cRpC5TYKlno6hsv6Cb3pkBk=
-github.com/sammyoina/mainflux v0.0.0-20230721115901-4556e641e834 h1:GrfQg8DvrRk7vas16hdo9prgc144gWSsEb7yoqAXwzw=
-github.com/sammyoina/mainflux v0.0.0-20230721115901-4556e641e834/go.mod h1:FoeJ13mrfikrsFDW6bOb3C44D5gZ5m9Jt249G1sLKq0=
 github.com/segmentio/asm v1.2.0 h1:9BQrFxC+YOHJlTlHGkTrFWf59nbL3XnCoFLTwDCI7ys=
 github.com/segmentio/asm v1.2.0/go.mod h1:BqMnlJP91P8d+4ibuonYZw9mfnzI9HfxselHZr5aAcs=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=

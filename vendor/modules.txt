@@ -169,7 +169,7 @@ github.com/lestrrat-go/option
 # github.com/mainflux/export v0.1.1-0.20230724124847-67d0bc7f38cb
 ## explicit; go 1.20
 github.com/mainflux/export/pkg/config
-# github.com/mainflux/mainflux v0.0.0-20230713105239-52131eba669c => github.com/sammyoina/mainflux v0.0.0-20230721115901-4556e641e834
+# github.com/mainflux/mainflux v0.0.0-20230713105239-52131eba669c
 ## explicit; go 1.20
 github.com/mainflux/mainflux
 github.com/mainflux/mainflux/bootstrap
@@ -462,4 +462,3 @@ gopkg.in/yaml.v3
 # robpike.io/filter v0.0.0-20150108201509-2984852a2183
 ## explicit
 robpike.io/filter
-# github.com/mainflux/mainflux => github.com/sammyoina/mainflux v0.0.0-20230721115901-4556e641e834
