@@ -83,7 +83,7 @@ Example configuration:
     username = ""
 
   [Agent.server]
-    nats_url = "localhost:4222"
+    broker_url = "localhost:4222"
     port = "9999"
 
 ```
@@ -105,7 +105,7 @@ Environment:
 | MF_AGENT_CONTROL_CHANNEL               | Channel for sending controls, commands                        |                                        |
 | MF_AGENT_DATA_CHANNEL                  | Channel for data sending                                      |                                        |
 | MF_AGENT_ENCRYPTION                    | Encryption                                                    | false                                  |
-| MF_AGENT_NATS_URL                      | Nats url                                                      | nats://localhost:4222                  |
+| MF_AGENT_BROKER_URL                      | Broker url                                                      | nats://localhost:4222                  |
 | MF_AGENT_MQTT_USERNAME                 | MQTT username, Mainflux thing id                              |                                        |
 | MF_AGENT_MQTT_PASSWORD                 | MQTT password, Mainflux thing key                             |                                        |
 | MF_AGENT_MQTT_SKIP_TLS                 | Skip TLS verification for MQTT                                | true                                   |
@@ -122,11 +122,11 @@ Here `thing` is a Mainflux thing, and control channel from `channels` is used wi
 (i.e. app needs to PUB/SUB on `/channels/<control_channel_id>/messages/req` and `/channels/<control_channel_id>/messages/res`).
 
 ## Sending commands to other services
-You can send commands to other services that are subscribed on the same Nats server as Agent.  
+You can send commands to other services that are subscribed on the same Broker as Agent.  
 Commands are being sent via MQTT to topic:   
 * `channels/<control_channel_id>/messages/services/<service_name>/<subtopic>`  
 
-when messages is received Agent forwards them to Nats on subject:   
+when messages is received Agent forwards them to Broker on subject:   
 * `commands.<service_name>.<subtopic>`.  
 
 Payload is up to the application and service itself.
@@ -142,6 +142,12 @@ Services running on the same host can publish to `heartbeat.<service-name>.<serv
 Agent will keep a record on those service and update their `live` status.
 If heartbeat is not received in 10 sec it marks it `offline`.
 Upon next heartbeat service will be marked `online` again.
+
+To test heartbeat run:
+```bash
+go run -tags <broker_name> ./examples/publish/main.go -s <broker_url> heartbeat.<service-name>.<service-type> "";
+```
+Broker names include: nats and rabbitmq.
 
 To check services that are currently registered to agent you can:
 
