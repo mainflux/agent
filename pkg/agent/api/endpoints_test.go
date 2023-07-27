@@ -62,9 +62,9 @@ func newService(ctx context.Context) (agent.Service, error) {
 		return nil, err
 	}
 
-	pubsub, err := brokers.NewPubSub(natsAddress, "", logger)
+	pubsub, err := brokers.NewPubSub(brokerAddress, "", logger)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to connect to Broker: %s %s", err, natsAddress)
+		return nil, fmt.Errorf("Failed to connect to Broker: %s %s", err, brokerAddress)
 	}
 	defer pubsub.Close()
 
