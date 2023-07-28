@@ -1,11 +1,13 @@
 // Copyright (c) Mainflux
 // SPDX-License-Identifier: Apache-2.0
 
+//go:build !test
 // +build !test
 
 package api
 
 import (
+	"context"
 	"time"
 
 	"github.com/go-kit/kit/metrics"
@@ -56,13 +58,13 @@ func (ms *metricsMiddleware) AddConfig(ec agent.Config) error {
 	return ms.svc.AddConfig(ec)
 }
 
-func (ms *metricsMiddleware) ServiceConfig(uuid, cmdStr string) error {
+func (ms *metricsMiddleware) ServiceConfig(ctx context.Context, uuid, cmdStr string) error {
 	defer func(begin time.Time) {
 		ms.counter.With("method", "service_config").Add(1)
 		ms.latency.With("method", "service_config").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return ms.svc.ServiceConfig(uuid, cmdStr)
+	return ms.svc.ServiceConfig(ctx, uuid, cmdStr)
 }
 
 func (ms *metricsMiddleware) Config() agent.Config {

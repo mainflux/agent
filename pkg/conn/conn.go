@@ -4,14 +4,15 @@
 package conn
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/mainflux/agent/pkg/agent"
 	"github.com/mainflux/mainflux/logger"
+	"github.com/mainflux/mainflux/pkg/messaging"
 	"github.com/mainflux/senml"
-	"github.com/nats-io/nats.go"
 	"robpike.io/filter"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -36,39 +37,41 @@ var _ MqttBroker = (*broker)(nil)
 // MqttBroker represents the MQTT broker.
 type MqttBroker interface {
 	// Subscribes to given topic and receives events.
-	Subscribe() error
+	Subscribe(ctx context.Context) error
 }
 
 type broker struct {
-	svc     agent.Service
-	client  mqtt.Client
-	logger  logger.Logger
-	nats    *nats.Conn
-	channel string
+	svc           agent.Service
+	client        mqtt.Client
+	logger        logger.Logger
+	messageBroker messaging.PubSub
+	channel       string
+	ctx           context.Context
 }
 
 // NewBroker returns new MQTT broker instance.
-func NewBroker(svc agent.Service, client mqtt.Client, chann string, nats *nats.Conn, log logger.Logger) MqttBroker {
+func NewBroker(svc agent.Service, client mqtt.Client, chann string, messBroker messaging.PubSub, log logger.Logger) MqttBroker {
 
 	return &broker{
-		svc:     svc,
-		client:  client,
-		logger:  log,
-		nats:    nats,
-		channel: chann,
+		svc:           svc,
+		client:        client,
+		logger:        log,
+		messageBroker: messBroker,
+		channel:       chann,
 	}
 
 }
 
 // Subscribe subscribes to the MQTT message broker.
-func (b *broker) Subscribe() error {
+func (b *broker) Subscribe(ctx context.Context) error {
 	topic := fmt.Sprintf("channels/%s/messages/%s", b.channel, reqTopic)
+	b.ctx = ctx
 	s := b.client.Subscribe(topic, 0, b.handleMsg)
 	if err := s.Error(); s.Wait() && err != nil {
 		return err
 	}
 	topic = fmt.Sprintf("channels/%s/messages/%s/#", b.channel, servTopic)
-	if b.nats != nil {
+	if b.messageBroker != nil {
 		n := b.client.Subscribe(topic, 0, b.handleNatsMsg)
 		if err := n.Error(); n.Wait() && err != nil {
 			return err
@@ -80,8 +83,11 @@ func (b *broker) Subscribe() error {
 
 // handleNatsMsg triggered when new message is received on MQTT broker.
 func (b *broker) handleNatsMsg(mc mqtt.Client, msg mqtt.Message) {
+	message := messaging.Message{
+		Payload: msg.Payload(),
+	}
 	if topic := extractNatsTopic(msg.Topic()); topic != "" {
-		if err := b.nats.Publish(topic, msg.Payload()); err != nil {
+		if err := b.messageBroker.Publish(b.ctx, topic, &message); err != nil {
 			b.logger.Warn(fmt.Sprintf("error publishing message with error: %v", err))
 		}
 	}
@@ -130,12 +136,12 @@ func (b *broker) handleMsg(mc mqtt.Client, msg mqtt.Message) {
 		}
 	case config:
 		b.logger.Info(fmt.Sprintf("Config service for uuid %s and command string %s", uuid, cmdStr))
-		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
+		if err := b.svc.ServiceConfig(b.ctx, uuid, cmdStr); err != nil {
 			b.logger.Warn(fmt.Sprintf("Execute operation failed: %s", err))
 		}
 	case service:
 		b.logger.Info(fmt.Sprintf("Services view for uuid %s and command string %s", uuid, cmdStr))
-		if err := b.svc.ServiceConfig(uuid, cmdStr); err != nil {
+		if err := b.svc.ServiceConfig(b.ctx, uuid, cmdStr); err != nil {
 			b.logger.Warn(fmt.Sprintf("Services view operation failed: %s", err))
 		}
 	case term:

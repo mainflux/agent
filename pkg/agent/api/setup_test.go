@@ -23,8 +23,8 @@ const (
 )
 
 var (
-	natsAddress string
-	mqttAddress string
+	brokerAddress string
+	mqttAddress   string
 )
 
 func TestMain(m *testing.M) {
@@ -41,7 +41,7 @@ func TestMain(m *testing.M) {
 
 	address := fmt.Sprintf("%s:%s", "localhost", container.GetPort("4222/tcp"))
 	if err := pool.Retry(func() error {
-		natsAddress = address
+		brokerAddress = address
 		return nil
 	}); err != nil {
 		log.Fatalf("Could not connect to docker: %s", err)

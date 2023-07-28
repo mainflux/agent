@@ -23,6 +23,7 @@ import (
 	"github.com/mainflux/mainflux"
 	"github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/mainflux/pkg/errors"
+	"github.com/mainflux/mainflux/pkg/messaging/brokers"
 	nats "github.com/nats-io/nats.go"
 	stdprometheus "github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/sync/errgroup"
@@ -92,6 +93,9 @@ var (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	g, ctx := errgroup.WithContext(ctx)
+
 	cfg, err := loadEnvConfig()
 	if err != nil {
 		log.Fatalf(fmt.Sprintf("Failed to load config: %s", err))
@@ -107,12 +111,11 @@ func main() {
 		logger.Error(fmt.Sprintf("Failed to load config: %s", err))
 	}
 
-	nc, err := nats.Connect(cfg.Server.NatsURL)
+	pubsub, err := brokers.NewPubSub(cfg.Server.BrokerURL, "", logger)
 	if err != nil {
-		logger.Error(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Server.NatsURL))
-		os.Exit(1)
+		logger.Fatal(fmt.Sprintf("Failed to connect to Broker: %s %s", err, cfg.Server.BrokerURL))
 	}
-	defer nc.Close()
+	defer pubsub.Close()
 
 	mqttClient, err := connectToMQTTBroker(cfg.MQTT, logger)
 	if err != nil {
@@ -121,7 +124,7 @@ func main() {
 	}
 	edgexClient := edgex.NewClient(cfg.Edgex.URL, logger)
 
-	svc, err := agent.New(mqttClient, &cfg, edgexClient, nc, logger)
+	svc, err := agent.New(ctx, mqttClient, &cfg, edgexClient, pubsub, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("Error in agent service: %s", err))
 		return
@@ -143,9 +146,7 @@ func main() {
 			Help:      "Total duration of requests in microseconds.",
 		}, []string{"method"}),
 	)
-	b := conn.NewBroker(svc, mqttClient, cfg.Channels.Control, nc, logger)
-	ctx, cancel := context.WithCancel(context.Background())
-	g, ctx := errgroup.WithContext(ctx)
+	b := conn.NewBroker(svc, mqttClient, cfg.Channels.Control, pubsub, logger)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", cfg.Server.Port),
@@ -153,7 +154,7 @@ func main() {
 	}
 
 	g.Go(func() error {
-		return b.Subscribe()
+		return b.Subscribe(ctx)
 	})
 
 	g.Go(func() error {
@@ -172,8 +173,8 @@ func main() {
 
 func loadEnvConfig() (agent.Config, error) {
 	sc := agent.ServerConfig{
-		NatsURL: mainflux.Env(envNatsURL, defNatsURL),
-		Port:    mainflux.Env(envHTTPPort, defHTTPPort),
+		BrokerURL: mainflux.Env(envNatsURL, defNatsURL),
+		Port:      mainflux.Env(envHTTPPort, defHTTPPort),
 	}
 	cc := agent.ChanConfig{
 		Control: mainflux.Env(envCtrlChan, defCtrlChan),

@@ -4,6 +4,7 @@
 package agent
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -20,12 +21,12 @@ import (
 	exp "github.com/mainflux/export/pkg/config"
 	log "github.com/mainflux/mainflux/logger"
 	"github.com/mainflux/mainflux/pkg/errors"
-	"github.com/nats-io/nats.go"
+	"github.com/mainflux/mainflux/pkg/messaging"
 )
 
 const (
 	Path     = "./config.toml"
-	Hearbeat = "heartbeat.>"
+	Hearbeat = "channels.heartbeat.>"
 	Commands = "commands"
 	config   = "config"
 
@@ -39,6 +40,8 @@ const (
 	data    = "data"
 
 	export = "export"
+
+	pubSubID = "agent"
 )
 
 var (
@@ -94,7 +97,7 @@ type Service interface {
 	Config() Config
 
 	// Saves config file.
-	ServiceConfig(uuid, cmdStr string) error
+	ServiceConfig(ctx context.Context, uuid, cmdStr string) error
 
 	// Services returns service list.
 	Services() []Info
@@ -113,18 +116,52 @@ type agent struct {
 	config      *Config
 	edgexClient edgex.Client
 	logger      log.Logger
-	nats        *nats.Conn
+	broker      messaging.PubSub
 	svcs        map[string]Heartbeat
 	terminals   map[string]terminal.Session
 }
 
+func (ag *agent) handle(ctx context.Context, pub messaging.Publisher, logger log.Logger, cfg HeartbeatConfig) handleFunc {
+	return func(msg *messaging.Message) error {
+		sub := msg.Channel
+		tok := strings.Split(sub, ".")
+		if len(tok) < 3 {
+			ag.logger.Error(fmt.Sprintf("Failed: Subject has incorrect length %s", sub))
+			return fmt.Errorf("Failed: Subject has incorrect length %s", sub)
+		}
+		svcname := tok[1]
+		svctype := tok[2]
+		// Service name is extracted from the subtopic
+		// if there is multiple instances of the same service
+		// we will have to add another distinction.
+		if _, ok := ag.svcs[svcname]; !ok {
+			svc := NewHeartbeat(svcname, svctype, cfg.Interval)
+			ag.svcs[svcname] = svc
+			ag.logger.Info(fmt.Sprintf("Services '%s-%s' registered", svcname, svctype))
+		}
+		serv := ag.svcs[svcname]
+		serv.Update()
+		return nil
+	}
+}
+
+type handleFunc func(msg *messaging.Message) error
+
+func (h handleFunc) Handle(msg *messaging.Message) error {
+	return h(msg)
+}
+
+func (h handleFunc) Cancel() error {
+	return nil
+}
+
 // New returns agent service implementation.
-func New(mc paho.Client, cfg *Config, ec edgex.Client, nc *nats.Conn, logger log.Logger) (Service, error) {
+func New(ctx context.Context, mc paho.Client, cfg *Config, ec edgex.Client, broker messaging.PubSub, logger log.Logger) (Service, error) {
 	ag := &agent{
 		mqttClient:  mc,
 		edgexClient: ec,
 		config:      cfg,
-		nats:        nc,
+		broker:      broker,
 		logger:      logger,
 		svcs:        make(map[string]Heartbeat),
 		terminals:   make(map[string]terminal.Session),
@@ -134,26 +171,7 @@ func New(mc paho.Client, cfg *Config, ec edgex.Client, nc *nats.Conn, logger log
 		ag.logger.Error(fmt.Sprintf("invalid heartbeat interval %d", cfg.Heartbeat.Interval))
 	}
 
-	_, err := ag.nats.Subscribe(Hearbeat, func(msg *nats.Msg) {
-		sub := msg.Subject
-		tok := strings.Split(sub, ".")
-		if len(tok) < 3 {
-			ag.logger.Error(fmt.Sprintf("Failed: Subject has incorrect length %s", sub))
-			return
-		}
-		svcname := tok[1]
-		svctype := tok[2]
-		// Service name is extracted from the subtopic
-		// if there is multiple instances of the same service
-		// we will have to add another distinction.
-		if _, ok := ag.svcs[svcname]; !ok {
-			svc := NewHeartbeat(svcname, svctype, cfg.Heartbeat.Interval)
-			ag.svcs[svcname] = svc
-			ag.logger.Info(fmt.Sprintf("Services '%s-%s' registered", svcname, svctype))
-		}
-		serv := ag.svcs[svcname]
-		serv.Update()
-	})
+	err := ag.broker.Subscribe(ctx, pubSubID, Hearbeat, ag.handle(ctx, ag.broker, logger, cfg.Heartbeat))
 
 	if err != nil {
 		return ag, errors.Wrap(errNatsSubscribing, err)
@@ -224,7 +242,7 @@ func (a *agent) Control(uuid, cmdStr string) error {
 //
 //	b, _ := toml.Marshal(cfg)
 //	config_file_content := base64.StdEncoding.EncodeToString(b).
-func (a *agent) ServiceConfig(uuid, cmdStr string) error {
+func (a *agent) ServiceConfig(ctx context.Context, uuid, cmdStr string) error {
 	cmdArgs := strings.Split(strings.ReplaceAll(cmdStr, " ", ""), ",")
 	if len(cmdArgs) < 1 {
 		return errInvalidCommand
@@ -245,7 +263,7 @@ func (a *agent) ServiceConfig(uuid, cmdStr string) error {
 		service := cmdArgs[1]
 		fileName := cmdArgs[2]
 		fileCont := cmdArgs[3]
-		if err := a.saveConfig(service, fileName, fileCont); err != nil {
+		if err := a.saveConfig(ctx, service, fileName, fileCont); err != nil {
 			return err
 		}
 	}
@@ -334,7 +352,7 @@ func (a *agent) processResponse(uuid, cmd, resp string) error {
 	return nil
 }
 
-func (a *agent) saveConfig(service, fileName, fileCont string) error {
+func (a *agent) saveConfig(ctx context.Context, service, fileName, fileCont string) error {
 	switch service {
 	case export:
 		content, err := base64.StdEncoding.DecodeString(fileCont)
@@ -354,7 +372,7 @@ func (a *agent) saveConfig(service, fileName, fileCont string) error {
 		return errNoSuchService
 	}
 
-	return a.nats.Publish(fmt.Sprintf("%s.%s.%s", Commands, service, config), []byte(""))
+	return a.broker.Publish(ctx, fmt.Sprintf("%s.%s.%s", Commands, service, config), &messaging.Message{})
 }
 
 func (a *agent) AddConfig(c Config) error {

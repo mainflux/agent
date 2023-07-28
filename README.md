@@ -1,6 +1,6 @@
 # Mainflux IoT Agent
 
-![](https://github.com/mainflux/agent/workflows/Go/badge.svg)
+![badge](https://github.com/mainflux/agent/workflows/Go/badge.svg)
 ![ci][ci]
 ![release][release]
 [![go report card][grc-badge]][grc-url]
@@ -14,6 +14,7 @@
 Mainflux IoT Agent is a communication, execution and SW management agent for Mainflux system.
 
 ## Install
+
 Get the code:
 
 ```bash
@@ -22,11 +23,13 @@ cd $GOPATH/github.com/mainflux/agent
 ```
 
 Make:
+
 ```bash
 make
 ```
 
 ## Usage
+
 Get Nats server and start it, by default it starts on port `4222`
 
 ```bash
@@ -44,6 +47,7 @@ MF_AGENT_BOOTSTRAP_KEY=<bootstrap_key> \
 MF_AGENT_BOOTSTRAP_URL=http://localhost:9013/things/bootstrap \
 build/mainflux-agent
 ```
+
 or,if [Mainflux UI](https://github.com/mainflux/ui) is used,
 
 ```bash
@@ -54,9 +58,11 @@ build/mainflux-agent
 ```
 
 ### Config
+
 Agent configuration is kept in `config.toml` if not otherwise specified with env var.
 
 Example configuration:
+
 ```toml
 [Agent]
 
@@ -83,7 +89,7 @@ Example configuration:
     username = ""
 
   [Agent.server]
-    nats_url = "localhost:4222"
+    broker_url = "localhost:4222"
     port = "9999"
 
 ```
@@ -105,7 +111,7 @@ Environment:
 | MF_AGENT_CONTROL_CHANNEL               | Channel for sending controls, commands                        |                                        |
 | MF_AGENT_DATA_CHANNEL                  | Channel for data sending                                      |                                        |
 | MF_AGENT_ENCRYPTION                    | Encryption                                                    | false                                  |
-| MF_AGENT_NATS_URL                      | Nats url                                                      | nats://localhost:4222                  |
+| MF_AGENT_BROKER_URL                    | Broker url                                                      | nats://localhost:4222                  |
 | MF_AGENT_MQTT_USERNAME                 | MQTT username, Mainflux thing id                              |                                        |
 | MF_AGENT_MQTT_PASSWORD                 | MQTT password, Mainflux thing key                             |                                        |
 | MF_AGENT_MQTT_SKIP_TLS                 | Skip TLS verification for MQTT                                | true                                   |
@@ -122,12 +128,15 @@ Here `thing` is a Mainflux thing, and control channel from `channels` is used wi
 (i.e. app needs to PUB/SUB on `/channels/<control_channel_id>/messages/req` and `/channels/<control_channel_id>/messages/res`).
 
 ## Sending commands to other services
-You can send commands to other services that are subscribed on the same Nats server as Agent.  
-Commands are being sent via MQTT to topic:   
-* `channels/<control_channel_id>/messages/services/<service_name>/<subtopic>`  
 
-when messages is received Agent forwards them to Nats on subject:   
-* `commands.<service_name>.<subtopic>`.  
+You can send commands to other services that are subscribed on the same Broker as Agent.  
+Commands are being sent via MQTT to topic:
+
+* `channels/<control_channel_id>/messages/services/<service_name>/<subtopic>`
+
+when messages is received Agent forwards them to Broker on subject:
+
+* `commands.<service_name>.<subtopic>`.
 
 Payload is up to the application and service itself.
 
@@ -138,16 +147,26 @@ mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_channel_id>/mess
 ```
 
 ## Heartbeat service
+
 Services running on the same host can publish to `heartbeat.<service-name>.<service-type>` a heartbeat message.  
 Agent will keep a record on those service and update their `live` status.
 If heartbeat is not received in 10 sec it marks it `offline`.
 Upon next heartbeat service will be marked `online` again.
+
+To test heartbeat run:
+
+```bash
+go run -tags <broker_name> ./examples/publish/main.go -s <broker_url> heartbeat.<service-name>.<service-type> "";
+```
+
+Broker names include: nats and rabbitmq.
 
 To check services that are currently registered to agent you can:
 
 ```bash
 curl -s -S X GET http://localhost:9999/services
 ```
+
 ```json
 [
   {
@@ -196,23 +215,28 @@ Check the output in terminal where you subscribed for results. You should see so
 
 
 ## How to save config via agent
+
 Agent can be used to send configuration file for the [Export][export] service from cloud to gateway via MQTT.  
 Here is the example command:
 
 ```bash
 mosquitto_pub -u <thing_id> -P <thing_key> -t channels/<control_channel_id>/messages/req -h localhost -p 1883  -m  "[{\"bn\":\"1:\", \"n\":\"config\", \"vs\":\"<config_file_path>, <file_content_base64>\"}]"
+
 ```
+
 * `<config_file_path>` - file path where to save contents
 * `<file_content_base64>` - file content, base64 encoded marshaled toml.
 
 Here is an example how to make payload for the command:
+
 ```go
 b,_ := toml.Marshal(export.Config)
 payload := base64.StdEncoding.EncodeToString(b)
 ```
 
 Example payload:
-```
+
+```text
 RmlsZSA9ICIuLi9jb25maWdzL2NvbmZpZy50b21sIgoKW2V4cF0KICBsb2dfbGV2ZWwgPSAiZGVidWciCiAgbmF0cyA9ICJuYXRzOi8vMTI3LjAuMC4xOjQyMjIiCiAgcG9ydCA9ICI4MTcwIgoKW21xdHRdCiAgY2FfcGF0aCA9ICJjYS5jcnQiCiAgY2VydF9wYXRoID0gInRoaW5nLmNydCIKICBjaGFubmVsID0gIiIKICBob3N0ID0gInRjcDovL2xvY2FsaG9zdDoxODgzIgogIG10bHMgPSBmYWxzZQogIHBhc3N3b3JkID0gImFjNmI1N2UwLTliNzAtNDVkNi05NGM4LWU2N2FjOTA4NjE2NSIKICBwcml2X2tleV9wYXRoID0gInRoaW5nLmtleSIKICBxb3MgPSAwCiAgcmV0YWluID0gZmFsc2UKICBza2lwX3Rsc192ZXIgPSBmYWxzZQogIHVzZXJuYW1lID0gIjRhNDM3ZjQ2LWRhN2ItNDQ2OS05NmI3LWJlNzU0YjVlOGQzNiIKCltbcm91dGVzXV0KICBtcXR0X3RvcGljID0gIjRjNjZhNzg1LTE5MDAtNDg0NC04Y2FhLTU2ZmI4Y2ZkNjFlYiIKICBuYXRzX3RvcGljID0gIioiCg==
 ```
 

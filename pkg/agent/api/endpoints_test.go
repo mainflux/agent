@@ -4,6 +4,7 @@
 package api_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,9 +19,9 @@ import (
 	"github.com/mainflux/agent/pkg/agent"
 	"github.com/mainflux/agent/pkg/agent/api"
 	"github.com/mainflux/agent/pkg/agent/mocks"
-	"github.com/nats-io/nats.go"
 
 	"github.com/mainflux/mainflux/logger"
+	"github.com/mainflux/mainflux/pkg/messaging/brokers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,7 +41,7 @@ func (tr testRequest) make() (*http.Response, error) {
 	return tr.client.Do(req)
 }
 
-func newService() (agent.Service, error) {
+func newService(ctx context.Context) (agent.Service, error) {
 	opts := paho.NewClientOptions().
 		SetUsername(username).
 		AddBroker(mqttAddress).
@@ -61,12 +62,13 @@ func newService() (agent.Service, error) {
 		return nil, err
 	}
 
-	nc, err := nats.Connect(natsAddress)
+	pubsub, err := brokers.NewPubSub(brokerAddress, "", logger)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to connect to Broker: %s %s", err, brokerAddress)
 	}
+	defer pubsub.Close()
 
-	agentSvc, err := agent.New(mqttClient, &config, edgexClient, nc, logger)
+	agentSvc, err := agent.New(ctx, mqttClient, &config, edgexClient, pubsub, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +87,7 @@ func toJSON(data interface{}) string {
 }
 
 func TestPublish(t *testing.T) {
-	svc, err := newService()
+	svc, err := newService(context.TODO())
 	if err != nil {
 		t.Errorf("failed to create service: %v", err)
 		return
