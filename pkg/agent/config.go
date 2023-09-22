@@ -6,7 +6,6 @@ package agent
 import (
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"os"
 	"time"
 
@@ -14,7 +13,12 @@ import (
 	"github.com/pelletier/go-toml"
 )
 
-var ErrWritingToml = errors.New("error writing to toml file")
+var (
+	ErrWritingToml   = errors.New("error writing to toml file")
+	errReadingFile   = errors.New("error reading config file")
+	errUnmarshalToml = errors.New("error unmarshaling toml")
+	errMarshalToml   = errors.New("error marshaling toml")
+)
 
 type ServerConfig struct {
 	Port      string `toml:"port" json:"port"`
@@ -88,7 +92,7 @@ func NewConfig(sc ServerConfig, cc ChanConfig, ec EdgexConfig, lc LogConfig, mc 
 func SaveConfig(c Config) error {
 	b, err := toml.Marshal(c)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error reading config file: %s", err))
+		return errors.Wrap(errMarshalToml, err)
 	}
 	if err := os.WriteFile(c.File, b, 0644); err != nil {
 		return errors.Wrap(ErrWritingToml, err)
@@ -96,16 +100,16 @@ func SaveConfig(c Config) error {
 	return nil
 }
 
-// Read - retrieve config from a file.
+// ReadConfig - retrieve config from a file.
 func ReadConfig(file string) (Config, error) {
 	data, err := os.ReadFile(file)
 	c := Config{}
 	if err != nil {
-		return c, errors.New(fmt.Sprintf("Error reading config file: %s", err))
+		return Config{}, errors.Wrap(errReadingFile, err)
 	}
 
 	if err := toml.Unmarshal(data, &c); err != nil {
-		return Config{}, errors.New(fmt.Sprintf("Error unmarshaling toml: %s", err))
+		return Config{}, errors.Wrap(errUnmarshalToml, err)
 	}
 	return c, nil
 }
