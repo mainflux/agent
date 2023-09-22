@@ -40,7 +40,9 @@ func TestBootstrap(t *testing.T) {
 			  }
 			`
 			w.WriteHeader(http.StatusOK)
-			io.WriteString(w, resp)
+			if _, err := io.WriteString(w, resp); err != nil {
+				t.Errorf(err.Error())
+			}
 			return
 		}
 		// Simulate a successful response.
@@ -75,7 +77,9 @@ func TestBootstrap(t *testing.T) {
 		  }
 		`
 		w.WriteHeader(http.StatusOK)
-		io.WriteString(w, resp)
+		if _, err := io.WriteString(w, resp); err != nil {
+			t.Errorf(err.Error())
+		}
 	}))
 	defer mockServer.Close()
 	mockLogger := logger.NewMock()
