@@ -126,8 +126,8 @@ func (ag *agent) handle(ctx context.Context, pub messaging.Publisher, logger log
 		sub := msg.Channel
 		tok := strings.Split(sub, ".")
 		if len(tok) < 3 {
-			ag.logger.Error(fmt.Sprintf("Failed: Subject has incorrect length %s", sub))
-			return fmt.Errorf("Failed: Subject has incorrect length %s", sub)
+			ag.logger.Error(fmt.Sprintf("failed: subject has incorrect length %s", sub))
+			return fmt.Errorf("failed: subject has incorrect length %s", sub)
 		}
 		svcname := tok[1]
 		svctype := tok[2]
