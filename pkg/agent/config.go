@@ -14,6 +14,8 @@ import (
 	"github.com/pelletier/go-toml"
 )
 
+var ErrWritingToml = errors.New("error writing to toml file")
+
 type ServerConfig struct {
 	Port      string `toml:"port" json:"port"`
 	BrokerURL string `toml:"broker_url" json:"broker_url"`
@@ -89,7 +91,7 @@ func SaveConfig(c Config) error {
 		return errors.New(fmt.Sprintf("Error reading config file: %s", err))
 	}
 	if err := os.WriteFile(c.File, b, 0644); err != nil {
-		return errors.New(fmt.Sprintf("Error writing toml: %s", err))
+		return errors.Wrap(ErrWritingToml, err)
 	}
 	return nil
 }

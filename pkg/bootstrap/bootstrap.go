@@ -25,6 +25,11 @@ import (
 
 const exportConfigFile = "/configs/export/config.toml"
 
+var (
+	errInvalidBootstrapRetriesValue = errors.New("invalid BOOTSTRAP_RETRIES value")
+	errInvalidBootstrapRetryDelay   = errors.New("invalid BOOTSTRAP_RETRY_DELAY_SECONDS value")
+)
+
 // Config represents the parameters for bootstrapping.
 type Config struct {
 	URL           string
@@ -46,20 +51,20 @@ type ConfigContent struct {
 }
 
 type deviceConfig struct {
-	MainfluxID       string              `json:"mainflux_id"`
-	MainfluxKey      string              `json:"mainflux_key"`
-	MainfluxChannels []bootstrap.Channel `json:"mainflux_channels"`
-	ClientKey        string              `json:"client_key"`
-	ClientCert       string              `json:"client_cert"`
-	CaCert           string              `json:"ca_cert"`
-	SvcsConf         ServicesConfig      `json:"-"`
+	ThingID    string              `json:"thing_id"`
+	ThingKey   string              `json:"thing_key"`
+	Channels   []bootstrap.Channel `json:"channels"`
+	ClientKey  string              `json:"client_key"`
+	ClientCert string              `json:"client_cert"`
+	CaCert     string              `json:"ca_cert"`
+	SvcsConf   ServicesConfig      `json:"-"`
 }
 
 // Bootstrap - Retrieve device config.
 func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	retries, err := strconv.ParseUint(cfg.Retries, 10, 64)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Invalid BOOTSTRAP_RETRIES value: %s", err))
+		return errors.Wrap(errInvalidBootstrapRetriesValue, err)
 	}
 
 	if retries == 0 {
@@ -69,7 +74,7 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 
 	retryDelaySec, err := strconv.ParseUint(cfg.RetryDelaySec, 10, 64)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Invalid BOOTSTRAP_RETRY_DELAY_SECONDS value: %s", err))
+		return errors.Wrap(errInvalidBootstrapRetryDelay, err)
 	}
 
 	logger.Info(fmt.Sprintf("Requesting config for %s from %s", cfg.ID, cfg.URL))
@@ -91,15 +96,15 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		}
 	}
 
-	if len(dc.MainfluxChannels) < 2 {
+	if len(dc.Channels) < 2 {
 		return agent.ErrMalformedEntity
 	}
 
-	ctrlChan := dc.MainfluxChannels[0].ID
-	dataChan := dc.MainfluxChannels[1].ID
-	if dc.MainfluxChannels[0].Metadata["type"] == "data" {
-		ctrlChan = dc.MainfluxChannels[1].ID
-		dataChan = dc.MainfluxChannels[0].ID
+	ctrlChan := dc.Channels[0].ID
+	dataChan := dc.Channels[1].ID
+	if dc.Channels[0].Metadata["type"] == "data" {
+		ctrlChan = dc.Channels[1].ID
+		dataChan = dc.Channels[0].ID
 	}
 
 	sc := dc.SvcsConf.Agent.Server
@@ -111,8 +116,8 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 	lc := dc.SvcsConf.Agent.Log
 
 	mc := dc.SvcsConf.Agent.MQTT
-	mc.Password = dc.MainfluxKey
-	mc.Username = dc.MainfluxID
+	mc.Password = dc.ThingKey
+	mc.Username = dc.ThingID
 	mc.ClientCert = dc.ClientCert
 	mc.ClientKey = dc.ClientKey
 	mc.CaCert = dc.CaCert
@@ -215,7 +220,6 @@ func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (d
 	if err := json.Unmarshal([]byte(body), &h); err != nil {
 		return deviceConfig{}, err
 	}
-	fmt.Println(h.Content)
 	sc := ServicesConfig{}
 	if err := json.Unmarshal([]byte(h.Content), &sc); err != nil {
 		return deviceConfig{}, err
