@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"testing"
 	"time"
 )
@@ -12,7 +13,8 @@ const (
 )
 
 func TestNewHeartbeat(t *testing.T) {
-	heartbeat := NewHeartbeat(name, serviceType, interval)
+	ctx, cancel := context.WithCancel(context.Background())
+	heartbeat := NewHeartbeat(ctx, name, serviceType, interval)
 
 	// Check initial status and info
 	info := heartbeat.Info()
@@ -25,10 +27,14 @@ func TestNewHeartbeat(t *testing.T) {
 	if info.Status != online {
 		t.Errorf("Expected initial status to be %s, but got %s", online, info.Status)
 	}
+	t.Cleanup(func() {
+		cancel()
+	})
 }
 
 func TestHeartbeat_Update(t *testing.T) {
-	heartbeat := NewHeartbeat(name, serviceType, interval)
+	ctx, cancel := context.WithCancel(context.Background())
+	heartbeat := NewHeartbeat(ctx, name, serviceType, interval)
 
 	// Sleep for more than the interval to simulate an update
 	time.Sleep(3 * time.Second)
@@ -40,10 +46,14 @@ func TestHeartbeat_Update(t *testing.T) {
 	if info.Status != online {
 		t.Errorf("Expected status to be %s, but got %s", online, info.Status)
 	}
+	t.Cleanup(func() {
+		cancel()
+	})
 }
 
 func TestHeartbeat_StatusOffline(t *testing.T) {
-	heartbeat := NewHeartbeat(name, serviceType, interval)
+	ctx, cancel := context.WithCancel(context.Background())
+	heartbeat := NewHeartbeat(ctx, name, serviceType, interval)
 
 	// Sleep for more than two intervals to simulate offline status
 	time.Sleep(5 * time.Second)
@@ -53,4 +63,7 @@ func TestHeartbeat_StatusOffline(t *testing.T) {
 	if info.Status != offline {
 		t.Errorf("Expected status to be %s, but got %s", offline, info.Status)
 	}
+	t.Cleanup(func() {
+		cancel()
+	})
 }

@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"sync"
 	"time"
 )
@@ -37,7 +38,7 @@ type Heartbeat interface {
 
 // interval - duration of interval
 // if service doesnt send heartbeat during  interval it is marked offline.
-func NewHeartbeat(name, svcType string, interval time.Duration) Heartbeat {
+func NewHeartbeat(ctx context.Context, name, svcType string, interval time.Duration) Heartbeat {
 	ticker := time.NewTicker(interval)
 	s := svc{
 		info: Info{
@@ -49,13 +50,14 @@ func NewHeartbeat(name, svcType string, interval time.Duration) Heartbeat {
 		ticker:   ticker,
 		interval: interval,
 	}
-	s.listen()
+	go s.listen(ctx)
 	return &s
 }
 
-func (s *svc) listen() {
-	go func() {
-		for range s.ticker.C {
+func (s *svc) listen(ctx context.Context) {
+	for {
+		select {
+		case <-s.ticker.C:
 			// TODO - we can disable ticker when the status gets OFFLINE
 			// and on the next heartbeat enable it again.
 			s.mu.Lock()
@@ -63,8 +65,10 @@ func (s *svc) listen() {
 				s.info.Status = offline
 			}
 			s.mu.Unlock()
+		case <-ctx.Done():
+			return
 		}
-	}()
+	}
 }
 
 func (s *svc) Update() {

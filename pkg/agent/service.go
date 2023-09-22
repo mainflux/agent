@@ -135,7 +135,7 @@ func (ag *agent) handle(ctx context.Context, pub messaging.Publisher, logger log
 		// if there is multiple instances of the same service
 		// we will have to add another distinction.
 		if _, ok := ag.svcs[svcname]; !ok {
-			svc := NewHeartbeat(svcname, svctype, cfg.Interval)
+			svc := NewHeartbeat(ctx, svcname, svctype, cfg.Interval)
 			ag.svcs[svcname] = svc
 			ag.logger.Info(fmt.Sprintf("Services '%s-%s' registered", svcname, svctype))
 		}
