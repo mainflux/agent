@@ -29,6 +29,7 @@ func TestNewHeartbeat(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		cancel()
+		heartbeat.Close()
 	})
 }
 
@@ -48,6 +49,7 @@ func TestHeartbeat_Update(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		cancel()
+		heartbeat.Close()
 	})
 }
 
@@ -65,5 +67,6 @@ func TestHeartbeat_StatusOffline(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		cancel()
+		heartbeat.Close()
 	})
 }
