@@ -5,11 +5,13 @@ import (
 	"time"
 )
 
-func TestNewHeartbeat(t *testing.T) {
-	name := "TestService"
-	serviceType := "TestType"
-	interval := 2 * time.Second
+const (
+	name        = "TestService"
+	serviceType = "TestType"
+	interval    = 2 * time.Second
+)
 
+func TestNewHeartbeat(t *testing.T) {
 	heartbeat := NewHeartbeat(name, serviceType, interval)
 
 	// Check initial status and info
@@ -26,10 +28,6 @@ func TestNewHeartbeat(t *testing.T) {
 }
 
 func TestHeartbeat_Update(t *testing.T) {
-	name := "TestService"
-	serviceType := "TestType"
-	interval := 2 * time.Second
-
 	heartbeat := NewHeartbeat(name, serviceType, interval)
 
 	// Sleep for more than the interval to simulate an update
@@ -45,10 +43,6 @@ func TestHeartbeat_Update(t *testing.T) {
 }
 
 func TestHeartbeat_StatusOffline(t *testing.T) {
-	name := "TestService"
-	serviceType := "TestType"
-	interval := 2 * time.Second
-
 	heartbeat := NewHeartbeat(name, serviceType, interval)
 
 	// Sleep for more than two intervals to simulate offline status
