@@ -39,6 +39,7 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          build-args: SVC=agent,VERSION=latest
+          build-args: |
+            SVC=agent
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
