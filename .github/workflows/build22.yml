@@ -39,6 +39,6 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          build-args: SVC=apigate,VERSION=latest
+          build-args: SVC=agent,VERSION=latest
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
