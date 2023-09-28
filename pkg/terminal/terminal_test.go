@@ -8,6 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	uuid    = "test-uuid"
+	timeout = 5 * time.Second
+)
+
 // MockPublish is a mock function for the publish function used in NewSession.
 func MockPublish(channel, payload string) error {
 	return nil
@@ -15,9 +20,6 @@ func MockPublish(channel, payload string) error {
 
 func TestSessionWrite(t *testing.T) {
 	publish := MockPublish
-
-	uuid := "test-uuid"
-	timeout := 5 * time.Second
 
 	session, err := NewSession(uuid, timeout, publish, logger.NewMock())
 	if err != nil {
@@ -36,9 +38,6 @@ func TestSessionWrite(t *testing.T) {
 func TestSessionSend(t *testing.T) {
 	publish := MockPublish
 
-	uuid := "test-uuid"
-	timeout := 5 * time.Second
-
 	session, err := NewSession(uuid, timeout, publish, logger.NewMock())
 	if err != nil {
 		t.Fatalf("Expected no error, but got: %v", err)
@@ -54,9 +53,6 @@ func TestSessionSend(t *testing.T) {
 
 func TestSessionIsDone(t *testing.T) {
 	publish := MockPublish
-
-	uuid := "test-uuid"
-	timeout := 5 * time.Second
 
 	session, err := NewSession(uuid, timeout, publish, logger.NewMock())
 	if err != nil {

@@ -9,8 +9,9 @@ import (
 	"github.com/mainflux/mainflux/logger"
 )
 
+const expectedResponse = "Response"
+
 func TestPushOperation(t *testing.T) {
-	expectedResponse := "Response"
 	// Create a mock HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check the HTTP request
@@ -54,7 +55,6 @@ func TestPushOperation(t *testing.T) {
 }
 
 func TestFetchConfig(t *testing.T) {
-	expectedResponse := "Response"
 
 	// Create a mock HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -92,7 +92,6 @@ func TestFetchConfig(t *testing.T) {
 }
 
 func TestFetchMetrics(t *testing.T) {
-	expectedResponse := "Response"
 
 	// Create a mock HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +129,6 @@ func TestFetchMetrics(t *testing.T) {
 }
 
 func TestPing(t *testing.T) {
-	expectedResponse := "Response"
 	// Create a mock HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check the HTTP request

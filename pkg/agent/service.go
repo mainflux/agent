@@ -107,6 +107,9 @@ type Service interface {
 
 	// Publish message.
 	Publish(string, string) error
+
+	// Closes all connections.
+	Close() error
 }
 
 var _ Service = (*agent)(nil)
@@ -119,6 +122,14 @@ type agent struct {
 	broker      messaging.PubSub
 	svcs        map[string]Heartbeat
 	terminals   map[string]terminal.Session
+}
+
+func (ag *agent) Close() error {
+	ag.mqttClient.Disconnect(1)
+	for _, svc := range ag.svcs {
+		svc.Close()
+	}
+	return ag.broker.Close()
 }
 
 func (ag *agent) handle(ctx context.Context, pub messaging.Publisher, logger log.Logger, cfg HeartbeatConfig) handleFunc {

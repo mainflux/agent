@@ -119,3 +119,16 @@ func (lm loggingMiddleware) Terminal(uuid, cmdStr string) (err error) {
 
 	return lm.svc.Terminal(uuid, cmdStr)
 }
+
+func (lm loggingMiddleware) Close() (err error) {
+	defer func(begin time.Time) {
+		message := fmt.Sprintf("Method close took %s to complete", time.Since(begin))
+		if err != nil {
+			lm.logger.Warn(fmt.Sprintf("%s with error: %s.", message, err))
+			return
+		}
+		lm.logger.Info(fmt.Sprintf("%s without errors.", message))
+	}(time.Now())
+
+	return lm.svc.Close()
+}

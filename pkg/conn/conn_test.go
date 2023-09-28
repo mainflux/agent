@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Mocks for testing
+// Mocks for testing.
 type mockService struct{}
 
 func (m *mockService) Config() agent.Config                         { return agent.Config{} }
@@ -24,6 +24,7 @@ func (m *mockService) Execute(uuid, command string) (string, error) { return "",
 func (m *mockService) ServiceConfig(ctx context.Context, uuid, command string) error {
 	return nil
 }
+func (m *mockService) Close() error                        { return nil }
 func (m *mockService) Terminal(uuid, command string) error { return nil }
 
 type mockMQTTClient struct {
