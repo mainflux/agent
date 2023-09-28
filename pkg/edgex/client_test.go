@@ -10,6 +10,7 @@ import (
 )
 
 func TestPushOperation(t *testing.T) {
+	expectedResponse := "Response"
 	// Create a mock HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check the HTTP request
@@ -32,7 +33,9 @@ func TestPushOperation(t *testing.T) {
 
 		// Respond with a dummy response
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Response"))
+		if _, err := w.Write([]byte(expectedResponse)); err != nil {
+			t.Errorf("error writing response %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -45,13 +48,14 @@ func TestPushOperation(t *testing.T) {
 		t.Errorf("Error calling PushOperation: %v", err)
 	}
 
-	expectedResponse := "Response"
 	if response != expectedResponse {
 		t.Errorf("Expected response %s, got %s", expectedResponse, response)
 	}
 }
 
 func TestFetchConfig(t *testing.T) {
+	expectedResponse := "Response"
+
 	// Create a mock HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check the HTTP request
@@ -67,7 +71,9 @@ func TestFetchConfig(t *testing.T) {
 
 		// Respond with a dummy response
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Response"))
+		if _, err := w.Write([]byte(expectedResponse)); err != nil {
+			t.Errorf("error writing response %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -80,7 +86,6 @@ func TestFetchConfig(t *testing.T) {
 		t.Errorf("Error calling FetchConfig: %v", err)
 	}
 
-	expectedResponse := "Response"
 	if response != expectedResponse {
 		t.Errorf("Expected response %s, got %s", expectedResponse, response)
 	}
@@ -104,7 +109,9 @@ func TestFetchMetrics(t *testing.T) {
 
 		// Respond with a dummy response
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(expectedResponse))
+		if _, err := w.Write([]byte(expectedResponse)); err != nil {
+			t.Errorf("error writing response %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -123,6 +130,7 @@ func TestFetchMetrics(t *testing.T) {
 }
 
 func TestPing(t *testing.T) {
+	expectedResponse := "Response"
 	// Create a mock HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check the HTTP request
@@ -138,7 +146,9 @@ func TestPing(t *testing.T) {
 
 		// Respond with a dummy response
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Response"))
+		if _, err := w.Write([]byte(expectedResponse)); err != nil {
+			t.Errorf("error writing response %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -151,7 +161,6 @@ func TestPing(t *testing.T) {
 		t.Errorf("Error calling Ping: %v", err)
 	}
 
-	expectedResponse := "Response"
 	if response != expectedResponse {
 		t.Errorf("Expected response %s, got %s", expectedResponse, response)
 	}
