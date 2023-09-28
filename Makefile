@@ -37,7 +37,7 @@ define make_docker
 		--build-arg VERSION=$(VERSION) \
 		--build-arg COMMIT=$(COMMIT) \
 		--build-arg TIME=$(TIME) \
-		--tag=sammyoina/$(svc) \
+		--tag=Mainflux/$(svc) \
 		-f docker/Dockerfile .
 endef
 
@@ -82,7 +82,7 @@ dockers_dev: $(DOCKERS_DEV)
 
 define docker_push
 	for svc in $(SERVICES); do \
-		docker push sammyoina/$$svc:$(1); \
+		docker push mainflux/$$svc:$(1); \
 	done
 endef
 
