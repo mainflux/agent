@@ -133,7 +133,6 @@ func TestBootstrap(t *testing.T) {
 			assert.True(t, errors.Contains(err, test.expectedErr), fmt.Sprintf("expected %v got %v", test.expectedErr, err))
 		})
 	}
-	// cleanup.
 	t.Cleanup(func() {
 		os.Remove("config.toml")
 	})
