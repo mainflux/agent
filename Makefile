@@ -37,7 +37,7 @@ define make_docker
 		--build-arg VERSION=$(VERSION) \
 		--build-arg COMMIT=$(COMMIT) \
 		--build-arg TIME=$(TIME) \
-		--tag=Mainflux/$(svc) \
+		--tag=mainflux/$(svc) \
 		-f docker/Dockerfile .
 endef
 
