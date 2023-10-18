@@ -107,6 +107,9 @@ type Service interface {
 
 	// Publish message.
 	Publish(string, string) error
+
+	// Closes all connections.
+	Close() error
 }
 
 var _ Service = (*agent)(nil)
@@ -121,13 +124,21 @@ type agent struct {
 	terminals   map[string]terminal.Session
 }
 
+func (ag *agent) Close() error {
+	ag.mqttClient.Disconnect(1)
+	for _, svc := range ag.svcs {
+		svc.Close()
+	}
+	return ag.broker.Close()
+}
+
 func (ag *agent) handle(ctx context.Context, pub messaging.Publisher, logger log.Logger, cfg HeartbeatConfig) handleFunc {
 	return func(msg *messaging.Message) error {
 		sub := msg.Channel
 		tok := strings.Split(sub, ".")
 		if len(tok) < 3 {
-			ag.logger.Error(fmt.Sprintf("Failed: Subject has incorrect length %s", sub))
-			return fmt.Errorf("Failed: Subject has incorrect length %s", sub)
+			ag.logger.Error(fmt.Sprintf("failed: subject has incorrect length %s", sub))
+			return fmt.Errorf("failed: subject has incorrect length %s", sub)
 		}
 		svcname := tok[1]
 		svctype := tok[2]
@@ -135,7 +146,7 @@ func (ag *agent) handle(ctx context.Context, pub messaging.Publisher, logger log
 		// if there is multiple instances of the same service
 		// we will have to add another distinction.
 		if _, ok := ag.svcs[svcname]; !ok {
-			svc := NewHeartbeat(svcname, svctype, cfg.Interval)
+			svc := NewHeartbeat(ctx, svcname, svctype, cfg.Interval)
 			ag.svcs[svcname] = svc
 			ag.logger.Info(fmt.Sprintf("Services '%s-%s' registered", svcname, svctype))
 		}

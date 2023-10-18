@@ -111,6 +111,9 @@ func TestPublish(t *testing.T) {
 		{"publish data", data, http.StatusOK},
 		{"publish data with invalid data", "}", http.StatusInternalServerError},
 	}
+	t.Cleanup(func() {
+		assert.Nil(t, svc.Close())
+	})
 
 	for _, tc := range cases {
 		req := testRequest{

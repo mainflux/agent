@@ -13,7 +13,6 @@ import (
 
 	"github.com/mainflux/agent/pkg/encoder"
 	"github.com/mainflux/mainflux/logger"
-	"github.com/mainflux/mainflux/pkg/errors"
 )
 
 const (
@@ -54,7 +53,7 @@ func NewSession(uuid string, timeout time.Duration, publish func(channel, payloa
 	c := exec.Command("bash")
 	ptmx, err := pty.Start(c)
 	if err != nil {
-		return t, errors.New(err.Error())
+		return t, err
 	}
 	t.ptmx = ptmx
 
@@ -120,7 +119,7 @@ func (t *term) Send(p []byte) error {
 	nr, err := io.Copy(t.ptmx, in)
 	t.logger.Debug(fmt.Sprintf("Written to ptmx: %d", nr))
 	if err != nil {
-		return errors.New(err.Error())
+		return err
 	}
 	return nil
 }
