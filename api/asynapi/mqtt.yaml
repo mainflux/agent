@@ -1,0 +1,21 @@
+asyncapi: 2.6.0
+info:
+  title: Agent Service
+  version: 0.13
+  description: Agent service provides remote command execution, remote terminal, heartbeat service for services on edge and edgex SMA.
+channels:
+  channels/{channel_id}/messages/req:
+    publish:
+      message:
+        $ref: '#/componenets/messages/agentMessage'
+components:
+  messages:
+    agentMessage:
+      payload:
+        type: object
+        example: |
+        ### SenML
+        ```json
+        [{"bn":"1:", "n":"<command>", "vs":"<content>"}]
+        ```
+        #### Commands: exec, control, config, service, term
