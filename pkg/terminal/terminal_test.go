@@ -1,6 +1,7 @@
 package terminal
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -14,31 +15,44 @@ const (
 )
 
 // MockPublish is a mock function for the publish function used in NewSession.
-func MockPublish(channel, payload string) error {
+func mockPublish(channel, payload string) error {
 	return nil
 }
 
-func TestSessionWrite(t *testing.T) {
-	publish := MockPublish
-
-	session, err := NewSession(uuid, timeout, publish, logger.NewMock())
-	if err != nil {
-		t.Fatalf("Expected no error, but got: %v", err)
-	}
-
-	// Simulate writing data to the session
-	data := []byte("test data")
-	n, err := session.Write(data)
-	if err != nil {
-		t.Fatalf("Expected no error, but got: %v", err)
-	}
-	assert.Equal(t, len(data), n)
+func mockPublishFail(channel, payload string) error {
+	return errors.New("")
 }
 
-func TestSessionSend(t *testing.T) {
-	publish := MockPublish
+func TestWrite(t *testing.T) {
+	t.Run("successful publish", func(t *testing.T) {
+		session, err := NewSession(uuid, timeout, mockPublish, logger.NewMock())
+		if err != nil {
+			t.Fatalf("Expected no error, but got: %v", err)
+		}
 
-	session, err := NewSession(uuid, timeout, publish, logger.NewMock())
+		// Simulate writing data to the session
+		data := []byte("test data")
+		n, err := session.Write(data)
+		if err != nil {
+			t.Fatalf("Expected no error, but got: %v", err)
+		}
+		assert.Equal(t, len(data), n)
+	})
+	t.Run("failed publish", func(t *testing.T) {
+		session, err := NewSession(uuid, timeout, mockPublishFail, logger.NewMock())
+		if err != nil {
+			t.Fatalf("Expected no error, but got: %v", err)
+		}
+
+		// Simulate writing data to the session
+		data := []byte("test data")
+		_, err = session.Write(data)
+		assert.NotNil(t, err)
+	})
+}
+
+func TestSend(t *testing.T) {
+	session, err := NewSession(uuid, timeout, mockPublish, logger.NewMock())
 	if err != nil {
 		t.Fatalf("Expected no error, but got: %v", err)
 	}
@@ -49,10 +63,11 @@ func TestSessionSend(t *testing.T) {
 	if err = session.Send(data); err != nil {
 		t.Fatalf("Expected no error, but got: %v", err)
 	}
+
 }
 
-func TestSessionIsDone(t *testing.T) {
-	publish := MockPublish
+func TestIsDone(t *testing.T) {
+	publish := mockPublish
 
 	session, err := NewSession(uuid, timeout, publish, logger.NewMock())
 	if err != nil {
