@@ -7,7 +7,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"os"
 
 	"fmt"
 	"io/ioutil"
@@ -100,21 +99,21 @@ func Bootstrap(cfg Config, logger log.Logger, file string) error {
 		}
 	}
 
-	if len(dc.MainfluxChannels) < 2 {
-		return agent.ErrMalformedEntity
-	}
+	// if len(dc.MainfluxChannels) < 2 {
+	// 	return agent.ErrMalformedEntity
+	// }
 
-	ctrlChan := dc.MainfluxChannels[0].ID
-	dataChan := dc.MainfluxChannels[1].ID
+	// ctrlChan := dc.MainfluxChannels[0].ID
+	dataChan := dc.MainfluxChannels[0].ID
 	if dc.MainfluxChannels[0].Metadata["type"] == "data" {
-		ctrlChan = dc.MainfluxChannels[1].ID
+		// ctrlChan = dc.MainfluxChannels[1].ID
 		dataChan = dc.MainfluxChannels[0].ID
 	}
 
 	sc := dc.SvcsConf.Agent.Server
 	cc := agent.ChanConfig{
-		Control: ctrlChan,
-		Data:    dataChan,
+		// Control: ctrlChan,
+		Data: dataChan,
 	}
 	ec := dc.SvcsConf.Agent.Edgex
 	lc := dc.SvcsConf.Agent.Log
@@ -167,20 +166,20 @@ func fillExportConfig(econf export.Config, c agent.Config) export.Config {
 }
 
 func saveExportConfig(econf export.Config, logger log.Logger) {
-	if econf.File == "" {
-		econf.File = exportConfigFile
-	}
-	exConfFileExist := false
-	if _, err := os.Stat(econf.File); err == nil {
-		exConfFileExist = true
-		logger.Info(fmt.Sprintf("Export config file %s exists", econf.File))
-	}
-	if !exConfFileExist {
-		logger.Info(fmt.Sprintf("Saving export config file %s", econf.File))
-		if err := export.Save(econf); err != nil {
-			logger.Warn(fmt.Sprintf("Failed to save export config file %s", err))
-		}
-	}
+	// if econf.File == "" {
+	// 	econf.File = exportConfigFile
+	// }
+	// exConfFileExist := false
+	// if _, err := os.Stat(econf.File); err == nil {
+	// 	exConfFileExist = true
+	// 	logger.Info(fmt.Sprintf("Export config file %s exists", econf.File))
+	// }
+	// if !exConfFileExist {
+	// 	logger.Info(fmt.Sprintf("Saving export config file %s", econf.File))
+	// 	if err := export.Save(econf); err != nil {
+	// 		logger.Warn(fmt.Sprintf("Failed to save export config file %s", err))
+	// 	}
+	// }
 }
 
 func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (deviceConfig, error) {
@@ -225,7 +224,6 @@ func getConfig(bsID, bsKey, bsSvrURL string, skipTLS bool, logger log.Logger) (d
 	if err := json.Unmarshal([]byte(body), &h); err != nil {
 		return deviceConfig{}, err
 	}
-	fmt.Println(h.Content)
 	sc := ServicesConfig{}
 	if err := json.Unmarshal([]byte(h.Content), &sc); err != nil {
 		return deviceConfig{}, err

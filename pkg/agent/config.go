@@ -122,15 +122,16 @@ func (c *ModBusConfig) UnmarshalJSON(b []byte) error {
 	}
 	interval, ok := v["polling_frequency"]
 	if !ok {
-		return errors.New("missing modbusconfig polling frequency")
+		return errors.New("missing modbus config polling frequency")
 	}
 	c.Host, ok = v["host"].(string)
 	if !ok {
-		return errors.New("missing modbusconfig host")
+		c.Host = "localhost:502"
+		// return errors.New("missing modbus  config host")
 	}
 	regs, ok := v["registers"].([]interface{})
 	if !ok {
-		return errors.New("missing modbusconfig registers")
+		return errors.New("missing modbus config registers")
 	}
 	for _, r := range regs {
 		switch val := r.(type) {

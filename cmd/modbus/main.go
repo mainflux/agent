@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -16,7 +17,6 @@ import (
 	"github.com/goburrow/modbus"
 	"github.com/mainflux/agent/pkg/agent"
 	"github.com/mainflux/agent/pkg/bootstrap"
-	"github.com/mainflux/agent/pkg/edgex"
 	"github.com/mainflux/agent/pkg/encoder"
 	"github.com/mainflux/mainflux"
 	"github.com/mainflux/mainflux/logger"
@@ -24,11 +24,33 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
+const msgTmplt = `
+[
+    {
+        "bn": "urn:dev:demo:10001BCD:",
+        "bt": %d,
+        "n": "temperature",
+        "v": %v,
+        "u": "C"
+    },
+    {
+        "n": "humidity",
+        "v": %v,
+        "u": "V"
+    },
+        {
+        "n": "voltage",
+        "v": %v,
+        "u": "V",
+        "t": 10
+    }
+]`
+
 const (
 	defHTTPPort                   = "9998"
 	defBootstrapURL               = "http://localhost:9013/things/bootstrap"
-	defBootstrapID                = ""
-	defBootstrapKey               = ""
+	defBootstrapID                = "9scb6:s:sda:2"
+	defBootstrapKey               = "key_123"
 	defBootstrapRetries           = "5"
 	defBootstrapSkipTLS           = "false"
 	defBootstrapRetryDelaySeconds = "10"
@@ -104,42 +126,53 @@ func main() {
 		logger.Error(fmt.Sprintf("Failed to load config: %s", err))
 	}
 
-	nc, err := nats.Connect(cfg.Server.NatsURL)
-	if err != nil {
-		logger.Error(fmt.Sprintf("Failed to connect to NATS: %s %s", err, cfg.Server.NatsURL))
-		os.Exit(1)
-	}
-	defer nc.Close()
-
 	mqttClient, err := connectToMQTTBroker(cfg.MQTT, logger)
 
 	if err != nil {
 		logger.Error(err.Error())
 		return
 	}
-	edgexClient := edgex.NewClient(cfg.Edgex.URL, logger)
+	handler := modbus.NewTCPClientHandler(cfg.ModBusConfig.Host)
+	handler.Timeout = 10 * time.Second
+	handler.SlaveId = 0xFF
+	handler.Connect()
+	defer handler.Close()
 
-	svc, err := agent.New(mqttClient, &cfg, edgexClient, nc, logger)
-	if err != nil {
-		logger.Error(fmt.Sprintf("Error in agent service: %s", err))
-		return
-	}
+	client := modbus.NewClient(handler)
 
+	logger.Info(fmt.Sprintf("Starting modbus for registers %v", cfg.ModBusConfig.Regs))
+	results := make([]uint16, len(cfg.ModBusConfig.Regs))
 	for {
-		for _, reg := range cfg.ModBusConfig.Regs {
+		for i, reg := range cfg.ModBusConfig.Regs {
 			logger.Info(fmt.Sprintf("reading modbus sensor on register: %d", reg))
-			data, err := readSensor(reg, cfg.ModBusConfig.Host, true)
+			result, err := client.ReadHoldingRegisters(reg, 1)
 			if err != nil {
 				logger.Error(fmt.Sprintf("failed to read sensor with error: %v", err.Error()))
 				continue
 			}
-			logger.Info("publishing sensor data")
-			if err := svc.Publish("data", string(data)); err != nil {
-				logger.Error(fmt.Sprintf("failed to publish with error: %v", err.Error()))
-			}
-			time.Sleep(cfg.ModBusConfig.PollingFrequency)
+			v, _ := SingleUint16FromBytes(result, 1)
+			results[i] = v
+			logger.Info(fmt.Sprintf("results %v", result))
+
+		}
+		time.Sleep(cfg.ModBusConfig.PollingFrequency)
+		topic := fmt.Sprintf("channels/%s/messages/data", cfg.Channels.Data)
+		msg := fmt.Sprintf(msgTmplt, time.Now().Unix(), results[0], results[1], results[2])
+		logger.Info(msg)
+		if err := publish(topic, msg, mqttClient, cfg.MQTT); err != nil {
+			logger.Error(fmt.Sprintf("failed to publish with error: %v", err.Error()))
 		}
 	}
+}
+
+func publish(t, payload string, client mqtt.Client, cfg agent.MQTTConfig) error {
+	token := client.Publish(t, cfg.QoS, cfg.Retain, payload)
+	token.Wait()
+	err := token.Error()
+	if err != nil {
+		return errors.New(err.Error())
+	}
+	return nil
 }
 
 func loadEnvConfig() (agent.Config, error) {
@@ -338,7 +371,7 @@ func readSensor(register uint16, host string, simulate bool) ([]byte, error) {
 }
 
 func connectToMQTTBroker(conf agent.MQTTConfig, logger logger.Logger) (mqtt.Client, error) {
-	name := fmt.Sprintf("agent-%s22", conf.Username)
+	name := fmt.Sprintf("agent-%smodbus", conf.Username)
 	conn := func(client mqtt.Client) {
 		logger.Info(fmt.Sprintf("Client %s connected", name))
 	}
@@ -385,4 +418,22 @@ func connectToMQTTBroker(conf agent.MQTTConfig, logger logger.Logger) (mqtt.Clie
 		return nil, token.Error()
 	}
 	return client, nil
+}
+
+func SingleUint16FromBytes(bytes []byte, byteorder uint8) (uint16, error) {
+	bytesLen := len(bytes)
+	var val uint16
+	if bytesLen == 2 {
+		if byteorder == 1 { // comparison  1 = Big Endian
+			val = binary.BigEndian.Uint16(bytes)
+			return val, nil
+		} else if byteorder == 2 {
+			val = binary.LittleEndian.Uint16(bytes)
+			return val, nil
+		} else {
+			return 0, errors.New("Byte Order not specified")
+		}
+	} else {
+		return 0, errors.New("Array length is not equal to 2")
+	}
 }
